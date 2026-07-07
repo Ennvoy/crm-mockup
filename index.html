@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>走查台 — 55688 隊員 CRM 互動原型</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.6; padding: 48px 24px 96px; }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  .brand-badge { background: var(--brand-55688); color: var(--brand-55688-on); font-weight: 700; font-style: italic; padding: 3px 10px; border-radius: 8px; font-size: 16px; }
+  h1 { font-family: var(--font-display); font-weight: 500; font-size: 40px; line-height: 1.15; margin-top: 16px; }
+  .sub { color: var(--muted); margin-top: 10px; font-size: 15px; }
+  .meta-row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; align-items: center; }
+  .chip { background: var(--surface-warm); color: var(--fg-2); border-radius: 9999px; padding: 5px 14px; font-size: 13px; }
+  .reset { border: none; cursor: pointer; background: var(--surface); box-shadow: 0 0 0 1px #d1cfc5; color: var(--fg-2); border-radius: 8px; padding: 8px 14px; font-size: 13px; font-family: inherit; min-height: 36px; }
+  .reset:hover { background: var(--surface-warm); }
+  h2 { font-family: var(--font-display); font-weight: 500; font-size: 25px; margin: 40px 0 14px; }
+  .cards { display: grid; gap: 12px; }
+  .jcard { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; }
+  .jcard.pending { opacity: .6; }
+  .jhead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .jid { font-family: var(--font-mono); font-size: 12.5px; color: var(--accent); background: rgba(201, 100, 66, .08); padding: 3px 10px; border-radius: 9999px; }
+  .jtitle { font-family: var(--font-display); font-weight: 500; font-size: 19px; margin-top: 8px; }
+  ol { margin: 10px 0 0 20px; color: var(--muted); font-size: 14px; display: grid; gap: 3px; }
+  .go { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; background: var(--accent); color: var(--accent-on); border-radius: 10px; padding: 9px 16px; font-size: 14px; text-decoration: none; box-shadow: 0 0 0 1px var(--accent); min-height: 40px; }
+  .go:hover { background: var(--accent-hover); }
+  .pending-tag { background: var(--surface-warm); color: var(--meta); border-radius: 9999px; padding: 4px 12px; font-size: 12.5px; }
+  .note { margin-top: 28px; color: var(--meta); font-size: 13px; border-top: 1px solid var(--border-soft); padding-top: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="brand-badge">55688</span>
+  <h1>隊員 CRM — 互動原型走查台</h1>
+  <p class="sub">照卡片把每條 journey 實際點一遍，「感受開發完的樣子」再定版。原型使用假資料（localStorage），亂點壞了可一鍵重置。</p>
+  <div class="meta-row">
+    <span class="chip">視覺基底：Claude 設計系統＋55688 品牌黃</span>
+    <span class="chip">本批交付：總覽（協理優先指示）</span>
+    <button class="reset" type="button" onclick="localStorage.removeItem('crm55688_proto_v1');alert('假資料已重置');">重置假資料</button>
+  </div>
+
+  <h2>本批可走查</h2>
+  <div class="cards">
+    <div class="jcard">
+      <div class="jhead">
+        <div>
+          <span class="jid">REQ-E2E-001</span>
+          <div class="jtitle">管理員登入並檢視總覽</div>
+        </div>
+      </div>
+      <ol>
+        <li>進入總覽頁（本批原型直接進入；登入頁於下一批補上）</li>
+        <li>頂部 KPI 卡列：確認 6 張卡、各級距數字「同時攤開」不需下拉（協理要求）</li>
+        <li>滑過任一指標旁的 ⓘ 小圖示 → 顯示計算口徑說明</li>
+        <li>「承接任務的分布」：切換縣市／月份 → 圖表即時變化；滑過柱條看數字</li>
+        <li>「隊員承接數」排卡：切換週／月、移除卡片、點「＋新增指標卡」從指標池組一張新卡</li>
+        <li>「進行中活動」：確認成效（+任務數）與費用（成本）是視覺重點；級距前後對比條</li>
+        <li>「早晚尖峰完成數」：切換年份 → 圖與表更新</li>
+        <li>右下角「原型狀態」切換：空狀態／載入中／錯誤／權限不足 各看一眼</li>
+      </ol>
+      <a class="go" href="pages/overview.html">開始走查 → 總覽</a>
+    </div>
+    <div class="jcard">
+      <div class="jhead">
+        <div>
+          <span class="jid">REQ-OV-007（總覽範圍・其他分頁）</span>
+          <div class="jtitle">早晚尖峰完成數（對應現行 Tableau 三張報表）</div>
+        </div>
+      </div>
+      <ol>
+        <li>上方三個 tab 依序看：「完成數 KPI」（年選擇＋早晚雙柱圖＋月表）</li>
+        <li>「每日完成數 by 星期」：同星期別日期併列，早／晚尖峰各含有效任務數、完成數、完成率、日均完成（累計）</li>
+        <li>「每日任務數・完成狀況」：每日完成／取消／未現／有車無承接／搜無車 數量與 %，可切早／晚尖峰</li>
+        <li>右上切換地區（雙北／全台）、年、月 → 三張報表同步更新；「匯出」為示意</li>
+      </ol>
+      <a class="go" href="pages/peak.html">開始走查 → 尖峰完成數</a>
+    </div>
+    <div class="jcard">
+      <div class="jhead">
+        <div>
+          <span class="jid">REQ-E2E-006（部分）＋活動→Profile 鏈路</span>
+          <div class="jtitle">隊員 Profile（協理第一階段最重要）＋主管確認路徑</div>
+        </div>
+      </div>
+      <ol>
+        <li>總覽 →「隊員活動」任一活動卡 → 點「查看參加隊員」→ 名單彈窗 → 點任一隊編 → 進入該隊員 Profile</li>
+        <li>Profile 頁：確認 11 維度資料卡（上線天數、早晚尖峰、身份別、承接率、活動參與、月均承接、收入、常跑區域、不願承接原因）</li>
+        <li>滑過各維度 ⓘ 看口徑；「收入」「電話」有敏感欄位標示（原型以已授權視角展示）</li>
+        <li>「趨勢」切換 承接任務數／收入 × 週／月／季</li>
+        <li>下方「溝通歷程」時間軸：每次聯繫的時間、專案、內容、意願（對應協理：連動看到何時溝通過、溝通什麼方案）</li>
+        <li>搜尋列直接輸入隊編（示例 chips：123456／0103／0217）；輸入不存在的隊編看「查無此隊編」</li>
+      </ol>
+      <a class="go" href="pages/profile.html">開始走查 → 隊員 Profile</a>
+    </div>
+  </div>
+
+  <h2>下一批（規劃已凍結、頁面製作中）</h2>
+  <div class="cards">
+    <div class="jcard pending"><span class="jid">REQ-E2E-002／003</span><div class="jtitle">資料匯入（欄位映射／全有全無錯誤報告）</div><span class="pending-tag">製作中</span></div>
+    <div class="jcard pending"><span class="jid">REQ-E2E-004</span><div class="jtitle">運力查詢（H/D/W/M/Q/Y 維度＋匯出）</div><span class="pending-tag">製作中</span></div>
+    <div class="jcard pending"><span class="jid">REQ-E2E-005</span><div class="jtitle">車組／車種報表與隊編下鑽</div><span class="pending-tag">製作中</span></div>
+    <div class="jcard pending"><span class="jid">REQ-E2E-006／012</span><div class="jtitle">隊員 Profile（11 維度）＋分群篩選拉名單</div><span class="pending-tag">製作中</span></div>
+    <div class="jcard pending"><span class="jid">REQ-E2E-007</span><div class="jtitle">隊員活動（建活動→匯入→前後成效）</div><span class="pending-tag">製作中</span></div>
+    <div class="jcard pending"><span class="jid">REQ-E2E-008／013</span><div class="jtitle">客服外撥（建專案→分配→逐筆撥打→統計／回覆篩選＋溝通歷程）</div><span class="pending-tag">製作中</span></div>
+    <div class="jcard pending"><span class="jid">REQ-E2E-009／010／011</span><div class="jtitle">權限管理／憑證與抓取器／匯入批次刪除</div><span class="pending-tag">製作中</span></div>
+  </div>
+
+  <div class="note">
+    原型定位：UI 錨點、非產品程式碼。開發時沿用此原型的版面與設計 tokens，把假資料層換成真 API（Supabase）。<br>
+    走查回饋請直接告訴我：哪一塊要改、哪一塊方向對。
+  </div>
+</div>
+</body>
+</html>

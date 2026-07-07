@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>營運總覽 — 55688 隊員 CRM</title>
+<link rel="stylesheet" href="../tokens.css?v=12">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    line-height: var(--leading-body);
+    min-height: 100dvh;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; }
+  :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 8px; }
+
+  /* ── 導覽列 ── */
+  #crm-nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border-soft); }
+  .nav-inner { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--container-gutter-desktop); display: flex; align-items: center; gap: 20px; height: 60px; }
+  .nav-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .brand-badge { background: var(--brand-55688); color: var(--brand-55688-on); font-weight: 700; font-style: italic; padding: 3px 9px; border-radius: 8px; font-size: 15px; letter-spacing: .5px; }
+  .brand-title { font-family: var(--font-display); font-weight: 500; font-size: 17px; }
+  .nav-links { display: flex; gap: 2px; overflow-x: auto; flex: 1; }
+  .nav-link { padding: 8px 11px; border-radius: 8px; font-size: 15px; color: var(--muted); white-space: nowrap; transition: color var(--motion-fast), background var(--motion-fast); min-height: 36px; display: inline-flex; align-items: center; }
+  .nav-link:hover { color: var(--fg); background: var(--surface-warm); }
+  .nav-link.active { color: var(--fg); font-weight: 500; box-shadow: inset 0 -2px 0 var(--brand-55688); border-radius: 8px 8px 0 0; }
+  .nav-link.pending { opacity: .55; }
+  .nav-meta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .data-chip { font-size: 12.5px; color: var(--muted); background: var(--surface-warm); padding: 4px 10px; border-radius: 9999px; }
+  .nav-user { font-size: 14px; color: var(--fg-2); }
+
+  /* ── 版面 ── */
+  .page { max-width: var(--container-max); margin: 0 auto; padding: 28px var(--container-gutter-desktop) 96px; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+  h1 { font-family: var(--font-display); font-weight: 500; font-size: 32px; line-height: 1.2; }
+  .page-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  select {
+    appearance: none; background: var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%235e5d59" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+    border: 1px solid var(--border-soft); border-radius: 12px; padding: 8px 32px 8px 14px;
+    font-size: 14.5px; color: var(--fg); cursor: pointer; min-height: 40px; font-family: inherit;
+  }
+  select:hover { border-color: #d1cfc5; }
+
+  h2 { font-family: var(--font-display); font-weight: 500; font-size: 25px; line-height: 1.2; }
+  .sec { margin-top: 40px; }
+  .sec-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .sec-head .hint { color: var(--meta); font-size: 13px; }
+
+  /* ── ① 關鍵指標排卡區（協理：同一區塊＝KPI＋排卡） ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-items: stretch; }
+  @media (max-width: 1000px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px)  { .kpi-grid { grid-template-columns: 1fr; } }
+  .kpi-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 16px 14px; position: relative; transition: box-shadow var(--motion-base) var(--ease-standard);
+    display: flex; flex-direction: column;
+  }
+  .kpi-card:hover { box-shadow: var(--elev-raised); }
+  .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .kpi-label { font-size: 13.5px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+  .kpi-remove { border: none; background: transparent; color: var(--meta); cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 6px; min-width: 26px; min-height: 26px; }
+  .kpi-remove:hover { background: var(--surface-warm); color: var(--danger); }
+  .kpi-value { font-size: 30px; font-weight: 600; letter-spacing: -0.5px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .kpi-unit { font-size: 13px; color: var(--meta); font-weight: 400; margin-left: 2px; }
+  .kpi-buckets { margin-top: 10px; display: grid; gap: 5px; }
+  .bucket { display: grid; grid-template-columns: 64px 1fr 52px; align-items: center; gap: 8px; font-size: 12.5px; }
+  .bucket .bk-label { color: var(--meta); white-space: nowrap; }
+  .bucket .bk-bar { height: 8px; border-radius: 9999px; background: var(--surface-warm); overflow: hidden; }
+  .bucket .bk-bar > i { display: block; height: 100%; border-radius: 9999px; }
+  .bucket .bk-val { text-align: right; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+  .kpi-note { margin-top: 8px; font-size: 11.5px; color: var(--meta); }
+  .kpi-trend-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 8px; }
+  .kpi-delta { font-size: 12.5px; }
+  .trend-up { color: var(--success); }
+  .trend-down { color: var(--danger); }
+  .kpi-spark { margin-top: 6px; }
+  .metric-toggle { display: inline-flex; background: var(--surface-warm); border-radius: 9999px; padding: 2px; }
+  .metric-toggle button { border: none; background: transparent; padding: 4px 12px; border-radius: 9999px; font-size: 12px; color: var(--muted); cursor: pointer; min-height: 26px; }
+  .metric-toggle button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 0 0 1px var(--border-soft); }
+  .add-card {
+    border: 1.5px dashed var(--border-soft); border-radius: 12px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px; color: var(--muted); cursor: pointer;
+    background: transparent; min-height: 150px; font-size: 14px; transition: border-color var(--motion-fast), color var(--motion-fast);
+  }
+  .add-card:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── 口徑 info icon（REQ-GEN-002） ── */
+  .crm-info { position: relative; display: inline-flex; color: var(--meta); cursor: help; vertical-align: middle; }
+  .crm-info:hover, .crm-info:focus-visible { color: var(--fg-2); }
+  .crm-info-tip {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: var(--fg); color: var(--surface); font-size: 12px; line-height: 1.5;
+    padding: 8px 12px; border-radius: 8px; width: max-content; max-width: 260px;
+    opacity: 0; pointer-events: none; transition: opacity var(--motion-fast); z-index: 500; text-align: left;
+  }
+  .crm-info:hover .crm-info-tip, .crm-info:focus-visible .crm-info-tip { opacity: 1; }
+
+  /* ── 卡片容器與按鈕 ── */
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .legend { display: flex; gap: 16px; align-items: center; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: baseline; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer;
+    border-radius: 8px; font-size: 14px; padding: 8px 14px; min-height: 40px;
+    background: var(--surface-warm); color: var(--fg-2); box-shadow: 0 0 0 1px #d1cfc5;
+    transition: background var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
+  }
+  .btn:hover { background: #e0ddd1; }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: var(--accent); color: var(--accent-on); box-shadow: 0 0 0 1px var(--accent); }
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  /* ── 活動卡 ── */
+  .act-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 1000px) { .act-grid { grid-template-columns: 1fr; } }
+  .act-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .act-card:hover { box-shadow: var(--elev-raised); }
+  .act-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .act-name { font-family: var(--font-display); font-weight: 500; font-size: 18px; line-height: 1.3; }
+  .act-dates { color: var(--meta); font-size: 12.5px; margin-top: 3px; }
+  .act-type { background: var(--surface-warm); color: var(--fg-2); font-size: 12px; padding: 3px 10px; border-radius: 9999px; white-space: nowrap; }
+  .act-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .act-stat { background: var(--bg); border-radius: 10px; padding: 10px 12px; }
+  .act-stat .k { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  .act-stat .v { font-size: 21px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .act-stat.cost .v { color: var(--accent); }
+  .act-stat.gain .v { color: var(--success); }
+  .act-sub { display: flex; gap: 16px; font-size: 12.5px; color: var(--muted); }
+  .act-sub b { color: var(--fg-2); font-variant-numeric: tabular-nums; }
+  .act-buckets { display: grid; gap: 6px; }
+  .ab-row { display: grid; grid-template-columns: 52px 1fr; gap: 8px; align-items: center; font-size: 12px; color: var(--meta); }
+  .ab-bars { display: grid; gap: 2px; }
+  .ab-bar { height: 7px; border-radius: 9999px; background: var(--surface-warm); overflow: hidden; }
+  .ab-bar > i { display: block; height: 100%; border-radius: 9999px; }
+  .ab-legend { display: flex; gap: 14px; font-size: 11.5px; color: var(--meta); margin-top: 2px; }
+  .act-detail { border-top: 1px solid var(--border); padding-top: 10px; }
+  .act-detail .dt-title { font-size: 12.5px; color: var(--meta); margin-bottom: 4px; }
+  .act-detail table { border-collapse: collapse; width: 100%; font-size: 12.5px; table-layout: fixed; }
+  .act-detail th, .act-detail td { padding: 6px 4px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .act-detail th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .act-detail th:first-child, .act-detail td:first-child { text-align: left; color: var(--muted); width: 30%; }
+
+  /* ── 圖表 ── */
+  .chart-wrap { overflow-x: auto; }
+  svg text { font-family: var(--font-body); }
+  .grid-line { stroke: var(--border-soft); stroke-width: 1; }
+  .bar { transition: opacity var(--motion-fast); cursor: pointer; }
+  .bar:hover { opacity: .8; }
+
+  /* ── 狀態層 ── */
+  .state-layer { display: none; padding: 72px 24px; text-align: center; }
+  .state-layer.show { display: block; }
+  .state-icon { font-size: 40px; margin-bottom: 12px; }
+  .state-title { font-family: var(--font-display); font-weight: 500; font-size: 20px; }
+  .state-desc { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .state-layer .btn { margin-top: 18px; }
+  .skeleton { border-radius: 12px; background: linear-gradient(90deg, var(--surface-warm) 25%, #f0eee4 50%, var(--surface-warm) 75%); background-size: 200% 100%; animation: shim 1.4s infinite; }
+  @keyframes shim { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } * { transition-duration: 0ms !important; } }
+
+  /* ── Modal ── */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(20, 20, 19, .45); z-index: 8000; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal-backdrop.show { display: flex; }
+  .modal { background: var(--surface); border-radius: 16px; width: 440px; max-width: 100%; padding: 24px; box-shadow: rgba(0,0,0,.18) 0 12px 48px; }
+  .modal h3 { font-family: var(--font-display); font-weight: 500; font-size: 20px; margin-bottom: 6px; }
+  .modal p.desc { color: var(--muted); font-size: 13.5px; margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13.5px; color: var(--fg-2); margin-bottom: 5px; font-weight: 500; }
+  .field select { width: 100%; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+  footer.proto-note { max-width: var(--container-max); margin: 0 auto; padding: 0 24px 120px; color: var(--meta); font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<nav id="crm-nav" aria-label="全站導覽"></nav>
+
+<main class="page" id="main">
+
+  <div class="page-head">
+    <div>
+      <h1>營運總覽</h1>
+      <div class="page-sub">隊員運力、任務承接與活動成效的即時全貌（資料每日自動更新）</div>
+    </div>
+  </div>
+
+  <div id="content-normal">
+
+    <!-- ① 關鍵指標（隊員運力＋隊員承接數合併；預設運力六卡，其餘由指標池新增；承接任務的分布已移至運力查詢） -->
+    <section class="sec" style="margin-top:8px" aria-label="關鍵指標">
+      <div class="sec-head">
+        <h2>關鍵指標</h2>
+        <span class="hint">預設顯示隊員運力六卡；其他指標（有承接隊員數、承接率…）用「＋新增指標卡」加入 <span id="key-hint"></span></span>
+      </div>
+      <div class="kpi-grid" id="key-cards"></div>
+    </section>
+
+    <!-- ② 隊員活動（進行中活動之成效與費用；前後比較可展開數據） -->
+    <section class="sec" aria-label="隊員活動">
+      <div class="sec-head">
+        <h2>隊員活動<span style="font-size:14px;color:var(--meta);font-family:var(--font-body);margin-left:8px">顯示所有進行中的活動</span></h2>
+        <span class="hint" id="act-asof"></span>
+      </div>
+      <div class="act-grid" id="act-grid"></div>
+    </section>
+
+  </div>
+
+  <!-- 狀態層 -->
+  <div class="state-layer" id="st-empty">
+    <div class="state-icon" aria-hidden="true">🗂️</div>
+    <div class="state-title">尚無資料</div>
+    <div class="state-desc">此期間還沒有匯入任何營運數據，請先到「資料匯入」上傳檔案。</div>
+    <button class="btn btn-primary" type="button" onclick="CRM.toast('前往資料匯入（原型示意）')">前往資料匯入</button>
+  </div>
+  <div class="state-layer" id="st-loading" aria-label="載入中">
+    <div style="display:grid;gap:12px;max-width:960px;margin:0 auto">
+      <div class="skeleton" style="height:150px"></div>
+      <div class="skeleton" style="height:280px"></div>
+      <div class="skeleton" style="height:180px"></div>
+    </div>
+  </div>
+  <div class="state-layer" id="st-error">
+    <div class="state-icon" aria-hidden="true">⚠️</div>
+    <div class="state-title">資料載入失敗</div>
+    <div class="state-desc">連線發生問題（HTTP 500），請稍後再試；若持續發生請聯絡系統管理員。</div>
+    <button class="btn" type="button" onclick="CRM.toast('重新載入（原型示意）')">重試</button>
+  </div>
+  <div class="state-layer" id="st-forbidden">
+    <div class="state-icon" aria-hidden="true">🔒</div>
+    <div class="state-title">無權限檢視此頁</div>
+    <div class="state-desc">你的帳號沒有「總覽（overview.view）」權限，需要存取請聯絡系統管理員開通。</div>
+  </div>
+
+</main>
+
+<footer class="proto-note">
+  原型說明：本頁為互動原型（假資料，localStorage 持久化），視覺基底＝Claude 設計系統＋55688 品牌黃。右下角可切換異常狀態檢視；「匯出」「隊編連結」等在原型中以提示訊息示意。「早晚尖峰完成數」依協理指示屬其他分頁（見導覽列「尖峰完成數」）。
+</footer>
+
+<!-- 新增指標卡 modal -->
+<div class="modal-backdrop" id="modal-add" role="dialog" aria-modal="true" aria-labelledby="m-title">
+  <div class="modal">
+    <h3 id="m-title">新增指標卡</h3>
+    <p class="desc">從內建指標池挑選指標並設定條件，數字口徑由系統統一控制。</p>
+    <div class="field"><label for="m-metric">指標</label><select id="m-metric"></select></div>
+    <div class="field"><label for="m-scope">地區範圍</label>
+      <select id="m-scope"><option>全台</option><option>雙北</option><option>台北市</option><option>新北市</option></select></div>
+    <div class="field"><label for="m-peak">時段</label>
+      <select id="m-peak"><option>全日</option><option>早尖峰</option><option>晚尖峰</option></select></div>
+    <div class="modal-foot">
+      <button class="btn" type="button" id="m-cancel">取消</button>
+      <button class="btn btn-primary" type="button" id="m-ok">加入卡片</button>
+    </div>
+  </div>
+</div>
+
+<!-- 參加隊員表格 modal（搜尋＋排序＋分頁＋前後差異） -->
+<div class="modal-backdrop" id="modal-members" role="dialog" aria-modal="true" aria-labelledby="ml-title">
+  <div class="modal" style="width:720px">
+    <h3 id="ml-title">參加隊員</h3>
+    <p class="desc" id="mt-total"></p>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+      <input id="mt-search" type="search" placeholder="搜尋隊編或姓名" aria-label="搜尋參加隊員"
+        style="flex:1;border:1px solid var(--border-soft);border-radius:10px;padding:9px 14px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--fg);outline:none">
+    </div>
+    <div id="member-list" style="max-height:380px;overflow-y:auto"></div>
+    <div class="modal-foot" style="justify-content:space-between;align-items:center">
+      <span style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)">
+        <button class="btn" type="button" id="mt-prev" style="min-height:32px;padding:4px 12px">上一頁</button>
+        <span id="mt-page"></span>
+        <button class="btn" type="button" id="mt-next" style="min-height:32px;padding:4px 12px">下一頁</button>
+      </span>
+      <button class="btn" type="button" onclick="document.getElementById('modal-members').classList.remove('show')">關閉</button>
+    </div>
+  </div>
+</div>
+<style>
+  .mt-table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  .mt-table th, .mt-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mt-table th { color: var(--muted); font-weight: 500; font-size: 12.5px; position: sticky; top: 0; background: var(--surface); }
+  .mt-table tbody tr:hover { background: var(--bg); }
+</style>
+
+<script src="../app.js?v=12"></script>
+<script>
+(function () {
+  'use strict';
+  var DB = CRM.load();
+  CRM.mountNav('overview', DB.meta.dataAsOf);
+
+  /* ═══ 共用：級距列 ═══ */
+  var bucketColors = ['var(--chart-4)', 'var(--chart-2)', 'var(--chart-1)'];
+  function bucketRows(pairs) {
+    var max = Math.max.apply(null, pairs.map(function (p) { return p[1]; }));
+    return pairs.map(function (p, i) {
+      return '<div class="bucket"><span class="bk-label">' + p[0] + '</span>' +
+        '<span class="bk-bar"><i style="width:' + Math.round(p[1] / max * 100) + '%;background:' + bucketColors[i % bucketColors.length] + '"></i></span>' +
+        '<span class="bk-val">' + CRM.fmt(p[1]) + '</span></div>';
+    }).join('');
+  }
+
+  /* ═══ ① 關鍵指標排卡（預設運力六卡；其餘由指標池新增；可移除、自動儲存） ═══ */
+  document.getElementById('key-hint').innerHTML =
+    CRM.infoIcon('可用運力隊員數＝隊員上線數（車發最新數據）；級距＝最近 30 天上線天數 11~20 天／21 天以上。有承接隊員數等指標可自指標池加入');
+  function sparkline(vals, color) {
+    var W = 260, H = 48, pad = 4;
+    var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+    var span = (mx - mn) || 1;
+    var pts = vals.map(function (v, i) {
+      return [pad + (W - pad * 2) * i / (vals.length - 1), H - pad - (H - pad * 2) * (v - mn) / span];
+    });
+    var line = pts.map(function (p) { return p.join(','); }).join(' ');
+    var area = 'M' + pts[0][0] + ',' + (H - pad) + ' L' + pts.map(function (p) { return p.join(','); }).join(' L') + ' L' + pts[pts.length - 1][0] + ',' + (H - pad) + ' Z';
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="48" aria-hidden="true">' +
+      '<path d="' + area + '" fill="' + color + '" opacity="0.12"/>' +
+      '<polyline points="' + line + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round"/>' +
+      '<circle cx="' + pts[pts.length - 1][0] + '" cy="' + pts[pts.length - 1][1] + '" r="3" fill="' + color + '"/></svg>';
+  }
+  function renderKeyCards() {
+    var wrap = document.getElementById('key-cards');
+    var html = '';
+    DB.keyCards.forEach(function (c) {
+      var inner = '<div class="kpi-top"><div class="kpi-label">' + c.label + ' ' + CRM.infoIcon(c.info || '') + '</div>' +
+        '<button class="kpi-remove" type="button" aria-label="移除「' + c.label + '」卡片" data-remove="' + c.id + '">×</button></div>';
+      if (c.kind === 'simple') {
+        inner += '<div class="kpi-value">' + CRM.fmt(c.value) + '<span class="kpi-unit">人</span></div>' +
+          '<div class="kpi-note">' + (c.note || '') + '</div>';
+      } else if (c.kind === 'buckets') {
+        inner += '<div class="kpi-value">' + CRM.fmt(c.b2 + c.b3) + '<span class="kpi-unit">人</span></div>' +
+          '<div class="kpi-buckets">' + bucketRows([['11~20 天', c.b2], ['21 天以上', c.b3]]) + '</div>' +
+          '<div class="kpi-note">' + (c.note || '') + '</div>';
+      } else if (c.kind === 'bucketsTrend' || c.kind === 'trend') {
+        var mode = c.viewMode || 'weekly';
+        var vals = mode === 'weekly' ? c.weekly : c.monthly;
+        var last = vals[vals.length - 1], prev = vals[vals.length - 2];
+        var delta = Math.round((last - prev) * 10) / 10, up = delta >= 0;
+        var isRate = !!c.isRate;
+        var bk = (mode === 'weekly') ? c.weeklyBuckets : c.monthlyBuckets;
+        var total = bk ? (bk.b1 + bk.b2 + bk.b3) : last;
+        inner += '<div class="kpi-value">' + (isRate ? total + '%' : CRM.fmt(total) + '<span class="kpi-unit">人</span>') + '</div>';
+        if (bk) {
+          var bkLabels = (mode === 'weekly') ? ['1~2 天', '3~4 天', '5 天以上'] : ['1~10 天', '11~20 天', '21 天以上'];
+          inner += '<div class="kpi-buckets">' + bucketRows([[bkLabels[0], bk.b1], [bkLabels[1], bk.b2], [bkLabels[2], bk.b3]]) + '</div>' +
+            '<div class="kpi-note">' + (mode === 'weekly' ? '最近完整一週' : '最近完整一月') + '（承接天數級距）</div>';
+        }
+        inner += '<div class="kpi-trend-row">' +
+          '<span class="kpi-delta ' + (up ? 'trend-up' : 'trend-down') + '">' + (up ? '▲' : '▼') + ' ' +
+            (isRate ? Math.abs(delta) + ' 百分點' : CRM.fmt(Math.abs(delta)) + ' 人') + '（較前一' + (mode === 'weekly' ? '週' : '月') + '）</span>' +
+          '<span class="metric-toggle" role="group" aria-label="切換週或月變化">' +
+            '<button type="button" data-mode="weekly" data-card="' + c.id + '" aria-pressed="' + (mode === 'weekly') + '">週</button>' +
+            '<button type="button" data-mode="monthly" data-card="' + c.id + '" aria-pressed="' + (mode === 'monthly') + '">月</button></span></div>' +
+          '<div class="kpi-spark">' + sparkline(vals, isRate ? 'var(--chart-1)' : 'var(--chart-2)') + '</div>';
+      }
+      html += '<div class="kpi-card" data-id="' + c.id + '">' + inner + '</div>';
+    });
+    html += '<button class="add-card" type="button" id="btn-add-card" aria-haspopup="dialog">' +
+      '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>' +
+      '新增指標卡</button>';
+    wrap.innerHTML = html;
+
+    wrap.querySelectorAll('[data-remove]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        DB.keyCards = DB.keyCards.filter(function (c) { return c.id !== b.dataset.remove; });
+        CRM.save(DB); renderKeyCards();
+        CRM.toast('已移除卡片（可按右下角「重置假資料」還原預設）');
+      });
+    });
+    wrap.querySelectorAll('[data-mode]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var card = DB.keyCards.find(function (c) { return c.id === b.dataset.card; });
+        card.viewMode = b.dataset.mode;
+        CRM.save(DB); renderKeyCards();
+      });
+    });
+    document.getElementById('btn-add-card').addEventListener('click', openModal);
+  }
+
+  /* 新增指標卡 modal */
+  var modal = document.getElementById('modal-add');
+  function openModal() {
+    var sel = document.getElementById('m-metric');
+    sel.innerHTML = DB.metricPool.map(function (m) { return '<option value="' + m.key + '">' + m.name + '</option>'; }).join('');
+    modal.classList.add('show');
+    sel.focus();
+  }
+  function closeModal() { modal.classList.remove('show'); }
+  document.getElementById('m-cancel').addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+  document.getElementById('m-ok').addEventListener('click', function () {
+    var mk = document.getElementById('m-metric');
+    var scope = document.getElementById('m-scope').value;
+    var peak = document.getElementById('m-peak').value;
+    var name = mk.options[mk.selectedIndex].text;
+    var card;
+    if (mk.value === 'acceptedMembers') {
+      // 有承接隊員數：含承接天數級距＋週/月變化（取內建模板，scope/peak 對不到就近似）
+      var tpl = DB.acceptTemplates[scope + '|' + peak] || DB.acceptTemplates['全台|晚尖峰'];
+      card = {
+        id: 'k' + Date.now(), kind: 'bucketsTrend', label: scope + '・' + peak + '有承接隊員數',
+        weeklyBuckets: tpl.weeklyBuckets, monthlyBuckets: tpl.monthlyBuckets,
+        weekly: tpl.weekly, monthly: tpl.monthly, viewMode: 'weekly',
+        info: '有承接任務之隊員數；週視角級距＝該週承接天數 1~2/3~4/5 天以上、月視角級距＝該月承接天數 1~10/11~20/21 天以上（後台可調切點）'
+      };
+    } else {
+      var isRate = (mk.value === 'acceptRate');
+      var base = isRate ? 70 : 2800 + Math.floor(Math.abs(Math.sin(DB.keyCards.length + 1)) * 1500);
+      var w = [], m6 = [];
+      for (var i = 0; i < 7; i++) w.push(isRate ? Math.round((base + Math.sin(i * 1.3) * 2 + i * 0.3) * 10) / 10 : base + Math.round(Math.sin(i * 1.7) * 180) + i * 40);
+      for (var j = 0; j < 6; j++) m6.push(isRate ? Math.round((base - 1 + Math.cos(j) * 1.5 + j * 0.4) * 10) / 10 : base * 4 + Math.round(Math.cos(j) * 500) + j * 160);
+      card = {
+        id: 'k' + Date.now(), kind: 'trend', isRate: isRate, label: scope + '・' + peak + name,
+        weekly: w, monthly: m6, viewMode: 'weekly',
+        info: '自訂指標卡（' + scope + '／' + peak + '）：口徑由系統指標池統一定義'
+      };
+    }
+    DB.keyCards.push(card);
+    CRM.save(DB); closeModal(); renderKeyCards();
+    CRM.toast('已新增指標卡（原型假資料）');
+  });
+
+  /* ═══ ② 進行中活動 ═══ */
+  document.getElementById('act-asof').innerHTML = '成效追蹤至 ' + DB.meta.dataAsOf + '（每日更新） ' + CRM.infoIcon('活動 TA（報名名單）之任務數變化：活動前基期 vs 活動起始迄今，依每日匯入資料 T+1 更新');
+  function renderActivities() {
+    var labels = ['0 次', '1~3 次', '4~6 次', '7 次以上'];
+    var keys = ['b0', 'b1', 'b2', 'b3'];
+    var html = '';
+    DB.activities.forEach(function (a) {
+      var maxB = Math.max.apply(null, keys.map(function (k) { return Math.max(a.baseline[k], a.current[k]); }));
+      var buckets = keys.map(function (k, i) {
+        return '<div class="ab-row"><span>' + labels[i] + '</span><div class="ab-bars">' +
+          '<div class="ab-bar"><i style="width:' + Math.round(a.baseline[k] / maxB * 100) + '%;background:var(--chart-4)"></i></div>' +
+          '<div class="ab-bar"><i style="width:' + Math.round(a.current[k] / maxB * 100) + '%;background:var(--chart-2)"></i></div>' +
+          '</div></div>';
+      }).join('');
+      var detailRows = keys.map(function (k, i) {
+        var diff = a.current[k] - a.baseline[k];
+        return '<tr><td>' + labels[i] + '</td><td>' + CRM.fmt(a.baseline[k]) + '</td><td>' + CRM.fmt(a.current[k]) + '</td>' +
+          '<td class="' + (diff >= 0 ? 'trend-up' : 'trend-down') + '">' + (diff >= 0 ? '+' : '') + CRM.fmt(diff) + '</td></tr>';
+      }).join('');
+      html += '<article class="act-card">' +
+        '<div class="act-head"><div><div class="act-name">' + a.name + '</div>' +
+        '<div class="act-dates">' + a.start + ' ～ ' + a.end + '</div></div>' +
+        '<span class="act-type">' + a.type + '</span></div>' +
+        '<div class="act-hero">' +
+          '<div class="act-stat gain"><span class="k">累計產生任務數 ' + CRM.infoIcon('參加隊員於活動期間累計完成之任務總數') + '</span><span class="v">' + CRM.fmt(a.cumTasks) + '</span></div>' +
+          '<div class="act-stat cost"><span class="k">成本花費（獎勵） ' + CRM.infoIcon('Σ 活動成效匯入之獲得獎金') + '</span><span class="v">$' + CRM.fmt(a.cost) + '</span></div>' +
+        '</div>' +
+        '<div class="act-sub"><span>參加隊員 <b>' + CRM.fmt(a.signup) + '</b> 人</span>' +
+        '<span>較活動前增加 <b class="trend-up">+' + CRM.fmt(a.extraTasks) + '</b> 趟</span></div>' +
+        '<div class="act-buckets">' + buckets +
+        '<div class="ab-legend"><span><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--chart-4);margin-right:5px"></i>活動前（日均完成級距）</span>' +
+        '<span><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--chart-2);margin-right:5px"></i>活動迄今</span></div></div>' +
+        '<div class="act-detail"><div class="dt-title">前後比較數據（人）</div>' +
+        '<table aria-label="' + a.name + ' 日均完成級距前後比較"><thead><tr><th>級距</th><th>活動前</th><th>活動迄今</th><th>變化</th></tr></thead><tbody>' +
+        detailRows + '</tbody></table></div>' +
+        '<div><button class="btn" type="button" data-members="' + a.id + '">查看參加隊員</button></div>' +
+        '</article>';
+    });
+    document.getElementById('act-grid').innerHTML = html;
+
+    // 查看參加隊員 → 可搜尋/排序/分頁之表格（含活動前後差異；正式版全量查詢）
+    document.querySelectorAll('[data-members]').forEach(function (b) {
+      b.addEventListener('click', function () { openMemberTable(b.dataset.members); });
+    });
+  }
+
+  /* 參加隊員表格（搜尋＋依變化排序＋分頁；REQ-ACT-003：每位參加者前後變化） */
+  var mt = { actId: null, page: 1, per: 10, q: '', sortDesc: true };
+  function openMemberTable(actId) {
+    mt.actId = actId; mt.page = 1; mt.q = ''; mt.sortDesc = true;
+    document.getElementById('mt-search').value = '';
+    var act = DB.activities.find(function (x) { return x.id === actId; });
+    document.getElementById('ml-title').textContent = act.name + '・參加隊員';
+    document.getElementById('mt-total').textContent = '共 ' + CRM.fmt(act.signup) + ' 人（原型含 40 筆示意資料；正式版全量搜尋與分頁）';
+    renderMemberTable();
+    document.getElementById('modal-members').classList.add('show');
+  }
+  function renderMemberTable() {
+    var list = (DB.activityParticipants[mt.actId] || []).slice();
+    if (mt.q) list = list.filter(function (p) { return p.code.indexOf(mt.q) !== -1 || p.name.indexOf(mt.q) !== -1; });
+    list.sort(function (a, b) {
+      var da = a.after - a.before, db2 = b.after - b.before;
+      return mt.sortDesc ? db2 - da : da - db2;
+    });
+    var pages = Math.max(1, Math.ceil(list.length / mt.per));
+    if (mt.page > pages) mt.page = pages;
+    var rows = list.slice((mt.page - 1) * mt.per, mt.page * mt.per);
+    var html = '<table class="mt-table"><thead><tr>' +
+      '<th style="text-align:left">隊編</th><th style="text-align:left">姓名／身份</th>' +
+      '<th>活動前日均</th><th>迄今日均</th>' +
+      '<th><button type="button" id="mt-sort" style="border:none;background:none;cursor:pointer;color:var(--accent);font-size:12.5px;font-family:inherit">變化 ' + (mt.sortDesc ? '▼' : '▲') + '</button></th><th></th></tr></thead><tbody>';
+    rows.forEach(function (p) {
+      var diff = Math.round((p.after - p.before) * 10) / 10;
+      html += '<tr><td style="text-align:left;font-variant-numeric:tabular-nums"><b>' + p.code + '</b></td>' +
+        '<td style="text-align:left;color:var(--muted)">' + p.name + '・' + p.identity + '</td>' +
+        '<td>' + p.before.toFixed(1) + '</td><td>' + p.after.toFixed(1) + '</td>' +
+        '<td class="' + (diff >= 0 ? 'trend-up' : 'trend-down') + '">' + (diff >= 0 ? '+' : '') + diff.toFixed(1) + '</td>' +
+        '<td><a href="profile.html?m=' + p.code + '" style="color:var(--accent);font-size:13px">Profile →</a></td></tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('member-list').innerHTML = html;
+    document.getElementById('mt-page').textContent = mt.page + ' / ' + pages + ' 頁';
+    document.getElementById('mt-sort').addEventListener('click', function () { mt.sortDesc = !mt.sortDesc; renderMemberTable(); });
+  }
+
+  /* ═══ 事件與初始化 ═══ */
+  CRM.mountStateSwitcher(function (state) {
+    document.getElementById('content-normal').style.display = (state === 'normal') ? '' : 'none';
+    ['empty', 'loading', 'error', 'forbidden'].forEach(function (k) {
+      document.getElementById('st-' + k).classList.toggle('show', state === k);
+    });
+  });
+
+  /* 參加隊員表格：搜尋與分頁 */
+  document.getElementById('mt-search').addEventListener('input', function (e) {
+    mt.q = e.target.value.trim(); mt.page = 1; renderMemberTable();
+  });
+  document.getElementById('mt-prev').addEventListener('click', function () { if (mt.page > 1) { mt.page--; renderMemberTable(); } });
+  document.getElementById('mt-next').addEventListener('click', function () { mt.page++; renderMemberTable(); });
+  document.getElementById('modal-members').addEventListener('click', function (e) {
+    if (e.target === this) this.classList.remove('show');
+  });
+
+  renderKeyCards();
+  renderActivities();
+})();
+</script>
+
+</body>
+</html>

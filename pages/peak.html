@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>尖峰完成數 — 55688 隊員 CRM</title>
+<link rel="stylesheet" href="../tokens.css?v=12">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: var(--leading-body); min-height: 100dvh; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; }
+  :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 8px; }
+
+  #crm-nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border-soft); }
+  .nav-inner { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--container-gutter-desktop); display: flex; align-items: center; gap: 20px; height: 60px; }
+  .nav-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .brand-badge { background: var(--brand-55688); color: var(--brand-55688-on); font-weight: 700; font-style: italic; padding: 3px 9px; border-radius: 8px; font-size: 15px; letter-spacing: .5px; }
+  .brand-title { font-family: var(--font-display); font-weight: 500; font-size: 17px; }
+  .nav-links { display: flex; gap: 2px; overflow-x: auto; flex: 1; }
+  .nav-link { padding: 8px 11px; border-radius: 8px; font-size: 15px; color: var(--muted); white-space: nowrap; transition: color var(--motion-fast), background var(--motion-fast); min-height: 36px; display: inline-flex; align-items: center; }
+  .nav-link:hover { color: var(--fg); background: var(--surface-warm); }
+  .nav-link.active { color: var(--fg); font-weight: 500; box-shadow: inset 0 -2px 0 var(--brand-55688); border-radius: 8px 8px 0 0; }
+  .nav-link.pending { opacity: .55; }
+  .nav-meta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .data-chip { font-size: 12.5px; color: var(--muted); background: var(--surface-warm); padding: 4px 10px; border-radius: 9999px; }
+  .nav-user { font-size: 14px; color: var(--fg-2); }
+
+  .page { max-width: var(--container-max); margin: 0 auto; padding: 28px var(--container-gutter-desktop) 96px; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  h1 { font-family: var(--font-display); font-weight: 500; font-size: 32px; line-height: 1.2; }
+  .page-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  select {
+    appearance: none; background: var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%235e5d59" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+    border: 1px solid var(--border-soft); border-radius: 12px; padding: 8px 32px 8px 14px;
+    font-size: 14.5px; color: var(--fg); cursor: pointer; min-height: 40px; font-family: inherit;
+  }
+  select:hover { border-color: #d1cfc5; }
+
+  /* tabs */
+  .tabs { display: flex; gap: 4px; background: var(--surface-warm); border-radius: 12px; padding: 4px; width: fit-content; max-width: 100%; overflow-x: auto; margin-bottom: 20px; }
+  .tab { border: none; background: transparent; padding: 9px 18px; border-radius: 9px; font-size: 14.5px; color: var(--muted); cursor: pointer; white-space: nowrap; min-height: 40px; transition: background var(--motion-fast), color var(--motion-fast); }
+  .tab[aria-selected="true"] { background: var(--surface); color: var(--fg); font-weight: 500; box-shadow: 0 0 0 1px var(--border-soft); }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .panel-title { font-family: var(--font-display); font-weight: 500; font-size: 20px; }
+  .panel-note { color: var(--meta); font-size: 12.5px; }
+  .legend { display: flex; gap: 16px; align-items: center; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: baseline; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer; border-radius: 8px; font-size: 14px; padding: 8px 14px; min-height: 40px; background: var(--surface-warm); color: var(--fg-2); box-shadow: 0 0 0 1px #d1cfc5; transition: background var(--motion-fast); }
+  .btn:hover { background: #e0ddd1; }
+
+  .chart-wrap { overflow-x: auto; }
+  svg text { font-family: var(--font-body); }
+  .grid-line { stroke: var(--border-soft); stroke-width: 1; }
+  .bar { transition: opacity var(--motion-fast); cursor: pointer; }
+  .bar:hover { opacity: .8; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 7px 10px; text-align: right; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 500; background: var(--bg); position: sticky; top: 0; }
+  th.grp { text-align: center; border-bottom: 1px solid var(--border-soft); }
+  th:first-child, td:first-child { text-align: left; color: var(--muted); }
+  tbody tr:hover { background: var(--bg); }
+  td.wd, th.wd { text-align: left; color: var(--muted); }
+  tr.wd-first td { border-top: 1px solid var(--border-soft); }
+  td.wd-merge { text-align: center; vertical-align: middle; color: var(--fg-2); font-weight: 500; background: var(--bg); border-right: 1px solid var(--border-soft); }
+  td.day-cell { text-align: center; color: var(--muted); }
+  th.day-head { text-align: center; }
+  .pct-good { color: var(--success); }
+  .pct-mid { color: var(--warn); }
+  .pct-bad { color: var(--danger); }
+
+  .crm-info { position: relative; display: inline-flex; color: var(--meta); cursor: help; vertical-align: middle; }
+  .crm-info:hover, .crm-info:focus-visible { color: var(--fg-2); }
+  .crm-info-tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--surface); font-size: 12px; line-height: 1.5; padding: 8px 12px; border-radius: 8px; width: max-content; max-width: 280px; opacity: 0; pointer-events: none; transition: opacity var(--motion-fast); z-index: 500; text-align: left; }
+  .crm-info:hover .crm-info-tip, .crm-info:focus-visible .crm-info-tip { opacity: 1; }
+
+  .state-layer { display: none; padding: 72px 24px; text-align: center; }
+  .state-layer.show { display: block; }
+  .state-icon { font-size: 40px; margin-bottom: 12px; }
+  .state-title { font-family: var(--font-display); font-weight: 500; font-size: 20px; }
+  .state-desc { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .skeleton { border-radius: 12px; background: linear-gradient(90deg, var(--surface-warm) 25%, #f0eee4 50%, var(--surface-warm) 75%); background-size: 200% 100%; animation: shim 1.4s infinite; }
+  @keyframes shim { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } * { transition-duration: 0ms !important; } }
+
+  footer.proto-note { max-width: var(--container-max); margin: 0 auto; padding: 0 24px 120px; color: var(--meta); font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<nav id="crm-nav" aria-label="全站導覽"></nav>
+
+<main class="page">
+  <div class="page-head">
+    <div>
+      <h1>早晚尖峰完成數</h1>
+      <div class="page-sub">尖峰時段完成數 KPI、每日完成 by 星期、每日任務完成狀況（對應現行 Tableau 三張報表）</div>
+    </div>
+    <div class="filters" role="group" aria-label="篩選">
+      <select id="f-region" aria-label="選擇地區"><option>雙北地區</option><option>全台</option></select>
+      <select id="f-year" aria-label="選擇年份"><option>2026</option><option>2025</option></select>
+      <select id="f-month" aria-label="選擇月份">
+        <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+        <option value="4">4 月</option><option value="5">5 月</option><option value="6" selected>6 月</option>
+      </select>
+      <button class="btn" id="btn-export" type="button">匯出</button>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="尖峰報表切換">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" data-tab="kpi">完成數 KPI</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" data-tab="weekday">每日完成數 by 星期</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" data-tab="status">每日任務數・完成狀況</button>
+  </div>
+
+  <div id="content-normal">
+
+    <!-- Tab 1：完成數 KPI（對應截圖：雙北_晚尖峰完成數KPI） -->
+    <section class="panel" id="pane-kpi" role="tabpanel" aria-labelledby="tab-1">
+      <div class="panel-head">
+        <div class="panel-title" id="kpi-title"></div>
+        <span class="panel-note">17:00~18:59・07:00~08:59（排除規則已於資料源頭處理） <span id="kpi-info"></span></span>
+      </div>
+      <div class="legend" style="margin-bottom:14px">
+        <span><i style="background:var(--chart-2)"></i>早尖峰完成數</span>
+        <span><i style="background:var(--chart-1)"></i>晚尖峰完成數</span>
+      </div>
+      <div class="chart-wrap"><div id="chart-kpi" role="img" aria-label="早晚尖峰各月完成數柱狀圖"></div></div>
+      <div class="chart-wrap" style="margin-top:16px"><table id="kpi-table" aria-label="早晚尖峰完成數月表"></table></div>
+    </section>
+
+    <!-- Tab 2：每日完成數 by 星期（對應截圖：每日完成數by星期-協理專用） -->
+    <section class="panel" id="pane-weekday" role="tabpanel" aria-labelledby="tab-2" hidden>
+      <div class="panel-head">
+        <div class="panel-title" id="wd-title"></div>
+        <span class="panel-note">同一星期別的日期併列，快速比對同星期的表現 <span id="wd-info"></span></span>
+      </div>
+      <div class="legend" style="margin-bottom:10px">
+        <span><i style="background:var(--chart-2);border-radius:9999px;width:18px;height:3px"></i>早尖峰每日完成數</span>
+        <span><i style="background:var(--chart-1);border-radius:9999px;width:18px;height:3px"></i>晚尖峰每日完成數</span>
+      </div>
+      <div class="chart-wrap"><div id="chart-wd" role="img" aria-label="每日完成數折線圖"></div></div>
+      <div class="chart-wrap" style="margin-top:16px"><table id="wd-table" aria-label="每日完成數依星期分組表"></table></div>
+    </section>
+
+    <!-- Tab 3：每日任務數完成狀況（對應截圖：晚尖峰每日任務數_完成狀況-協理專用） -->
+    <section class="panel" id="pane-status" role="tabpanel" aria-labelledby="tab-3" hidden>
+      <div class="panel-head">
+        <div class="panel-title" id="st-title"></div>
+        <div class="filters">
+          <select id="f-weekday" aria-label="篩選星期幾">
+            <option value="all">全部星期</option>
+            <option value="1">星期一</option><option value="2">星期二</option><option value="3">星期三</option>
+            <option value="4">星期四</option><option value="5">星期五</option><option value="6">星期六</option><option value="0">星期日</option>
+          </select>
+          <select id="f-peak" aria-label="選擇尖峰時段"><option value="evening">晚尖峰</option><option value="morning">早尖峰</option></select>
+        </div>
+      </div>
+      <div class="legend" style="margin-bottom:10px">
+        <span><i style="background:var(--chart-4);border-radius:9999px;width:18px;height:3px"></i>每日有效任務數</span>
+        <span><i style="background:var(--chart-2);border-radius:9999px;width:18px;height:3px"></i>每日完成任務數</span>
+      </div>
+      <div class="chart-wrap"><div id="chart-status" role="img" aria-label="每日任務數與完成數折線圖"></div></div>
+      <div class="legend" style="margin:14px 0 12px">
+        <span><i style="background:var(--chart-2)"></i>完成</span>
+        <span><i style="background:var(--chart-4)"></i>取消</span>
+        <span><i style="background:var(--chart-6)"></i>未現</span>
+        <span><i style="background:var(--chart-5)"></i>有車無承接</span>
+        <span><i style="background:var(--chart-3)"></i>搜無車</span>
+        <span id="st-info"></span>
+      </div>
+      <div class="chart-wrap"><table id="status-table" aria-label="每日任務完成狀況表"></table></div>
+    </section>
+
+  </div>
+
+  <div class="state-layer" id="st-empty">
+    <div class="state-icon" aria-hidden="true">🗂️</div>
+    <div class="state-title">尚無資料</div>
+    <div class="state-desc">此期間還沒有匯入任務明細，請先到「資料匯入」上傳檔案。</div>
+  </div>
+  <div class="state-layer" id="st-loading" aria-label="載入中">
+    <div style="display:grid;gap:12px;max-width:960px;margin:0 auto">
+      <div class="skeleton" style="height:280px"></div>
+      <div class="skeleton" style="height:220px"></div>
+    </div>
+  </div>
+  <div class="state-layer" id="st-error">
+    <div class="state-icon" aria-hidden="true">⚠️</div>
+    <div class="state-title">資料載入失敗</div>
+    <div class="state-desc">連線發生問題（HTTP 500），請稍後再試。</div>
+  </div>
+  <div class="state-layer" id="st-forbidden">
+    <div class="state-icon" aria-hidden="true">🔒</div>
+    <div class="state-title">無權限檢視此頁</div>
+    <div class="state-desc">你的帳號沒有此分頁權限，需要存取請聯絡系統管理員。</div>
+  </div>
+</main>
+
+<footer class="proto-note">
+  原型說明：本頁對應 v2 需求文件「其他分頁」三張 Tableau 報表（雙北_晚尖峰完成數 KPI／每日完成數 by 星期／晚尖峰每日任務數_完成狀況）。假資料即時生成、數字量級貼近截圖。
+</footer>
+
+<script src="../app.js?v=12"></script>
+<script>
+(function () {
+  'use strict';
+  var DB = CRM.load();
+  CRM.mountNav('peak', DB.meta.dataAsOf);
+
+  /* ── deterministic 假資料生成（貼近截圖量級） ── */
+  function rnd(seed) { var x = Math.sin(seed * 12.9898) * 43758.5453; return x - Math.floor(x); }
+  function daysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
+  var WD = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+
+  // 每日資料：早/晚尖峰之 有效任務數、完成、取消、未現、有車無承接、搜無車、隊員數
+  function dayData(y, m, d, peak) {
+    var date = new Date(y, m - 1, d);
+    var wd = date.getDay();
+    var weekend = (wd === 0 || wd === 6);
+    var s = y * 373 + m * 31 + d + (peak === 'morning' ? 0 : 500);
+    var base = peak === 'morning' ? (weekend ? 4200 : 9600) : (weekend ? 8500 : 10200);
+    var valid = Math.round(base * (0.85 + rnd(s) * 0.45));
+    var doneRate = peak === 'morning' ? (weekend ? 0.82 : 0.72) : (weekend ? 0.62 : 0.68);
+    doneRate += (rnd(s + 1) - 0.5) * 0.12;
+    var done = Math.round(valid * doneRate);
+    var cancel = Math.round(valid * (0.038 + rnd(s + 2) * 0.012));
+    var noshow = Math.round(valid * (0.012 + rnd(s + 3) * 0.006));
+    var noaccept = Math.round(valid * (0.10 + rnd(s + 4) * 0.16));
+    var nocar = Math.max(0, valid - done - cancel - noshow - noaccept);
+    var members = Math.round(1900 + rnd(s + 5) * 1300);
+    return { d: d, wd: wd, valid: valid, done: done, cancel: cancel, noshow: noshow, noaccept: noaccept, nocar: nocar, members: members };
+  }
+  function monthDays(y, m, peak) {
+    var arr = [];
+    for (var d = 1; d <= daysInMonth(y, m); d++) arr.push(dayData(y, m, d, peak));
+    return arr;
+  }
+  function pctCls(p) { return p >= 70 ? 'pct-good' : (p >= 55 ? 'pct-mid' : 'pct-bad'); }
+
+  /* 通用每日折線圖（多系列；dayLabels 可傳篩選後之實際日期） */
+  function lineChart(seriesArr, dayCount, dayLabels) {
+    var W = 1120, H = 220, padL = 56, padB = 30, padT = 12, padR = 16;
+    var innerW = W - padL - padR, innerH = H - padT - padB;
+    var all = [];
+    seriesArr.forEach(function (s) { all = all.concat(s.vals); });
+    var maxV = Math.max.apply(null, all) * 1.1;
+    var xOf = function (i) { return dayCount > 1 ? padL + innerW * i / (dayCount - 1) : padL + innerW / 2; };
+    var labelOf = function (i) { return dayLabels ? dayLabels[i] : (i + 1); };
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="min-width:760px" aria-hidden="true">';
+    for (var g = 0; g <= 3; g++) {
+      var gy = padT + innerH - innerH * g / 3;
+      svg += '<line class="grid-line" x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy + '"/>';
+      svg += '<text x="' + (padL - 8) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="11" fill="var(--meta)">' + CRM.fmt(Math.round(maxV * g / 3 / 100) * 100) + '</text>';
+    }
+    seriesArr.forEach(function (s) {
+      var pts = s.vals.map(function (v, i) { return [xOf(i), padT + innerH - v / maxV * innerH]; });
+      svg += '<polyline points="' + pts.map(function (p) { return p.join(','); }).join(' ') + '" fill="none" stroke="' + s.color + '" stroke-width="2.2" stroke-linecap="round"/>';
+      pts.forEach(function (p, i) {
+        svg += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.6" fill="' + s.color + '" stroke="var(--surface)" stroke-width="1"><title>' + labelOf(i) + '日 ' + s.name + ' ' + CRM.fmt(s.vals[i]) + '</title></circle>';
+      });
+    });
+    var step = dayCount > 16 ? 2 : 1;
+    for (var d = 0; d < dayCount; d += step) {
+      svg += '<text x="' + xOf(d) + '" y="' + (H - padB + 18) + '" text-anchor="middle" font-size="11" fill="var(--muted)">' + labelOf(d) + '</text>';
+    }
+    svg += '</svg>';
+    return svg;
+  }
+
+  function region() { return document.getElementById('f-region').value; }
+  function year() { return Number(document.getElementById('f-year').value); }
+  function month() { return Number(document.getElementById('f-month').value); }
+  function regionFactor() { return region() === '全台' ? 2.4 : 1; }
+
+  /* ═══ Tab 1：完成數 KPI ═══ */
+  document.getElementById('kpi-info').innerHTML = CRM.infoIcon('完成數＝任務狀態 completed；月值＝該月每日完成數平均（對齊現行 Tableau KPI 口徑）');
+  function drawKpi() {
+    var y = year(), f = regionFactor();
+    document.getElementById('kpi-title').textContent = region() + '・早晚尖峰完成數 KPI（' + y + '）';
+    var months = { morning: [], evening: [] };
+    for (var m = 1; m <= 12; m++) {
+      if (y === 2026 && m > 6) { months.morning.push(null); months.evening.push(null); continue; }
+      ['morning', 'evening'].forEach(function (pk) {
+        var days = monthDays(y, m, pk);
+        var avg = Math.round(days.reduce(function (a, r) { return a + r.done; }, 0) / days.length * f * (pk === 'morning' ? 0.72 : 0.65));
+        months[pk].push(avg);
+      });
+    }
+    var W = 1120, H = 300, padL = 56, padB = 40, padT = 16, padR = 16;
+    var innerW = W - padL - padR, innerH = H - padT - padB;
+    var all = months.morning.concat(months.evening).filter(function (v) { return v !== null; });
+    var maxV = Math.max.apply(null, all) * 1.15;
+    var groupW = innerW / 12, barW = Math.min(18, groupW / 3);
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="min-width:760px" aria-hidden="true">';
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + innerH - innerH * g / 4;
+      svg += '<line class="grid-line" x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy + '"/>';
+      svg += '<text x="' + (padL - 8) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="11" fill="var(--meta)">' + CRM.fmt(Math.round(maxV * g / 4 / 100) * 100) + '</text>';
+    }
+    for (var mi = 0; mi < 12; mi++) {
+      var cx = padL + groupW * mi + groupW / 2;
+      if (months.morning[mi] !== null) {
+        var h1 = months.morning[mi] / maxV * innerH;
+        svg += '<rect class="bar" x="' + (cx - barW - 1.5) + '" y="' + (padT + innerH - h1) + '" width="' + barW + '" height="' + h1 + '" rx="4" fill="var(--chart-2)"><title>' + (mi + 1) + '月 早尖峰 ' + CRM.fmt(months.morning[mi]) + '</title></rect>';
+      }
+      if (months.evening[mi] !== null) {
+        var h2 = months.evening[mi] / maxV * innerH;
+        svg += '<rect class="bar" x="' + (cx + 1.5) + '" y="' + (padT + innerH - h2) + '" width="' + barW + '" height="' + h2 + '" rx="4" fill="var(--chart-1)"><title>' + (mi + 1) + '月 晚尖峰 ' + CRM.fmt(months.evening[mi]) + '</title></rect>';
+      }
+      svg += '<text x="' + cx + '" y="' + (H - padB + 18) + '" text-anchor="middle" font-size="12" fill="var(--muted)">' + (mi + 1) + '月</text>';
+    }
+    svg += '</svg>';
+    document.getElementById('chart-kpi').innerHTML = svg;
+
+    var tbl = '<thead><tr><th>' + y + ' 年</th>';
+    for (var i = 1; i <= 12; i++) tbl += '<th>' + i + '月</th>';
+    tbl += '</tr></thead><tbody>';
+    tbl += '<tr><td>早尖峰完成數</td>' + months.morning.map(function (v) { return '<td>' + CRM.fmt(v) + '</td>'; }).join('') + '</tr>';
+    tbl += '<tr><td>晚尖峰完成數</td>' + months.evening.map(function (v) { return '<td>' + CRM.fmt(v) + '</td>'; }).join('') + '</tr>';
+    tbl += '</tbody>';
+    document.getElementById('kpi-table').innerHTML = tbl;
+  }
+
+  /* ═══ Tab 2：每日完成數 by 星期 ═══ */
+  document.getElementById('wd-info').innerHTML = CRM.infoIcon('每日完成率＝每日完成任務數 ÷ 每日有效任務數；日均完成任務數（累計）＝當月 1 日起至該日之完成數累計平均');
+  function drawWeekday() {
+    var y = year(), m = month(), f = regionFactor();
+    document.getElementById('wd-title').textContent = region() + '・每日完成數 by 星期（' + y + ' 年 ' + m + ' 月）';
+    var am = monthDays(y, m, 'morning'), pm = monthDays(y, m, 'evening');
+    // 累計日均
+    function withCum(days) {
+      var sum = 0;
+      return days.map(function (r, i) { sum += r.done; return Math.round(sum / (i + 1)); });
+    }
+    var amCum = withCum(am), pmCum = withCum(pm);
+    // 每日完成數折線圖（早/晚兩線）
+    document.getElementById('chart-wd').innerHTML = lineChart([
+      { name: '早尖峰完成數', color: 'var(--chart-2)', vals: am.map(function (r) { return Math.round(r.done * f); }) },
+      { name: '晚尖峰完成數', color: 'var(--chart-1)', vals: pm.map(function (r) { return Math.round(r.done * f); }) }
+    ], am.length);
+    // group by weekday（一 → 日）；星期欄以 rowspan 合併置中、日欄純數字
+    var order = [1, 2, 3, 4, 5, 6, 0];
+    var html = '<thead><tr>' +
+      '<th class="wd" rowspan="2" style="text-align:center;vertical-align:middle">星期</th>' +
+      '<th class="day-head" rowspan="2" style="vertical-align:middle">日</th>' +
+      '<th class="grp" colspan="4" style="border-left:1px solid var(--border-soft)">早尖峰</th>' +
+      '<th class="grp" colspan="4" style="border-left:1px solid var(--border-soft)">晚尖峰</th></tr>' +
+      '<tr>' +
+      '<th style="border-left:1px solid var(--border-soft)">每日有效任務數</th><th>每日完成任務數</th><th>每日完成率</th><th>日均完成（累計）</th>' +
+      '<th style="border-left:1px solid var(--border-soft)">每日有效任務數</th><th>每日完成任務數</th><th>每日完成率</th><th>日均完成（累計）</th></tr></thead><tbody>';
+    order.forEach(function (wd) {
+      var rows = [];
+      am.forEach(function (r, i) { if (r.wd === wd) rows.push(i); });
+      rows.forEach(function (i, idx) {
+        var r = am[i], p = pm[i];
+        var amRate = Math.round(r.done / r.valid * 1000) / 10;
+        var pmRate = Math.round(p.done / p.valid * 1000) / 10;
+        html += '<tr class="' + (idx === 0 ? 'wd-first' : '') + '">' +
+          (idx === 0 ? '<td class="wd-merge" rowspan="' + rows.length + '">' + WD[wd] + '</td>' : '') +
+          '<td class="day-cell">' + r.d + '</td>' +
+          '<td style="border-left:1px solid var(--border-soft)">' + CRM.fmt(Math.round(r.valid * f)) + '</td><td>' + CRM.fmt(Math.round(r.done * f)) + '</td>' +
+          '<td class="' + pctCls(amRate) + '">' + amRate + '%</td><td>' + CRM.fmt(Math.round(amCum[i] * f)) + '</td>' +
+          '<td style="border-left:1px solid var(--border-soft)">' + CRM.fmt(Math.round(p.valid * f)) + '</td><td>' + CRM.fmt(Math.round(p.done * f)) + '</td>' +
+          '<td class="' + pctCls(pmRate) + '">' + pmRate + '%</td><td>' + CRM.fmt(Math.round(pmCum[i] * f)) + '</td></tr>';
+      });
+    });
+    html += '</tbody>';
+    document.getElementById('wd-table').innerHTML = html;
+  }
+
+  /* ═══ Tab 3：每日任務數・完成狀況 ═══ */
+  document.getElementById('st-info').innerHTML = CRM.infoIcon('每日有效任務數＝完成＋取消＋未現＋有車無承接＋搜無車；各狀態 % ＝ 該狀態 ÷ 每日有效任務數');
+  function drawStatus() {
+    var y = year(), m = month(), f = regionFactor();
+    var pk = document.getElementById('f-peak').value;
+    document.getElementById('st-title').textContent = region() + '・' + (pk === 'morning' ? '早尖峰' : '晚尖峰') + '每日任務數_完成狀況（' + y + ' 年 ' + m + ' 月）';
+    var days = monthDays(y, m, pk);
+    // 星期篩選（表格與折線圖同步變動）
+    var wdFilter = document.getElementById('f-weekday').value;
+    if (wdFilter !== 'all') days = days.filter(function (r) { return r.wd === Number(wdFilter); });
+    // 每日任務數＋完成數折線圖（X 軸＝篩選後之實際日期）
+    document.getElementById('chart-status').innerHTML = lineChart([
+      { name: '每日有效任務數', color: 'var(--chart-4)', vals: days.map(function (r) { return Math.round(r.valid * f); }) },
+      { name: '每日完成任務數', color: 'var(--chart-2)', vals: days.map(function (r) { return Math.round(r.done * f); }) }
+    ], days.length, days.map(function (r) { return r.d; }));
+    var html = '<thead><tr><th>日（任務建立時間）</th><th class="wd">星期</th><th>每日有效任務數</th><th>隊員數</th>' +
+      '<th style="border-left:1px solid var(--border-soft)">完成</th><th>取消</th><th>未現</th><th>有車無承接</th><th>搜無車</th>' +
+      '<th style="border-left:1px solid var(--border-soft)">完成%</th><th>取消%</th><th>未現%</th><th>有車無承接%</th><th>搜無車%</th></tr></thead><tbody>';
+    days.forEach(function (r) {
+      var pf = function (n) { return Math.round(n / r.valid * 1000) / 10; };
+      var donePct = pf(r.done);
+      html += '<tr><td>' + y + '年' + m + '月' + r.d + '日</td><td class="wd">' + WD[r.wd] + '</td>' +
+        '<td>' + CRM.fmt(Math.round(r.valid * f)) + '</td><td>' + CRM.fmt(Math.round(r.members * f)) + '</td>' +
+        '<td style="border-left:1px solid var(--border-soft);color:var(--fg-2);font-weight:500">' + CRM.fmt(Math.round(r.done * f)) + '</td>' +
+        '<td>' + CRM.fmt(Math.round(r.cancel * f)) + '</td><td>' + CRM.fmt(Math.round(r.noshow * f)) + '</td>' +
+        '<td style="color:var(--danger)">' + CRM.fmt(Math.round(r.noaccept * f)) + '</td><td>' + CRM.fmt(Math.round(r.nocar * f)) + '</td>' +
+        '<td style="border-left:1px solid var(--border-soft)" class="' + pctCls(donePct) + '">' + donePct + '%</td>' +
+        '<td>' + pf(r.cancel) + '%</td><td>' + pf(r.noshow) + '%</td>' +
+        '<td style="color:var(--danger)">' + pf(r.noaccept) + '%</td><td>' + pf(r.nocar) + '%</td></tr>';
+    });
+    html += '</tbody>';
+    document.getElementById('status-table').innerHTML = html;
+  }
+
+  /* ═══ tabs ═══ */
+  var PANES = { kpi: 'pane-kpi', weekday: 'pane-weekday', status: 'pane-status' };
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
+      t.setAttribute('aria-selected', 'true');
+      Object.keys(PANES).forEach(function (k) {
+        document.getElementById(PANES[k]).hidden = (k !== t.dataset.tab);
+      });
+    });
+  });
+
+  function redraw() { drawKpi(); drawWeekday(); drawStatus(); }
+  ['f-region', 'f-year', 'f-month', 'f-peak', 'f-weekday'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', redraw);
+  });
+  document.getElementById('btn-export').addEventListener('click', function () {
+    CRM.toast('匯出 Excel／CSV（原型示意；正式版需 report.export 權限並記審計）');
+  });
+
+  CRM.mountStateSwitcher(function (state) {
+    document.getElementById('content-normal').style.display = (state === 'normal') ? '' : 'none';
+    ['empty', 'loading', 'error', 'forbidden'].forEach(function (k) {
+      document.getElementById('st-' + k).classList.toggle('show', state === k);
+    });
+  });
+
+  redraw();
+})();
+</script>
+
+</body>
+</html>
