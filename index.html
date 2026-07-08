@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>走查台 — 55688 隊員 CRM 互動原型</title>
-<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="tokens.css?v=13">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.6; padding: 48px 24px 96px; }
@@ -38,7 +38,7 @@
   <div class="meta-row">
     <span class="chip">視覺基底：Claude 設計系統＋55688 品牌黃</span>
     <span class="chip">本批交付：總覽（協理優先指示）</span>
-    <button class="reset" type="button" onclick="localStorage.removeItem('crm55688_proto_v1');alert('假資料已重置');">重置假資料</button>
+    <button class="reset" type="button" id="reset-proto">重置假資料</button>
   </div>
 
   <h2>本批可走查</h2>
@@ -52,8 +52,8 @@
       </div>
       <ol>
         <li>進入總覽頁（本批原型直接進入；登入頁於下一批補上）</li>
-        <li>頂部 KPI 卡列：確認 6 張卡、各級距數字「同時攤開」不需下拉（協理要求）</li>
-        <li>滑過任一指標旁的 ⓘ 小圖示 → 顯示計算口徑說明</li>
+        <li>頂部 KPI 卡列：確認 6 張卡、每張卡「較 7 天前／較 30 天前」增減數（主管回饋）、運力卡四級距 0／1~10／11~20／21+ 同時攤開（0 天灰色列示、不計入主數字）</li>
+        <li>滑過任一指標旁的 ⓘ 小圖示 → 顯示計算口徑說明；「雙北地區隊員數」的 ⓘ 列出雙北包含的車隊清單（主管回饋）</li>
         <li>「承接任務的分布」：切換縣市／月份 → 圖表即時變化；滑過柱條看數字</li>
         <li>「隊員承接數」排卡：切換週／月、移除卡片、點「＋新增指標卡」從指標池組一張新卡</li>
         <li>「進行中活動」：確認成效（+任務數）與費用（成本）是視覺重點；級距前後對比條</li>
@@ -70,7 +70,7 @@
         </div>
       </div>
       <ol>
-        <li>上方三個 tab 依序看：「完成數 KPI」（年選擇＋早晚雙柱圖＋月表）</li>
+        <li>上方三個 tab 依序看：「完成數 KPI」（年選擇 2024~2026——資料補到 2024（主管回饋）＋早晚雙柱圖＋月表）</li>
         <li>「每日完成數 by 星期」：同星期別日期併列，早／晚尖峰各含有效任務數、完成數、完成率、日均完成（累計）</li>
         <li>「每日任務數・完成狀況」：每日完成／取消／未現／有車無承接／搜無車 數量與 %，可切早／晚尖峰</li>
         <li>右上切換地區（雙北／全台）、年、月 → 三張報表同步更新；「匯出」為示意</li>
@@ -90,7 +90,7 @@
         <li>滑過各維度 ⓘ 看口徑；「收入」「電話」有敏感欄位標示（原型以已授權視角展示）</li>
         <li>「趨勢」切換 承接任務數／收入 × 週／月／季</li>
         <li>下方「溝通歷程」時間軸：每次聯繫的時間、專案、內容、意願（對應協理：連動看到何時溝通過、溝通什麼方案）</li>
-        <li>搜尋列直接輸入隊編（示例 chips：123456／0103／0217）；輸入不存在的隊編看「查無此隊編」</li>
+        <li>搜尋列輸入隊編，或點「標籤搜尋」chips（主管回饋：標籤方式搜尋）→ 符合隊員清單 → 點任一列進入個人 Profile；輸入不存在的隊編看「查無此隊編／標籤」</li>
       </ol>
       <a class="go" href="pages/profile.html">開始走查 → 隊員 Profile</a>
     </div>
@@ -112,5 +112,13 @@
     走查回饋請直接告訴我：哪一塊要改、哪一塊方向對。
   </div>
 </div>
+<script>
+document.getElementById('reset-proto').addEventListener('click', function () {
+  // 清掉原型所有 localStorage key（含歷史版本前綴），確保跨版本重置有效
+  Object.keys(localStorage).filter(function (k) { return k.indexOf('crm55688_') === 0; })
+    .forEach(function (k) { localStorage.removeItem(k); });
+  this.textContent = '已重置 ✓';
+});
+</script>
 </body>
 </html>

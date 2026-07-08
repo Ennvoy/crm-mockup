@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  var STORE_KEY = 'crm55688_proto_v8';
+  var STORE_KEY = 'crm55688_proto_v9';
 
   /* 活動參加名單生成（deterministic；每活動 40 筆示意，前 3 筆為完整 Profile 假資料隊員） */
   function buildParticipants() {
@@ -40,20 +40,19 @@
    * Seed 假資料（貼近真實量級：參考 Tableau 截圖數字）
    * ──────────────────────────────────────────────── */
   function buildSeed() {
+    // 車隊→車隊地區對照（REQ-SET-007；「台北」＝雙北。初始清單依主管提供之分公司對照表，正式清單隨匯入更新）
+    var fleetRegions = {
+      '台北': ['台北分公司', '台北志英', '小黃耐斯都會', '耐斯都會車隊', '幸福車隊', '泛亞北區', '城市衛星北區', '祥賀車隊', '新利達車隊', '慶安車隊', '龍星北區', '聯合車隊', '警光北區', '台北多元試跑', '多元台北', '多元台北生通', '多元台北宏力', '多元台北保底', '多元慶安'],
+      '桃園': ['大文山車隊', '桃園分公司', '泛亞桃園', '多元桃園'],
+      '宜蘭': ['宜蘭分公司', '多元宜蘭']
+    };
     return {
       meta: {
         dataAsOf: '2026-07-06',        // 資料截至（昨日）
         importedAt: '2026-07-07 06:30',
         staleDays: 0                   // 超過 2 天顯示過期警示（demo 可切）
       },
-      kpi: {
-        totalMembers: 21847,
-        taipeiMembers: 9326,
-        morningCapacity: { b1: 1204, b2: 2861, b3: 3590 },   // 1~10 / 11~20 / 21+（最近30天）
-        eveningCapacity: { b1: 1436, b2: 3012, b3: 3874 },
-        morningAccepted: { b1: 1732, b2: 1268, b3: 894 },    // 週承接天數 1~2 / 3~4 / 5+（最近完整一週）
-        eveningAccepted: { b1: 1985, b2: 1547, b3: 1103 }
-      },
+      fleetRegions: fleetRegions,
       // 承接任務分布（本月 by 行政區；city → districts）
       distribution: {
         '台北市': [
@@ -72,17 +71,6 @@
           { d: '三重區', tasks: 21467, accepted: 14322 },
           { d: '新莊區', tasks: 20894, accepted: 14075 }
         ]
-      },
-      // 早晚尖峰完成數 by 月（2025 參考截圖、2026 到 6 月）
-      peakCompleted: {
-        '2025': {
-          morning: [6421, 6633, 6812, 6905, 7102, 7011, 7233, 7180, 7095, 6821, 6544, 6702],
-          evening: [5817, 6070, 6243, 6333, 6595, 6617, 6857, 6668, 6626, 6237, 5975, 6102]
-        },
-        '2026': {
-          morning: [6890, 6742, 7011, 7154, 7302, 7255, null, null, null, null, null, null],
-          evening: [6263, 6105, 6388, 6512, 6690, 6641, null, null, null, null, null, null]
-        }
       },
       // 進行中活動（總覽只顯示進行中）
       activities: [
@@ -109,19 +97,21 @@
         }
       ],
       // 總覽「關鍵指標」排卡：預設＝隊員運力六卡；其餘指標（有承接數等）由指標池「新增指標卡」加入
+      // 每卡 d7/d30＝主數字與 7／30 天前之差（REQ-OV-011）；運力卡主數字＝b1+b2+b3（0 天 b0 不計入，REQ-OV-003）
       keyCards: [
-        { id: 'k1', kind: 'simple', label: '全台隊員總數', value: 21847, note: '全台在職（車發最新數據）',
+        { id: 'k1', kind: 'simple', label: '全台隊員總數', value: 21847, d7: 38, d30: 156, note: '全台在職（車發最新數據）',
           info: '隊員主檔最近一次匯入之「在職」隊員數（車發最新數據）' },
-        { id: 'k2', kind: 'simple', label: '雙北地區隊員數', value: 9326, note: '台北市＋新北市',
-          info: '主檔 region ∈ {台北市、新北市} 之在職隊員數' },
-        { id: 'k3', kind: 'buckets', label: '全台・早尖峰可用運力', b2: 2861, b3: 3590, note: '級距＝上線天數',
-          info: '早尖峰（07:00–08:59）有上線之隊員數；可用運力＝隊員上線數；級距＝最近 30 天上線天數' },
-        { id: 'k4', kind: 'buckets', label: '全台・晚尖峰可用運力', b2: 3012, b3: 3874, note: '級距＝上線天數',
-          info: '晚尖峰（17:00–18:59）有上線之隊員數；可用運力＝隊員上線數；級距＝最近 30 天上線天數' },
-        { id: 'k5', kind: 'buckets', label: '雙北・早尖峰可用運力', b2: 1288, b3: 1651, note: '級距＝上線天數',
-          info: '雙北地區早尖峰有上線之隊員數；級距＝最近 30 天上線天數' },
-        { id: 'k6', kind: 'buckets', label: '雙北・晚尖峰可用運力', b2: 1395, b3: 1780, note: '級距＝上線天數',
-          info: '雙北地區晚尖峰有上線之隊員數；級距＝最近 30 天上線天數' }
+        { id: 'k2', kind: 'simple', label: '雙北地區隊員數', value: 9326, d7: 12, d30: -61,
+          note: '車隊地區＝台北（雙北）・共 ' + fleetRegions['台北'].length + ' 車隊',
+          info: '所屬車隊之車隊地區＝台北（雙北）的在職隊員數。包含車隊：' + fleetRegions['台北'].join('、') + '（車隊→地區對照可於系統設定維護）' },
+        { id: 'k3', kind: 'buckets', label: '全台・早尖峰可用運力', b0: 14192, b1: 1204, b2: 2861, b3: 3590, d7: 85, d30: -142, note: '級距＝上個月的上線天數',
+          info: '上個月早尖峰（07:00–08:59）有上線（≥1 天）之隊員數＝1~10／11~20／21 天以上三桶加總；0 天＝上個月未上線之在職隊員，列示供參考、不計入主數字；級距切點後台可調' },
+        { id: 'k4', kind: 'buckets', label: '全台・晚尖峰可用運力', b0: 13525, b1: 1436, b2: 3012, b3: 3874, d7: 47, d30: 203, note: '級距＝上個月的上線天數',
+          info: '上個月晚尖峰（17:00–18:59）有上線（≥1 天）之隊員數＝1~10／11~20／21 天以上三桶加總；0 天＝上個月未上線之在職隊員，列示供參考、不計入主數字；級距切點後台可調' },
+        { id: 'k5', kind: 'buckets', label: '雙北・早尖峰可用運力', b0: 5844, b1: 543, b2: 1288, b3: 1651, d7: 36, d30: -58, note: '級距＝上個月的上線天數',
+          info: '雙北（車隊地區＝台北）隊員上個月早尖峰有上線（≥1 天）之人數＝三桶加總；0 天列示供參考、不計入主數字；級距切點後台可調' },
+        { id: 'k6', kind: 'buckets', label: '雙北・晚尖峰可用運力', b0: 5504, b1: 647, b2: 1395, b3: 1780, d7: -21, d30: 94, note: '級距＝上個月的上線天數',
+          info: '雙北（車隊地區＝台北）隊員上個月晚尖峰有上線（≥1 天）之人數＝三桶加總；0 天列示供參考、不計入主數字；級距切點後台可調' }
       ],
       // 有承接隊員數之指標模板（新增指標卡選「有承接隊員數」時取用）
       // 週視角級距＝該週承接天數 1~2/3~4/5+；月視角級距＝該月承接天數 1~10/11~20/21+（口徑不同、數據不同）
@@ -142,7 +132,7 @@
       // 隊員 Profile 假資料（REQ-PROF-002：11 維度；依協理 image4 範例，去除評分/優良標章）
       members: {
         '123456': {
-          code: '123456', name: '陳大明', identity: '小黃', region: '台北市', carModel: 'RAV4',
+          code: '123456', name: '陳大明', identity: '小黃', region: '台北市', fleet: '台北分公司', carModel: 'RAV4',
           fleetGroups: ['好孕車組', '敬老愛心_台北', '提供刷卡付款', '提供悠遊卡付款', '開行李箱', '一般預約'],
           onlineDays: { month: 26, quarter: 78, year: 301 }, evePeakDays: 18, mornPeakDays: 16,
           acceptRate: 32, joinedActivity: true, activityTypes: ['獎勵活動', '培訓課程'],
@@ -157,7 +147,7 @@
           ]
         },
         '0103': {
-          code: '0103', name: '林志偉', identity: '多元', region: '新北市', carModel: 'Tesla',
+          code: '0103', name: '林志偉', identity: '多元', region: '新北市', fleet: '多元台北', carModel: 'Tesla',
           fleetGroups: ['提供綁定付款', '敬老愛心_新北', '低底盤車', '送餐車組'],
           onlineDays: { month: 18, quarter: 51, year: 194 }, evePeakDays: 12, mornPeakDays: 8,
           acceptRate: 21, joinedActivity: true, activityTypes: ['獎勵活動'],
@@ -170,7 +160,7 @@
           ]
         },
         '0217': {
-          code: '0217', name: '張淑芬', identity: '試跑', region: '台北市', carModel: '商務型', fleetGroups: ['預設'],
+          code: '0217', name: '張淑芬', identity: '試跑', region: '台北市', fleet: '台北多元試跑', carModel: '商務型', fleetGroups: ['預設'],
           onlineDays: { month: 9, quarter: 22, year: 61 }, evePeakDays: 4, mornPeakDays: 6,
           acceptRate: 8, joinedActivity: false, activityTypes: [],
           monthlyTasks: 41, monthlyIncome: 12800, topDistricts: ['大安區', '中山區', '松山區'],
