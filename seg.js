@@ -1,5 +1,5 @@
 // PROTOTYPE 分群篩選共用元件（REQ-SEG-001~005、REQ-E2E-012）— build 時換成真 API
-// 一份實作、兩個入口掛載：pages/segments.html（獨立子頁）與 profile.html 的「分群篩選」tab
+// 掛載於 profile.html 的「分群篩選（拉名單）」tab（介面形式定版：Profile 頁內 tab）
 // 用法：CRMSEG.mount(containerEl)
 
 (function () {

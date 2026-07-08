@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>隊員 Profile — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=15">
+<link rel="stylesheet" href="../tokens.css?v=16">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -148,10 +148,10 @@
   <h1>隊員 Profile</h1>
   <div class="page-sub">11 維度隊員資料卡・可用隊編或標籤搜尋隊員（Profile 維度未來作為分群篩選與 AI 分群基礎）</div>
 
-  <!-- A/B 比較中：A 案＝搜尋列旁按鈕進獨立子頁；B 案＝此 tab 列頁內切換（拍板後收斂一種） -->
+  <!-- 分群篩選＝Profile 頁內 tab（使用者 A/B 比較後定版 2026-07-08） -->
   <div class="pf-tabs" role="tablist" aria-label="Profile 功能切換">
     <button class="pf-tab" role="tab" id="pf-tab-1" aria-selected="true" data-pftab="search" type="button">個人查詢</button>
-    <button class="pf-tab" role="tab" id="pf-tab-2" aria-selected="false" data-pftab="seg" type="button">分群篩選（頁內版）</button>
+    <button class="pf-tab" role="tab" id="pf-tab-2" aria-selected="false" data-pftab="seg" type="button">分群篩選（拉名單）</button>
   </div>
 
   <div id="pf-view-search">
@@ -161,7 +161,6 @@
       <input id="q" type="search" placeholder="輸入隊編或標籤搜尋（例：123456、好孕車組）" aria-label="以隊編或標籤搜尋隊員">
     </div>
     <button class="btn btn-primary" id="btn-search" type="button">搜尋</button>
-    <a class="btn" href="segments.html" id="btn-seg">分群篩選（拉名單）→</a>
     <div class="chips"><span>示例：</span>
       <button class="chip-btn" data-q="123456" type="button">123456 陳大明</button>
       <button class="chip-btn" data-q="0103" type="button">0103 林志偉</button>
@@ -210,7 +209,7 @@
   </div>
   </div><!-- /pf-view-search -->
 
-  <!-- B 案：頁內分群篩選（共用 seg.js 元件，與 segments.html 同一實作） -->
+  <!-- 頁內分群篩選（seg.js 元件） -->
   <div id="pf-view-seg" style="display:none"><div id="seg-host-tab"></div></div>
 
   <!-- 異常狀態層 -->
@@ -241,8 +240,8 @@
   原型說明：Profile 卡對應協理 11 維度示意圖（依訪談拿掉評分與優良司機標章）。「隊員平均每月收入」「行動電話」為敏感欄位——原型以已授權（profile.view_sensitive）的管理員視角展示，未授權者將顯示 ***。「不願承接任務的原因」取自客服外撥最新回覆；溝通歷程對應跨專案聯繫紀錄時間軸。
 </footer>
 
-<script src="../app.js?v=15"></script>
-<script src="../seg.js?v=15"></script>
+<script src="../app.js?v=16"></script>
+<script src="../seg.js?v=16"></script>
 <script>
 (function () {
   'use strict';
@@ -520,7 +519,7 @@
   var urlM = new URLSearchParams(location.search).get('m');
   if (urlM) { document.getElementById('q').value = urlM; search(urlM); }
 
-  /* 功能 tab：個人查詢｜分群篩選（B 案，與 segments.html 共用 CRMSEG 元件） */
+  /* 功能 tab：個人查詢｜分群篩選（CRMSEG 元件） */
   var segMounted = false;
   function switchTab(key) {
     document.getElementById('pf-tab-1').setAttribute('aria-selected', String(key === 'search'));

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>走查台 — 55688 隊員 CRM 互動原型</title>
-<link rel="stylesheet" href="tokens.css?v=15">
+<link rel="stylesheet" href="tokens.css?v=16">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.6; padding: 48px 24px 96px; }
@@ -102,7 +102,7 @@
         </div>
       </div>
       <ol>
-        <li>本卡同時走兩種入口，比較後拍板收斂一種：<b>A 案</b>＝Profile 搜尋列旁「分群篩選（拉名單）→」按鈕進獨立子頁；<b>B 案</b>＝Profile 頁上方「分群篩選（頁內版）」tab 不跳頁（兩案功能完全相同、共用同一元件）</li>
+        <li>入口（已定版）：隊員 Profile 頁上方「分群篩選（拉名單）」tab，不跳頁</li>
         <li>點「一鍵帶入示例條件」（雙北＋晚尖峰 ≥11 天＋曾參與活動）→ 右側即時人數與名單更新</li>
         <li>手動調條件感受 AND/OR：多勾一個身份別（同欄位 OR）、再加承接率區間（跨欄位 AND）</li>
         <li>「不願承接任務的原因」條件留意 🔒 需 callrecord.view_all 標示（防繞過客服 scope）</li>
@@ -110,8 +110,7 @@
         <li>點「帶入外撥專案」→ 確認名單筆數＝篩選人數、預覽含隊編＋電話（敏感遮罩）→ 建立（示意）</li>
         <li>名單點任一列 → 進入該隊員個人 Profile</li>
       </ol>
-      <a class="go" href="pages/segments.html">開始走查 → 分群篩選（A 案子頁）</a>
-      <a class="go" href="pages/profile.html?tab=seg" style="margin-left:8px;background:var(--surface);color:var(--accent)">或走 B 案：Profile 頁內 tab</a>
+      <a class="go" href="pages/profile.html?tab=seg">開始走查 → 分群篩選（Profile 頁內 tab）</a>
     </div>
   </div>
 
