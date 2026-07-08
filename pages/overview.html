@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>營運總覽 — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=14">
+<link rel="stylesheet" href="../tokens.css?v=15">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -60,6 +60,7 @@
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
     padding: 16px 16px 14px; position: relative; transition: box-shadow var(--motion-base) var(--ease-standard);
     display: flex; flex-direction: column;
+    min-width: 0; /* 長備註（nowrap 截斷）不得撐爆 grid 欄寬 */
   }
   .kpi-card:hover { box-shadow: var(--elev-raised); }
   .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
@@ -74,8 +75,7 @@
   .bucket .bk-bar { height: 8px; border-radius: 9999px; background: var(--surface-warm); overflow: hidden; }
   .bucket .bk-bar > i { display: block; height: 100%; border-radius: 9999px; }
   .bucket .bk-val { text-align: right; color: var(--fg-2); font-variant-numeric: tabular-nums; }
-  .bucket.muted .bk-label, .bucket.muted .bk-val { color: var(--meta); }
-  .kpi-note { margin-top: 8px; font-size: 11.5px; color: var(--meta); }
+  .kpi-note { margin-top: 8px; font-size: 11.5px; color: var(--meta); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-cmp { display: flex; gap: 12px; flex-wrap: wrap; margin: 2px 0 4px; }
   .kpi-trend-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 8px; }
   .kpi-delta { font-size: 12.5px; }
@@ -291,7 +291,7 @@
   .mt-table tbody tr:hover { background: var(--bg); }
 </style>
 
-<script src="../app.js?v=14"></script>
+<script src="../app.js?v=15"></script>
 <script>
 (function () {
   'use strict';
@@ -299,15 +299,12 @@
   CRM.mountNav('overview', DB.meta.dataAsOf);
 
   /* ═══ 共用：級距列 ═══ */
-  var bucketColors = ['var(--chart-4)', 'var(--chart-2)', 'var(--chart-1)'];
+  var bucketColors = ['var(--chart-3)', 'var(--chart-4)', 'var(--chart-2)', 'var(--chart-1)'];
   function bucketRows(pairs) {
     var max = Math.max.apply(null, pairs.map(function (p) { return p[1]; }));
-    var ci = 0;
-    return pairs.map(function (p) {
-      var muted = p[2] === 'muted';   // 0 天桶：列示供參考、不計入主數字（REQ-OV-003）
-      var color = muted ? 'var(--border)' : bucketColors[ci++ % bucketColors.length];
-      return '<div class="bucket' + (muted ? ' muted' : '') + '"><span class="bk-label">' + p[0] + '</span>' +
-        '<span class="bk-bar"><i style="width:' + Math.round(p[1] / max * 100) + '%;background:' + color + '"></i></span>' +
+    return pairs.map(function (p, i) {
+      return '<div class="bucket"><span class="bk-label">' + p[0] + '</span>' +
+        '<span class="bk-bar"><i style="width:' + Math.round(p[1] / max * 100) + '%;background:' + bucketColors[i % bucketColors.length] + '"></i></span>' +
         '<span class="bk-val">' + CRM.fmt(p[1]) + '</span></div>';
     }).join('');
   }
@@ -347,15 +344,16 @@
     DB.keyCards.forEach(function (c) {
       var inner = '<div class="kpi-top"><div class="kpi-label">' + c.label + ' ' + CRM.infoIcon(c.info || '') + '</div>' +
         '<button class="kpi-remove" type="button" aria-label="移除「' + c.label + '」卡片" data-remove="' + c.id + '">×</button></div>';
+      // 備註過長以 … 截斷、hover 顯示全文（title）
+      var noteHtml = c.note ? '<div class="kpi-note" title="' + String(c.note).replace(/"/g, '&quot;') + '">' + c.note + '</div>' : '';
       if (c.kind === 'simple') {
         inner += '<div class="kpi-value">' + CRM.fmt(c.value) + '<span class="kpi-unit">人</span></div>' +
-          deltaRow(c.d7, c.d30) +
-          '<div class="kpi-note">' + (c.note || '') + '</div>';
+          deltaRow(c.d7, c.d30) + noteHtml;
       } else if (c.kind === 'buckets') {
         inner += '<div class="kpi-value">' + CRM.fmt(c.b1 + c.b2 + c.b3) + '<span class="kpi-unit">人</span></div>' +
           deltaRow(c.d7, c.d30) +
-          '<div class="kpi-buckets">' + bucketRows([['0 天', c.b0, 'muted'], ['1~10 天', c.b1], ['11~20 天', c.b2], ['21 天以上', c.b3]]) + '</div>' +
-          '<div class="kpi-note">' + (c.note || '') + '</div>';
+          '<div class="kpi-buckets">' + bucketRows([['0 天', c.b0], ['1~10 天', c.b1], ['11~20 天', c.b2], ['21 天以上', c.b3]]) + '</div>' +
+          noteHtml;
       } else if (c.kind === 'bucketsTrend' || c.kind === 'trend') {
         var mode = c.viewMode || 'weekly';
         var vals = mode === 'weekly' ? c.weekly : c.monthly;

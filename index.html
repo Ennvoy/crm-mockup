@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>走查台 — 55688 隊員 CRM 互動原型</title>
-<link rel="stylesheet" href="tokens.css?v=14">
+<link rel="stylesheet" href="tokens.css?v=15">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.6; padding: 48px 24px 96px; }
@@ -94,6 +94,25 @@
       </ol>
       <a class="go" href="pages/profile.html">開始走查 → 隊員 Profile</a>
     </div>
+    <div class="jcard">
+      <div class="jhead">
+        <div>
+          <span class="jid">REQ-E2E-012</span>
+          <div class="jtitle">分群篩選拉名單 → 帶入外撥專案（協理重點）＋ A/B 入口比較</div>
+        </div>
+      </div>
+      <ol>
+        <li>本卡同時走兩種入口，比較後拍板收斂一種：<b>A 案</b>＝Profile 搜尋列旁「分群篩選（拉名單）→」按鈕進獨立子頁；<b>B 案</b>＝Profile 頁上方「分群篩選（頁內版）」tab 不跳頁（兩案功能完全相同、共用同一元件）</li>
+        <li>點「一鍵帶入示例條件」（雙北＋晚尖峰 ≥11 天＋曾參與活動）→ 右側即時人數與名單更新</li>
+        <li>手動調條件感受 AND/OR：多勾一個身份別（同欄位 OR）、再加承接率區間（跨欄位 AND）</li>
+        <li>「不願承接任務的原因」條件留意 🔒 需 callrecord.view_all 標示（防繞過客服 scope）</li>
+        <li>點「儲存為名單條件」→ 左下 segment 清單出現 → 點「執行」以最新資料重算</li>
+        <li>點「帶入外撥專案」→ 確認名單筆數＝篩選人數、預覽含隊編＋電話（敏感遮罩）→ 建立（示意）</li>
+        <li>名單點任一列 → 進入該隊員個人 Profile</li>
+      </ol>
+      <a class="go" href="pages/segments.html">開始走查 → 分群篩選（A 案子頁）</a>
+      <a class="go" href="pages/profile.html?tab=seg" style="margin-left:8px;background:var(--surface);color:var(--accent)">或走 B 案：Profile 頁內 tab</a>
+    </div>
   </div>
 
   <h2>下一批（規劃已凍結、頁面製作中）</h2>
@@ -101,7 +120,6 @@
     <div class="jcard pending"><span class="jid">REQ-E2E-002／003</span><div class="jtitle">資料匯入（欄位映射／全有全無錯誤報告）</div><span class="pending-tag">製作中</span></div>
     <div class="jcard pending"><span class="jid">REQ-E2E-004</span><div class="jtitle">運力查詢（H/D/W/M/Q/Y 維度＋匯出）</div><span class="pending-tag">製作中</span></div>
     <div class="jcard pending"><span class="jid">REQ-E2E-005</span><div class="jtitle">車組／車種報表與隊編下鑽</div><span class="pending-tag">製作中</span></div>
-    <div class="jcard pending"><span class="jid">REQ-E2E-006／012</span><div class="jtitle">隊員 Profile（11 維度）＋分群篩選拉名單</div><span class="pending-tag">製作中</span></div>
     <div class="jcard pending"><span class="jid">REQ-E2E-007</span><div class="jtitle">隊員活動（建活動→匯入→前後成效）</div><span class="pending-tag">製作中</span></div>
     <div class="jcard pending"><span class="jid">REQ-E2E-008／013</span><div class="jtitle">客服外撥（建專案→分配→逐筆撥打→統計／回覆篩選＋溝通歷程）</div><span class="pending-tag">製作中</span></div>
     <div class="jcard pending"><span class="jid">REQ-E2E-009／010／011</span><div class="jtitle">權限管理／憑證與抓取器／匯入批次刪除</div><span class="pending-tag">製作中</span></div>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>隊員 Profile — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=14">
+<link rel="stylesheet" href="../tokens.css?v=15">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -31,6 +31,11 @@
   h1 { font-family: var(--font-display); font-weight: 500; font-size: 32px; line-height: 1.2; }
   .page-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
   h2 { font-family: var(--font-display); font-weight: 500; font-size: 22px; line-height: 1.2; }
+
+  /* Profile 功能 tab（個人查詢｜分群篩選） */
+  .pf-tabs { display: inline-flex; background: var(--surface-warm); border-radius: 12px; padding: 3px; margin-top: 18px; gap: 2px; }
+  .pf-tab { border: none; background: transparent; padding: 8px 18px; border-radius: 9px; font-size: 14px; color: var(--muted); cursor: pointer; min-height: 38px; font-family: inherit; }
+  .pf-tab[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 0 0 1px var(--border-soft); }
 
   /* 搜尋列 */
   .search-bar { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; align-items: center; }
@@ -143,12 +148,20 @@
   <h1>隊員 Profile</h1>
   <div class="page-sub">11 維度隊員資料卡・可用隊編或標籤搜尋隊員（Profile 維度未來作為分群篩選與 AI 分群基礎）</div>
 
+  <!-- A/B 比較中：A 案＝搜尋列旁按鈕進獨立子頁；B 案＝此 tab 列頁內切換（拍板後收斂一種） -->
+  <div class="pf-tabs" role="tablist" aria-label="Profile 功能切換">
+    <button class="pf-tab" role="tab" id="pf-tab-1" aria-selected="true" data-pftab="search" type="button">個人查詢</button>
+    <button class="pf-tab" role="tab" id="pf-tab-2" aria-selected="false" data-pftab="seg" type="button">分群篩選（頁內版）</button>
+  </div>
+
+  <div id="pf-view-search">
   <div class="search-bar" role="search">
     <div class="search-input">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input id="q" type="search" placeholder="輸入隊編或標籤搜尋（例：123456、好孕車組）" aria-label="以隊編或標籤搜尋隊員">
     </div>
     <button class="btn btn-primary" id="btn-search" type="button">搜尋</button>
+    <a class="btn" href="segments.html" id="btn-seg">分群篩選（拉名單）→</a>
     <div class="chips"><span>示例：</span>
       <button class="chip-btn" data-q="123456" type="button">123456 陳大明</button>
       <button class="chip-btn" data-q="0103" type="button">0103 林志偉</button>
@@ -195,6 +208,10 @@
       <div class="state-desc">請確認隊編或標籤名稱是否正確；若為新進隊員，主檔可能尚未匯入（資料截至時間見右上角）。</div>
     </div>
   </div>
+  </div><!-- /pf-view-search -->
+
+  <!-- B 案：頁內分群篩選（共用 seg.js 元件，與 segments.html 同一實作） -->
+  <div id="pf-view-seg" style="display:none"><div id="seg-host-tab"></div></div>
 
   <!-- 異常狀態層 -->
   <div class="state-layer" id="st-empty">
@@ -224,7 +241,8 @@
   原型說明：Profile 卡對應協理 11 維度示意圖（依訪談拿掉評分與優良司機標章）。「隊員平均每月收入」「行動電話」為敏感欄位——原型以已授權（profile.view_sensitive）的管理員視角展示，未授權者將顯示 ***。「不願承接任務的原因」取自客服外撥最新回覆；溝通歷程對應跨專案聯繫紀錄時間軸。
 </footer>
 
-<script src="../app.js?v=14"></script>
+<script src="../app.js?v=15"></script>
+<script src="../seg.js?v=15"></script>
 <script>
 (function () {
   'use strict';
@@ -501,6 +519,20 @@
   /* URL 參數（活動頁「查看參加隊員」導入） */
   var urlM = new URLSearchParams(location.search).get('m');
   if (urlM) { document.getElementById('q').value = urlM; search(urlM); }
+
+  /* 功能 tab：個人查詢｜分群篩選（B 案，與 segments.html 共用 CRMSEG 元件） */
+  var segMounted = false;
+  function switchTab(key) {
+    document.getElementById('pf-tab-1').setAttribute('aria-selected', String(key === 'search'));
+    document.getElementById('pf-tab-2').setAttribute('aria-selected', String(key === 'seg'));
+    document.getElementById('pf-view-search').style.display = (key === 'search') ? '' : 'none';
+    document.getElementById('pf-view-seg').style.display = (key === 'seg') ? '' : 'none';
+    if (key === 'seg' && !segMounted) { CRMSEG.mount(document.getElementById('seg-host-tab')); segMounted = true; }
+  }
+  document.querySelectorAll('.pf-tab').forEach(function (b) {
+    b.addEventListener('click', function () { switchTab(b.dataset.pftab); });
+  });
+  if (new URLSearchParams(location.search).get('tab') === 'seg') switchTab('seg');
 })();
 </script>
 
