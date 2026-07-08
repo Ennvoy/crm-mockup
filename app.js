@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  var STORE_KEY = 'crm55688_proto_v9';
+  var STORE_KEY = 'crm55688_proto_v10';
 
   /* 活動參加名單生成（deterministic；每活動 40 筆示意，前 3 筆為完整 Profile 假資料隊員） */
   function buildParticipants() {
@@ -40,8 +40,8 @@
    * Seed 假資料（貼近真實量級：參考 Tableau 截圖數字）
    * ──────────────────────────────────────────────── */
   function buildSeed() {
-    // 車隊→車隊地區對照（REQ-SET-007；「台北」＝雙北。初始清單依主管提供之分公司對照表，正式清單隨匯入更新）
-    var fleetRegions = {
+    // 車隊（branch）→車隊地區對照（REQ-SET-007；「台北」＝雙北。初始清單依主管提供之分公司對照表，正式清單隨匯入更新）
+    var branchRegions = {
       '台北': ['台北分公司', '台北志英', '小黃耐斯都會', '耐斯都會車隊', '幸福車隊', '泛亞北區', '城市衛星北區', '祥賀車隊', '新利達車隊', '慶安車隊', '龍星北區', '聯合車隊', '警光北區', '台北多元試跑', '多元台北', '多元台北生通', '多元台北宏力', '多元台北保底', '多元慶安'],
       '桃園': ['大文山車隊', '桃園分公司', '泛亞桃園', '多元桃園'],
       '宜蘭': ['宜蘭分公司', '多元宜蘭']
@@ -52,7 +52,7 @@
         importedAt: '2026-07-07 06:30',
         staleDays: 0                   // 超過 2 天顯示過期警示（demo 可切）
       },
-      fleetRegions: fleetRegions,
+      branchRegions: branchRegions,
       // 承接任務分布（本月 by 行政區；city → districts）
       distribution: {
         '台北市': [
@@ -102,8 +102,8 @@
         { id: 'k1', kind: 'simple', label: '全台隊員總數', value: 21847, d7: 38, d30: 156, note: '全台在職（車發最新數據）',
           info: '隊員主檔最近一次匯入之「在職」隊員數（車發最新數據）' },
         { id: 'k2', kind: 'simple', label: '雙北地區隊員數', value: 9326, d7: 12, d30: -61,
-          note: '車隊地區＝台北（雙北）・共 ' + fleetRegions['台北'].length + ' 車隊',
-          info: '所屬車隊之車隊地區＝台北（雙北）的在職隊員數。包含車隊：' + fleetRegions['台北'].join('、') + '（車隊→地區對照可於系統設定維護）' },
+          note: '車隊地區＝台北（雙北）・共 ' + branchRegions['台北'].length + ' 車隊',
+          info: '所屬車隊之車隊地區＝台北（雙北）的在職隊員數。包含車隊：' + branchRegions['台北'].join('、') + '（車隊→地區對照可於系統設定維護）' },
         { id: 'k3', kind: 'buckets', label: '全台・早尖峰可用運力', b0: 14192, b1: 1204, b2: 2861, b3: 3590, d7: 85, d30: -142, note: '級距＝上個月的上線天數',
           info: '上個月早尖峰（07:00–08:59）有上線（≥1 天）之隊員數＝1~10／11~20／21 天以上三桶加總；0 天＝上個月未上線之在職隊員，列示供參考、不計入主數字；級距切點後台可調' },
         { id: 'k4', kind: 'buckets', label: '全台・晚尖峰可用運力', b0: 13525, b1: 1436, b2: 3012, b3: 3874, d7: 47, d30: 203, note: '級距＝上個月的上線天數',
@@ -132,7 +132,7 @@
       // 隊員 Profile 假資料（REQ-PROF-002：11 維度；依協理 image4 範例，去除評分/優良標章）
       members: {
         '123456': {
-          code: '123456', name: '陳大明', identity: '小黃', region: '台北市', fleet: '台北分公司', carModel: 'RAV4',
+          code: '123456', name: '陳大明', identity: '小黃', region: '台北市', branch: '台北分公司', carModel: 'RAV4',
           fleetGroups: ['好孕車組', '敬老愛心_台北', '提供刷卡付款', '提供悠遊卡付款', '開行李箱', '一般預約'],
           onlineDays: { month: 26, quarter: 78, year: 301 }, evePeakDays: 18, mornPeakDays: 16,
           acceptRate: 32, joinedActivity: true, activityTypes: ['獎勵活動', '培訓課程'],
@@ -147,7 +147,7 @@
           ]
         },
         '0103': {
-          code: '0103', name: '林志偉', identity: '多元', region: '新北市', fleet: '多元台北', carModel: 'Tesla',
+          code: '0103', name: '林志偉', identity: '多元', region: '新北市', branch: '多元台北', carModel: 'Tesla',
           fleetGroups: ['提供綁定付款', '敬老愛心_新北', '低底盤車', '送餐車組'],
           onlineDays: { month: 18, quarter: 51, year: 194 }, evePeakDays: 12, mornPeakDays: 8,
           acceptRate: 21, joinedActivity: true, activityTypes: ['獎勵活動'],
@@ -160,7 +160,7 @@
           ]
         },
         '0217': {
-          code: '0217', name: '張淑芬', identity: '試跑', region: '台北市', fleet: '台北多元試跑', carModel: '商務型', fleetGroups: ['預設'],
+          code: '0217', name: '張淑芬', identity: '試跑', region: '台北市', branch: '台北多元試跑', carModel: '商務型', fleetGroups: ['預設'],
           onlineDays: { month: 9, quarter: 22, year: 61 }, evePeakDays: 4, mornPeakDays: 6,
           acceptRate: 8, joinedActivity: false, activityTypes: [],
           monthlyTasks: 41, monthlyIncome: 12800, topDistricts: ['大安區', '中山區', '松山區'],

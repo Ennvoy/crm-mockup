@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>隊員 Profile — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=13">
+<link rel="stylesheet" href="../tokens.css?v=14">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -224,7 +224,7 @@
   原型說明：Profile 卡對應協理 11 維度示意圖（依訪談拿掉評分與優良司機標章）。「隊員平均每月收入」「行動電話」為敏感欄位——原型以已授權（profile.view_sensitive）的管理員視角展示，未授權者將顯示 ***。「不願承接任務的原因」取自客服外撥最新回覆；溝通歷程對應跨專案聯繫紀錄時間軸。
 </footer>
 
-<script src="../app.js?v=13"></script>
+<script src="../app.js?v=14"></script>
 <script>
 (function () {
   'use strict';
@@ -299,7 +299,7 @@
       '<span class="id-badge id-' + m.identity + '">' + m.identity + '</span>' +
       '<div class="p-meta">' +
         '<div><span class="k">所屬地區</span><span>' + m.region + '</span></div>' +
-        '<div><span class="k">車隊</span><span>' + (m.fleet || '—') + '</span></div>' +
+        '<div><span class="k">車隊</span><span>' + (m.branch || '—') + '</span></div>' +
         '<div><span class="k">車款</span><span>' + m.carModel + '</span></div>' +
         '<div><span class="k">車組</span><span class="fleet-chips">' +
           (m.fleetGroups.length ? m.fleetGroups.map(function (g) { return '<span class="fleet-chip">' + g + '</span>'; }).join('') : '—') +
@@ -386,7 +386,7 @@
   var G_DISTRICTS = ['信義區', '大安區', '中山區', '內湖區', '板橋區', '中和區', '永和區', '三重區', '新莊區', '新店區'];
   var G_REASONS = ['低價', '距離遠', '目的地不符', '時段不合', '車輛保養中'];
   var G_TAGS = ['預設', '一般預約', '提供刷卡付款', '提供悠遊卡付款', '提供綁定付款', '敬老愛心_台北', '敬老愛心_新北', '敬老愛心_雙北', '好孕車組', '開行李箱', '攜帶輪椅', '手機充電', '低底盤車', '送餐車組', '短程預約', '專派任務', '乘車券', '國旅卡車組'];
-  var G_FLEETS = ['台北分公司', '泛亞北區', '多元台北', '幸福車隊', '慶安車隊', '聯合車隊'];
+  var G_BRANCHES = ['台北分公司', '泛亞北區', '多元台北', '幸福車隊', '慶安車隊', '聯合車隊'];
   function genMember(code) {
     var s = 0; for (var i = 0; i < code.length; i++) s = s * 31 + code.charCodeAt(i);
     var r = function (k) { var x = Math.sin((s % 100000 + k) * 12.9898) * 43758.5453; return x - Math.floor(x); };
@@ -407,7 +407,7 @@
       name: G_SURNAMES[Math.floor(r(5) * 10)] + G_GIVEN[Math.floor(r(6) * 10)],
       identity: idPool[Math.floor(r(7) * 5)],
       region: r(8) > 0.5 ? '台北市' : '新北市',
-      fleet: G_FLEETS[Math.floor(r(31) * G_FLEETS.length)],
+      branch: G_BRANCHES[Math.floor(r(31) * G_BRANCHES.length)],
       carModel: ['RAV4', 'Tesla', 'Altis', '豪華型', '商務型'][Math.floor(r(9) * 5)],
       fleetGroups: (function () {
         var n = 1 + Math.floor(r(20) * 5);
@@ -458,7 +458,7 @@
       '<span style="color:var(--meta);font-size:13px;font-family:var(--font-body)">原型示意 ' + rows.length + ' 筆・完整名單與多條件組合見「分群篩選」（下一批原型）</span></div>' +
       '<div class="chart-wrap"><table class="tag-table"><thead><tr><th>隊編</th><th>姓名</th><th>身份別</th><th>車隊</th><th>地區</th><th>車組標籤</th></tr></thead><tbody>' +
       rows.map(function (m2) {
-        return '<tr class="tag-row" data-code="' + m2.code + '" tabindex="0" aria-label="檢視 ' + m2.name + ' 的 Profile"><td>' + m2.code + '</td><td>' + m2.name + '</td><td>' + m2.identity + '</td><td>' + (m2.fleet || '—') + '</td><td>' + m2.region + '</td><td>' +
+        return '<tr class="tag-row" data-code="' + m2.code + '" tabindex="0" aria-label="檢視 ' + m2.name + ' 的 Profile"><td>' + m2.code + '</td><td>' + m2.name + '</td><td>' + m2.identity + '</td><td>' + (m2.branch || '—') + '</td><td>' + m2.region + '</td><td>' +
           m2.fleetGroups.slice(0, 3).join('、') + (m2.fleetGroups.length > 3 ? '…' : '') + '</td></tr>';
       }).join('') + '</tbody></table></div></section>';
     var view = document.getElementById('tag-view');
