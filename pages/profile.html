@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>隊員 Profile — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=16">
+<link rel="stylesheet" href="../tokens.css?v=17">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -58,13 +58,6 @@
   .stat-card .k { font-size: 13px; color: var(--muted); }
   .stat-card .v { font-size: 24px; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
   .stat-card .sub { font-size: 12px; color: var(--meta); margin-top: 6px; line-height: 1.5; }
-
-  /* 標籤搜尋結果表 */
-  .tag-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  .tag-table th { text-align: left; color: var(--meta); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--border-soft); white-space: nowrap; }
-  .tag-table td { padding: 9px 10px; border-bottom: 1px solid var(--border-soft); white-space: nowrap; }
-  .tag-row { cursor: pointer; }
-  .tag-row:hover, .tag-row:focus-visible { background: var(--surface-warm); }
 
   /* Profile 主卡 */
   .profile-wrap { display: grid; grid-template-columns: 340px 1fr; gap: 16px; margin-top: 24px; align-items: start; }
@@ -146,7 +139,7 @@
 
 <main class="page">
   <h1>隊員 Profile</h1>
-  <div class="page-sub">11 維度隊員資料卡・可用隊編或標籤搜尋隊員（Profile 維度未來作為分群篩選與 AI 分群基礎）</div>
+  <div class="page-sub">11 維度隊員資料卡・隊編搜尋個人各維度數據；依標籤／條件拉名單見「分群篩選」分頁（Profile 維度為分群篩選與 AI 分群基礎）</div>
 
   <!-- 分群篩選＝Profile 頁內 tab（使用者 A/B 比較後定版 2026-07-08） -->
   <div class="pf-tabs" role="tablist" aria-label="Profile 功能切換">
@@ -158,7 +151,7 @@
   <div class="search-bar" role="search">
     <div class="search-input">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input id="q" type="search" placeholder="輸入隊編或標籤搜尋（例：123456、好孕車組）" aria-label="以隊編或標籤搜尋隊員">
+      <input id="q" type="search" placeholder="輸入隊編搜尋（例：123456）" aria-label="以隊編搜尋隊員">
     </div>
     <button class="btn btn-primary" id="btn-search" type="button">搜尋</button>
     <div class="chips"><span>示例：</span>
@@ -166,15 +159,6 @@
       <button class="chip-btn" data-q="0103" type="button">0103 林志偉</button>
       <button class="chip-btn" data-q="0217" type="button">0217 張淑芬</button>
     </div>
-  </div>
-  <!-- 標籤搜尋（REQ-PROF-001：以標籤搜出符合隊員清單，點入個人卡） -->
-  <div class="chips" style="margin-top:10px"><span>標籤搜尋：</span>
-    <button class="chip-btn" data-q="好孕車組" type="button">好孕車組</button>
-    <button class="chip-btn" data-q="敬老愛心_台北" type="button">敬老愛心_台北</button>
-    <button class="chip-btn" data-q="送餐車組" type="button">送餐車組</button>
-    <button class="chip-btn" data-q="低底盤車" type="button">低底盤車</button>
-    <button class="chip-btn" data-q="國旅卡車組" type="button">國旅卡車組</button>
-    <button class="chip-btn" data-q="一般預約" type="button">一般預約</button>
   </div>
 
   <div id="content-normal">
@@ -191,20 +175,17 @@
         <div class="stat-card"><div class="k">歷史承接率中位數</div><div class="v">24%</div>
           <div class="sub">最近 90 天・個人承接率口徑</div></div>
       </div>
-      <p style="color:var(--meta);font-size:13.5px;margin-top:18px">輸入隊編或點擊上方示例，檢視單一隊員的 11 維度 Profile。（分群篩選器（依條件拉名單）於下一批原型提供）</p>
+      <p style="color:var(--meta);font-size:13.5px;margin-top:18px">輸入隊編或點擊上方示例，檢視單一隊員的 11 維度 Profile；依標籤／條件拉名單請切換上方「分群篩選（拉名單）」分頁。</p>
     </div>
 
     <!-- 搜尋結果：Profile 卡 -->
     <div id="profile-view" style="display:none"></div>
 
-    <!-- 標籤搜尋結果：符合隊員清單（REQ-PROF-001） -->
-    <div id="tag-view" style="display:none"></div>
-
-    <!-- 查無隊編／標籤（REQ-PROF-006） -->
+    <!-- 查無隊編（REQ-PROF-006） -->
     <div class="state-layer" id="not-found">
       <div class="state-icon" aria-hidden="true">🔍</div>
-      <div class="state-title">查無此隊編／標籤</div>
-      <div class="state-desc">請確認隊編或標籤名稱是否正確；若為新進隊員，主檔可能尚未匯入（資料截至時間見右上角）。</div>
+      <div class="state-title">查無此隊編</div>
+      <div class="state-desc">請確認隊編是否正確；若為新進隊員，主檔可能尚未匯入（資料截至時間見右上角）。</div>
     </div>
   </div>
   </div><!-- /pf-view-search -->
@@ -240,8 +221,8 @@
   原型說明：Profile 卡對應協理 11 維度示意圖（依訪談拿掉評分與優良司機標章）。「隊員平均每月收入」「行動電話」為敏感欄位——原型以已授權（profile.view_sensitive）的管理員視角展示，未授權者將顯示 ***。「不願承接任務的原因」取自客服外撥最新回覆；溝通歷程對應跨專案聯繫紀錄時間軸。
 </footer>
 
-<script src="../app.js?v=16"></script>
-<script src="../seg.js?v=16"></script>
+<script src="../app.js?v=17"></script>
+<script src="../seg.js?v=17"></script>
 <script>
 (function () {
   'use strict';
@@ -455,50 +436,15 @@
     };
   }
 
-  /* 標籤搜尋：符合該標籤之隊員清單（REQ-PROF-001；原型示意 12 筆，正式版與分群篩選共用資料源） */
-  function renderTagResults(tag) {
-    var rows = [];
-    Object.keys(DB.members).forEach(function (k) {
-      if ((DB.members[k].fleetGroups || []).indexOf(tag) >= 0) rows.push(DB.members[k]);
-    });
-    var s = 0; for (var i = 0; i < tag.length; i++) s = s * 31 + tag.charCodeAt(i);
-    var r = function (k) { var x = Math.sin((s % 100000 + k) * 12.9898) * 43758.5453; return x - Math.floor(x); };
-    // 只收「生成結果本來就含該標籤」的隊員，確保清單與點入之個人卡標籤一致
-    var n = 0;
-    while (rows.length < 12 && n < 400) {
-      var g = genMember(String(1000 + Math.floor(r(++n) * 8999)));
-      if (g.fleetGroups.indexOf(tag) < 0) continue;
-      if (rows.some(function (m2) { return m2.code === g.code; })) continue;
-      rows.push(g);
-    }
-    var html = '<section class="panel"><div class="panel-title">標籤「' + tag + '」符合隊員' +
-      '<span style="color:var(--meta);font-size:13px;font-family:var(--font-body)">原型示意 ' + rows.length + ' 筆・完整名單與多條件組合見「分群篩選」（下一批原型）</span></div>' +
-      '<div class="chart-wrap"><table class="tag-table"><thead><tr><th>隊編</th><th>姓名</th><th>身份別</th><th>車隊</th><th>地區</th><th>車組標籤</th></tr></thead><tbody>' +
-      rows.map(function (m2) {
-        return '<tr class="tag-row" data-code="' + m2.code + '" tabindex="0" aria-label="檢視 ' + m2.name + ' 的 Profile"><td>' + m2.code + '</td><td>' + m2.name + '</td><td>' + m2.identity + '</td><td>' + (m2.branch || '—') + '</td><td>' + m2.region + '</td><td>' +
-          m2.fleetGroups.slice(0, 3).join('、') + (m2.fleetGroups.length > 3 ? '…' : '') + '</td></tr>';
-      }).join('') + '</tbody></table></div></section>';
-    var view = document.getElementById('tag-view');
-    view.innerHTML = html;
-    view.querySelectorAll('.tag-row').forEach(function (tr) {
-      function go() { document.getElementById('q').value = tr.dataset.code; search(tr.dataset.code); }
-      tr.addEventListener('click', go);
-      tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
-    });
-  }
-
-  /* 搜尋（REQ-PROF-001/006：隊編＋標籤複合搜尋） */
+  /* 搜尋（REQ-PROF-001/006：隊編搜尋；標籤／條件式拉名單由「分群篩選」tab 承接） */
   function search(q) {
     q = (q || '').trim();
     // 原型：已知隊編用完整假資料；其他純數字隊編（3~6 位）以生成器補齊，確保活動名單任一隊編可查
     var m = DB.members[q] || (/^\d{3,6}$/.test(q) ? genMember(q) : null);
-    var isTag = !m && !!q && G_TAGS.indexOf(q) >= 0;
     document.getElementById('overview-stats').style.display = q ? 'none' : '';
     document.getElementById('profile-view').style.display = (q && m) ? '' : 'none';
-    document.getElementById('tag-view').style.display = isTag ? '' : 'none';
-    document.getElementById('not-found').classList.toggle('show', !!q && !m && !isTag);
+    document.getElementById('not-found').classList.toggle('show', !!q && !m);
     if (m) renderProfile(m);
-    if (isTag) renderTagResults(q);
     if (q) history.replaceState(null, '', '?m=' + encodeURIComponent(q));
   }
   document.getElementById('btn-search').addEventListener('click', function () { search(document.getElementById('q').value); });
