@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>尖峰完成數 — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=18">
+<link rel="stylesheet" href="../tokens.css?v=19">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -101,15 +101,6 @@
       <h1>早晚尖峰完成數</h1>
       <div class="page-sub">尖峰時段完成數 KPI、每日完成 by 星期、每日任務完成狀況（對應現行 Tableau 三張報表）</div>
     </div>
-    <div class="filters" role="group" aria-label="篩選">
-      <select id="f-region" aria-label="選擇地區"><option>雙北地區</option><option>全台</option></select>
-      <select id="f-year" aria-label="選擇年份"><option>2026</option><option>2025</option><option>2024</option></select>
-      <select id="f-month" aria-label="選擇月份">
-        <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
-        <option value="4">4 月</option><option value="5">5 月</option><option value="6" selected>6 月</option>
-      </select>
-      <button class="btn" id="btn-export" type="button">匯出</button>
-    </div>
   </div>
 
   <div class="tabs" role="tablist" aria-label="尖峰報表切換">
@@ -124,12 +115,14 @@
     <section class="panel" id="pane-kpi" role="tabpanel" aria-labelledby="tab-1">
       <div class="panel-head">
         <div class="panel-title" id="kpi-title"></div>
-        <span class="panel-note">17:00~18:59・07:00~08:59（排除規則已於資料源頭處理） <span id="kpi-info"></span></span>
+        <div class="filters" role="group" aria-label="完成數 KPI 篩選">
+          <select id="f-region1" aria-label="選擇地區"><option>雙北地區</option><option>全台</option></select>
+          <select id="f-peak1" aria-label="選擇時段"><option value="full">全日</option><option value="morning">早尖峰</option><option value="evening">晚尖峰</option></select>
+          <button class="btn" id="btn-export1" type="button">匯出</button>
+        </div>
       </div>
-      <div class="legend" style="margin-bottom:14px">
-        <span><i style="background:var(--chart-2)"></i>早尖峰完成數</span>
-        <span><i style="background:var(--chart-1)"></i>晚尖峰完成數</span>
-      </div>
+      <div class="panel-note" style="margin:-4px 0 10px">直接呈現近 3 年（2024–2026）年度對照・早尖峰 07:00~08:59・晚尖峰 17:00~18:59（排除規則已於資料源頭處理） <span id="kpi-info"></span></div>
+      <div class="legend" id="kpi-legend" style="margin-bottom:14px"></div>
       <div class="chart-wrap"><div id="chart-kpi" role="img" aria-label="早晚尖峰各月完成數柱狀圖"></div></div>
       <div class="chart-wrap" style="margin-top:16px"><table id="kpi-table" aria-label="早晚尖峰完成數月表"></table></div>
     </section>
@@ -138,8 +131,19 @@
     <section class="panel" id="pane-weekday" role="tabpanel" aria-labelledby="tab-2" hidden>
       <div class="panel-head">
         <div class="panel-title" id="wd-title"></div>
-        <span class="panel-note">同一星期別的日期併列，快速比對同星期的表現 <span id="wd-info"></span></span>
+        <div class="filters" role="group" aria-label="每日完成數篩選">
+          <select id="f-region2" aria-label="選擇地區"><option>雙北地區</option><option>全台</option></select>
+          <select id="f-year2" aria-label="選擇年份"><option>2026</option><option>2025</option><option>2024</option></select>
+          <select id="f-month2" aria-label="選擇月份">
+            <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+            <option value="4">4 月</option><option value="5">5 月</option><option value="6" selected>6 月</option>
+            <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+            <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+          </select>
+          <button class="btn" id="btn-export2" type="button">匯出</button>
+        </div>
       </div>
+      <div class="panel-note" style="margin:-4px 0 10px">同一星期別的日期併列，快速比對同星期的表現 <span id="wd-info"></span></div>
       <div class="legend" style="margin-bottom:10px">
         <span><i style="background:var(--chart-2);border-radius:9999px;width:18px;height:3px"></i>早尖峰每日完成數</span>
         <span><i style="background:var(--chart-1);border-radius:9999px;width:18px;height:3px"></i>晚尖峰每日完成數</span>
@@ -152,13 +156,22 @@
     <section class="panel" id="pane-status" role="tabpanel" aria-labelledby="tab-3" hidden>
       <div class="panel-head">
         <div class="panel-title" id="st-title"></div>
-        <div class="filters">
+        <div class="filters" role="group" aria-label="每日任務數篩選">
+          <select id="f-region3" aria-label="選擇地區"><option>雙北地區</option><option>全台</option></select>
+          <select id="f-year3" aria-label="選擇年份"><option>2026</option><option>2025</option><option>2024</option></select>
+          <select id="f-month3" aria-label="選擇月份">
+            <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+            <option value="4">4 月</option><option value="5">5 月</option><option value="6" selected>6 月</option>
+            <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+            <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+          </select>
           <select id="f-weekday" aria-label="篩選星期幾">
             <option value="all">全部星期</option>
             <option value="1">星期一</option><option value="2">星期二</option><option value="3">星期三</option>
             <option value="4">星期四</option><option value="5">星期五</option><option value="6">星期六</option><option value="0">星期日</option>
           </select>
           <select id="f-peak" aria-label="選擇尖峰時段"><option value="evening">晚尖峰</option><option value="morning">早尖峰</option></select>
+          <button class="btn" id="btn-export3" type="button">匯出</button>
         </div>
       </div>
       <div class="legend" style="margin-bottom:10px">
@@ -206,7 +219,7 @@
   原型說明：本頁對應 v2 需求文件「其他分頁」三張 Tableau 報表（雙北_晚尖峰完成數 KPI／每日完成數 by 星期／晚尖峰每日任務數_完成狀況）。假資料即時生成、數字量級貼近截圖。
 </footer>
 
-<script src="../app.js?v=18"></script>
+<script src="../app.js?v=19"></script>
 <script>
 (function () {
   'use strict';
@@ -273,56 +286,76 @@
     return svg;
   }
 
-  function region() { return document.getElementById('f-region').value; }
-  function year() { return Number(document.getElementById('f-year').value); }
-  function month() { return Number(document.getElementById('f-month').value); }
-  function regionFactor() { return region() === '全台' ? 2.4 : 1; }
+  function val(id) { return document.getElementById(id).value; }
+  function num(id) { return Number(val(id)); }
+  function factorOf(rg) { return rg === '全台' ? 2.4 : 1; }
 
-  /* ═══ Tab 1：完成數 KPI ═══ */
-  document.getElementById('kpi-info').innerHTML = CRM.infoIcon('完成數＝任務狀態 completed；月值＝該月每日完成數平均（對齊現行 Tableau KPI 口徑）');
-  function drawKpi() {
-    var y = year(), f = regionFactor();
-    document.getElementById('kpi-title').textContent = region() + '・早晚尖峰完成數 KPI（' + y + '）';
-    var months = { morning: [], evening: [] };
-    for (var m = 1; m <= 12; m++) {
-      if (y === 2026 && m > 6) { months.morning.push(null); months.evening.push(null); continue; }
-      ['morning', 'evening'].forEach(function (pk) {
-        var days = monthDays(y, m, pk);
-        var avg = Math.round(days.reduce(function (a, r) { return a + r.done; }, 0) / days.length * f * (pk === 'morning' ? 0.72 : 0.65));
-        months[pk].push(avg);
-      });
+  /* ═══ Tab 1：完成數 KPI（直接呈現近 3 年年度對照；篩選＝地區＋時段，主管走查回饋 2026-07-09） ═══ */
+  document.getElementById('kpi-info').innerHTML = CRM.infoIcon('完成數＝任務狀態 completed；月值＝該月每日完成數平均。時段：全日 00:00–23:59、早尖峰 07:00–08:59、晚尖峰 17:00–18:59（對齊現行 Tableau KPI 口徑）');
+  var KPI_YEARS = [2024, 2025, 2026];
+  var YEAR_COLORS = { 2024: 'var(--chart-4)', 2025: 'var(--chart-2)', 2026: 'var(--chart-1)' };
+  var PEAK_LABEL = { full: '全日', morning: '早尖峰', evening: '晚尖峰' };
+  function monthAvg(y, m, pk, f) {
+    if (y === 2026 && m > 6) return null;   // 資料截至 2026-07-06，7 月起未滿月
+    var days = monthDays(y, m, pk);
+    return Math.round(days.reduce(function (a, r) { return a + r.done; }, 0) / days.length * f * (pk === 'morning' ? 0.72 : 0.65));
+  }
+  function monthVal(y, m, pk, f) {
+    if (pk === 'full') {
+      var a = monthAvg(y, m, 'morning', f);
+      if (a === null) return null;
+      return Math.round((a + monthAvg(y, m, 'evening', f)) * 2.3);   // 全日＝含尖峰外時段（示意校準）
     }
-    var W = 1120, H = 300, padL = 56, padB = 40, padT = 16, padR = 16;
+    return monthAvg(y, m, pk, f);
+  }
+  function drawKpi() {
+    var rg = val('f-region1'), pk = val('f-peak1'), f = factorOf(rg);
+    document.getElementById('kpi-title').textContent = rg + '・' + PEAK_LABEL[pk] + '完成數 KPI（2024–2026）';
+    var series = KPI_YEARS.map(function (y) {
+      var vals = [];
+      for (var m = 1; m <= 12; m++) vals.push(monthVal(y, m, pk, f));
+      return { y: y, vals: vals };
+    });
+    // 年度對照折線：一年一線 ×12 個月，2026 至最新完整月自然斷開
+    var W = 1120, H = 300, padL = 60, padB = 40, padT = 16, padR = 16;
     var innerW = W - padL - padR, innerH = H - padT - padB;
-    var all = months.morning.concat(months.evening).filter(function (v) { return v !== null; });
-    var maxV = Math.max.apply(null, all) * 1.15;
-    var groupW = innerW / 12, barW = Math.min(18, groupW / 3);
+    var all = [];
+    series.forEach(function (s) { s.vals.forEach(function (v) { if (v !== null) all.push(v); }); });
+    var maxV = Math.max.apply(null, all) * 1.12;
+    var minV = Math.min.apply(null, all) * 0.85;
+    var span = (maxV - minV) || 1;
+    var xOf = function (mi) { return padL + innerW * mi / 11; };
+    var yOf = function (v) { return padT + innerH - (v - minV) / span * innerH; };
     var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="min-width:760px" aria-hidden="true">';
     for (var g = 0; g <= 4; g++) {
       var gy = padT + innerH - innerH * g / 4;
       svg += '<line class="grid-line" x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy + '"/>';
-      svg += '<text x="' + (padL - 8) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="11" fill="var(--meta)">' + CRM.fmt(Math.round(maxV * g / 4 / 100) * 100) + '</text>';
+      svg += '<text x="' + (padL - 8) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="11" fill="var(--meta)">' + CRM.fmt(Math.round((minV + span * g / 4) / 100) * 100) + '</text>';
     }
+    series.forEach(function (s) {
+      var pts = [];
+      s.vals.forEach(function (v, mi) { if (v !== null) pts.push([xOf(mi), yOf(v), mi, v]); });
+      svg += '<polyline points="' + pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' ') + '" fill="none" stroke="' + YEAR_COLORS[s.y] + '" stroke-width="2.4" stroke-linecap="round"/>';
+      pts.forEach(function (p) {
+        svg += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.2" fill="' + YEAR_COLORS[s.y] + '" stroke="var(--surface)" stroke-width="1.2"><title>' + s.y + ' 年 ' + (p[2] + 1) + '月 ' + PEAK_LABEL[pk] + ' ' + CRM.fmt(p[3]) + '</title></circle>';
+      });
+    });
     for (var mi = 0; mi < 12; mi++) {
-      var cx = padL + groupW * mi + groupW / 2;
-      if (months.morning[mi] !== null) {
-        var h1 = months.morning[mi] / maxV * innerH;
-        svg += '<rect class="bar" x="' + (cx - barW - 1.5) + '" y="' + (padT + innerH - h1) + '" width="' + barW + '" height="' + h1 + '" rx="4" fill="var(--chart-2)"><title>' + (mi + 1) + '月 早尖峰 ' + CRM.fmt(months.morning[mi]) + '</title></rect>';
-      }
-      if (months.evening[mi] !== null) {
-        var h2 = months.evening[mi] / maxV * innerH;
-        svg += '<rect class="bar" x="' + (cx + 1.5) + '" y="' + (padT + innerH - h2) + '" width="' + barW + '" height="' + h2 + '" rx="4" fill="var(--chart-1)"><title>' + (mi + 1) + '月 晚尖峰 ' + CRM.fmt(months.evening[mi]) + '</title></rect>';
-      }
-      svg += '<text x="' + cx + '" y="' + (H - padB + 18) + '" text-anchor="middle" font-size="12" fill="var(--muted)">' + (mi + 1) + '月</text>';
+      svg += '<text x="' + xOf(mi) + '" y="' + (H - padB + 18) + '" text-anchor="middle" font-size="12" fill="var(--muted)">' + (mi + 1) + '月</text>';
     }
     svg += '</svg>';
     document.getElementById('chart-kpi').innerHTML = svg;
-
-    var tbl = '<thead><tr><th>' + y + ' 年</th>';
+    // 圖例：一年一色
+    document.getElementById('kpi-legend').innerHTML = KPI_YEARS.map(function (y) {
+      return '<span><i style="background:' + YEAR_COLORS[y] + ';border-radius:9999px;width:18px;height:3px"></i>' + y + ' 年</span>';
+    }).join('');
+    // 3 年 × 12 月數字表（一年一列）
+    var tbl = '<thead><tr><th>' + PEAK_LABEL[pk] + '完成數</th>';
     for (var i = 1; i <= 12; i++) tbl += '<th>' + i + '月</th>';
     tbl += '</tr></thead><tbody>';
-    tbl += '<tr><td>早尖峰完成數</td>' + months.morning.map(function (v) { return '<td>' + CRM.fmt(v) + '</td>'; }).join('') + '</tr>';
-    tbl += '<tr><td>晚尖峰完成數</td>' + months.evening.map(function (v) { return '<td>' + CRM.fmt(v) + '</td>'; }).join('') + '</tr>';
+    series.forEach(function (s) {
+      tbl += '<tr><td>' + s.y + ' 年</td>' + s.vals.map(function (v) { return '<td>' + CRM.fmt(v) + '</td>'; }).join('') + '</tr>';
+    });
     tbl += '</tbody>';
     document.getElementById('kpi-table').innerHTML = tbl;
   }
@@ -330,8 +363,8 @@
   /* ═══ Tab 2：每日完成數 by 星期 ═══ */
   document.getElementById('wd-info').innerHTML = CRM.infoIcon('每日完成率＝每日完成任務數 ÷ 每日有效任務數；日均完成任務數（累計）＝當月 1 日起至該日之完成數累計平均');
   function drawWeekday() {
-    var y = year(), m = month(), f = regionFactor();
-    document.getElementById('wd-title').textContent = region() + '・每日完成數 by 星期（' + y + ' 年 ' + m + ' 月）';
+    var y = num('f-year2'), m = num('f-month2'), f = factorOf(val('f-region2'));
+    document.getElementById('wd-title').textContent = val('f-region2') + '・每日完成數 by 星期（' + y + ' 年 ' + m + ' 月）';
     var am = monthDays(y, m, 'morning'), pm = monthDays(y, m, 'evening');
     // 累計日均
     function withCum(days) {
@@ -377,9 +410,9 @@
   /* ═══ Tab 3：每日任務數・完成狀況 ═══ */
   document.getElementById('st-info').innerHTML = CRM.infoIcon('每日有效任務數＝完成＋取消＋未現＋有車無承接＋搜無車；各狀態 % ＝ 該狀態 ÷ 每日有效任務數');
   function drawStatus() {
-    var y = year(), m = month(), f = regionFactor();
+    var y = num('f-year3'), m = num('f-month3'), f = factorOf(val('f-region3'));
     var pk = document.getElementById('f-peak').value;
-    document.getElementById('st-title').textContent = region() + '・' + (pk === 'morning' ? '早尖峰' : '晚尖峰') + '每日任務數_完成狀況（' + y + ' 年 ' + m + ' 月）';
+    document.getElementById('st-title').textContent = val('f-region3') + '・' + (pk === 'morning' ? '早尖峰' : '晚尖峰') + '每日任務數_完成狀況（' + y + ' 年 ' + m + ' 月）';
     var days = monthDays(y, m, pk);
     // 星期篩選（表格與折線圖同步變動）
     var wdFilter = document.getElementById('f-weekday').value;
@@ -420,13 +453,17 @@
     });
   });
 
+  /* 篩選與匯出：三報表各自獨立（主管走查回饋 2026-07-09） */
+  ['f-region1', 'f-peak1'].forEach(function (id) { document.getElementById(id).addEventListener('change', drawKpi); });
+  ['f-region2', 'f-year2', 'f-month2'].forEach(function (id) { document.getElementById(id).addEventListener('change', drawWeekday); });
+  ['f-region3', 'f-year3', 'f-month3', 'f-peak', 'f-weekday'].forEach(function (id) { document.getElementById(id).addEventListener('change', drawStatus); });
+  [['btn-export1', '完成數 KPI'], ['btn-export2', '每日完成數 by 星期'], ['btn-export3', '每日任務數・完成狀況']].forEach(function (p) {
+    document.getElementById(p[0]).addEventListener('click', function () {
+      CRM.toast('匯出「' + p[1] + '」Excel／CSV（原型示意；正式版需 report.export 權限並記審計）');
+    });
+  });
+
   function redraw() { drawKpi(); drawWeekday(); drawStatus(); }
-  ['f-region', 'f-year', 'f-month', 'f-peak', 'f-weekday'].forEach(function (id) {
-    document.getElementById(id).addEventListener('change', redraw);
-  });
-  document.getElementById('btn-export').addEventListener('click', function () {
-    CRM.toast('匯出 Excel／CSV（原型示意；正式版需 report.export 權限並記審計）');
-  });
 
   CRM.mountStateSwitcher(function (state) {
     document.getElementById('content-normal').style.display = (state === 'normal') ? '' : 'none';
