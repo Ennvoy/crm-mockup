@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>隊員 Profile — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=17">
+<link rel="stylesheet" href="../tokens.css?v=18">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -144,7 +144,7 @@
   <!-- 分群篩選＝Profile 頁內 tab（使用者 A/B 比較後定版 2026-07-08） -->
   <div class="pf-tabs" role="tablist" aria-label="Profile 功能切換">
     <button class="pf-tab" role="tab" id="pf-tab-1" aria-selected="true" data-pftab="search" type="button">個人查詢</button>
-    <button class="pf-tab" role="tab" id="pf-tab-2" aria-selected="false" data-pftab="seg" type="button">分群篩選（拉名單）</button>
+    <button class="pf-tab" role="tab" id="pf-tab-2" aria-selected="false" data-pftab="seg" type="button">分群篩選</button>
   </div>
 
   <div id="pf-view-search">
@@ -175,7 +175,7 @@
         <div class="stat-card"><div class="k">歷史承接率中位數</div><div class="v">24%</div>
           <div class="sub">最近 90 天・個人承接率口徑</div></div>
       </div>
-      <p style="color:var(--meta);font-size:13.5px;margin-top:18px">輸入隊編或點擊上方示例，檢視單一隊員的 11 維度 Profile；依標籤／條件拉名單請切換上方「分群篩選（拉名單）」分頁。</p>
+      <p style="color:var(--meta);font-size:13.5px;margin-top:18px">輸入隊編或點擊上方示例，檢視單一隊員的 11 維度 Profile；依標籤／條件拉名單請切換上方「分群篩選」分頁。</p>
     </div>
 
     <!-- 搜尋結果：Profile 卡 -->
@@ -221,8 +221,8 @@
   原型說明：Profile 卡對應協理 11 維度示意圖（依訪談拿掉評分與優良司機標章）。「隊員平均每月收入」「行動電話」為敏感欄位——原型以已授權（profile.view_sensitive）的管理員視角展示，未授權者將顯示 ***。「不願承接任務的原因」取自客服外撥最新回覆；溝通歷程對應跨專案聯繫紀錄時間軸。
 </footer>
 
-<script src="../app.js?v=17"></script>
-<script src="../seg.js?v=17"></script>
+<script src="../app.js?v=18"></script>
+<script src="../seg.js?v=18"></script>
 <script>
 (function () {
   'use strict';
