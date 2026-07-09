@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>營運總覽 — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=19">
+<link rel="stylesheet" href="../tokens.css?v=20">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -292,7 +292,7 @@
   .mt-table tbody tr:hover { background: var(--bg); }
 </style>
 
-<script src="../app.js?v=19"></script>
+<script src="../app.js?v=20"></script>
 <script>
 (function () {
   'use strict';
@@ -537,7 +537,7 @@
     rows.forEach(function (p) {
       var diff = Math.round((p.after - p.before) * 10) / 10;
       html += '<tr><td style="text-align:left;font-variant-numeric:tabular-nums"><b>' + p.code + '</b></td>' +
-        '<td style="text-align:left;color:var(--muted)">' + p.name + '・' + p.identity + '</td>' +
+        '<td style="text-align:left;color:var(--muted)">' + CRM.maskName(p.name) + '・' + p.identity + '</td>' +
         '<td>' + p.before.toFixed(1) + '</td><td>' + p.after.toFixed(1) + '</td>' +
         '<td class="' + (diff >= 0 ? 'trend-up' : 'trend-down') + '">' + (diff >= 0 ? '+' : '') + diff.toFixed(1) + '</td>' +
         '<td><a href="profile.html?m=' + p.code + '" style="color:var(--accent);font-size:13px">Profile →</a></td></tr>';

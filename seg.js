@@ -13,7 +13,6 @@
   var IDS = ['小黃', '小黃', '小黃', '多元', '多元', '試跑'];
   var TAGS = ['預設', '一般預約', '提供刷卡付款', '提供悠遊卡付款', '提供綁定付款', '敬老愛心_台北', '敬老愛心_新北', '敬老愛心_雙北', '好孕車組', '開行李箱', '攜帶輪椅', '手機充電', '低底盤車', '送餐車組', '短程預約', '專派任務', '乘車券', '國旅卡車組'];
   var CARS = ['RAV4', 'Tesla', 'Altis', '豪華型', '商務型'];
-  var EMPLOY = ['在職', '在職', '在職', '在職', '在職', '在職', '在職', '在職', '在職', '在職', '在職', '停權', '離職'];
   var ACT_TYPES = ['獎勵活動', '培訓課程', '車組招募'];
   var REASONS = ['低價', '距離遠', '目的地不符', '時段不合', '車輛保養中'];
   var REGION_OF_BRANCH_REGION = { '台北': ['台北市', '新北市'], '桃園': ['桃園市'], '宜蘭': ['宜蘭縣'] };
@@ -32,7 +31,7 @@
       var m = DB.members[code];
       list.push({
         code: m.code, name: m.name, identity: m.identity, region: m.region,
-        branch: m.branch, branchRegion: '台北', employment: '在職',
+        branch: m.branch, branchRegion: '台北',
         carModel: m.carModel, fleetGroups: m.fleetGroups,
         monthOnline: m.onlineDays.month, mornPeak: m.mornPeakDays, evePeak: m.evePeakDays,
         acceptRate: m.acceptRate, joined: m.joinedActivity, actTypes: m.activityTypes,
@@ -54,7 +53,6 @@
         identity: IDS[Math.floor(rnd(s, 9) * IDS.length)],
         region: regions[Math.floor(rnd(s, 10) * regions.length)],
         branch: br.name, branchRegion: br.region,
-        employment: EMPLOY[Math.floor(rnd(s, 11) * EMPLOY.length)],
         carModel: CARS[Math.floor(rnd(s, 12) * CARS.length)],
         fleetGroups: tags,
         monthOnline: mo,
@@ -69,11 +67,11 @@
     }
     return list;
   }
-  function phoneOf(m) { return '09' + m.code.slice(-2) + '-***-' + ('00' + m.code).slice(-3); }  // 敏感遮罩（REQ-PROF-007）
 
   /* ── 篩選條件狀態與判定（AND 跨欄位、OR 同欄位多值，REQ-SEG-001） ── */
   function emptyCond() {
-    return { identity: [], region: [], branchRegion: [], branch: [], employment: ['在職'], tags: [], car: [],
+    // 名單池僅含正式隊員（退隊者不進池，REQ-SEG-001；正式／退隊由名冊全量比對推導，REQ-IMP-015）
+    return { identity: [], region: [], branchRegion: [], branch: [], tags: [], car: [],
       bucket: [], mornMin: '', eveMin: '', arMin: '', arMax: '', joined: '', actTypes: [], mtMin: '', mtMax: '', reasons: [] };
   }
   function bucketOf(d) { return d === 0 ? '0' : (d <= 10 ? '1-10' : (d <= 20 ? '11-20' : '21+')); }
@@ -82,7 +80,6 @@
     if (c.region.length && c.region.indexOf(m.region) < 0) return false;
     if (c.branchRegion.length && c.branchRegion.indexOf(m.branchRegion) < 0) return false;
     if (c.branch.length && c.branch.indexOf(m.branch) < 0) return false;
-    if (c.employment.length && c.employment.indexOf(m.employment) < 0) return false;
     if (c.tags.length && !c.tags.some(function (t) { return m.fleetGroups.indexOf(t) >= 0; })) return false;
     if (c.car.length && c.car.indexOf(m.carModel) < 0) return false;
     if (c.bucket.length && c.bucket.indexOf(bucketOf(m.monthOnline)) < 0) return false;
@@ -104,7 +101,6 @@
     if (c.branchRegion.length) p.push('車隊地區 ' + c.branchRegion.map(function (r) { return r === '台北' ? '台北（雙北）' : r; }).join('/'));
     if (c.branch.length) p.push('車隊 ' + c.branch.join('/'));
     if (c.region.length) p.push(c.region.join('/'));
-    if (c.employment.length && c.employment.join() !== '在職') p.push(c.employment.join('/'));
     if (c.tags.length) p.push('車組 ' + c.tags.join('/'));
     if (c.car.length) p.push('車款 ' + c.car.join('/'));
     if (c.bucket.length) p.push('上線級距 ' + c.bucket.join('/'));
@@ -202,7 +198,6 @@
                 return '<optgroup label="' + rg + '">' + DB.branchRegions[rg].map(function (b) { return '<option>' + b + '</option>'; }).join('') + '</optgroup>';
               }).join('') + '</select></div><div class="seg-chips" id="seg-branch-chips" style="margin-top:6px"></div></div>' +
             '<div class="seg-g"><div class="gl">縣市</div>' + chips('region', ['台北市', '新北市', '桃園市', '宜蘭縣']) + '</div>' +
-            '<div class="seg-g"><div class="gl">在職狀態</div>' + chips('employment', ['在職', '停權', '離職']) + '</div>' +
             '<div class="seg-g"><div class="gl">車組（多值標籤）</div>' + chips('tags', TAGS) + '</div>' +
             '<div class="seg-g"><div class="gl">車款</div>' + chips('car', CARS) + '</div>' +
             '<div class="seg-g"><div class="gl">上線天數（上個月，級距）</div>' + chips('bucket', ['0', '1-10', '11-20', '21+'], ['0 天', '1~10 天', '11~20 天', '21 天以上']) + '</div>' +
@@ -228,17 +223,17 @@
             '<button type="button" class="seg-btn" id="seg-export">匯出名單（活動報名用）</button>' +
           '</div>' +
           '<div class="chart-wrap" style="overflow-x:auto"><table class="seg-table"><thead><tr>' +
-            '<th>隊編</th><th>姓名</th><th>身份別</th><th>車隊</th><th>縣市</th><th>上月上線</th><th>晚尖峰</th><th>承接率</th><th>曾參與</th><th>行動電話 <span class="seg-lock">敏感</span></th>' +
+            '<th>隊編</th><th>姓名（去識別化）</th><th>身份別</th><th>車隊</th><th>縣市</th><th>上月上線</th><th>晚尖峰</th><th>承接率</th><th>曾參與</th>' +
           '</tr></thead><tbody id="seg-rows"></tbody></table></div>' +
           '<p class="seg-hint" id="seg-more" style="margin-top:8px"></p>' +
         '</div>' +
       '</div>' +
       '<div class="seg-modal" id="seg-modal" role="dialog" aria-modal="true" aria-label="帶入外撥專案">' +
         '<div class="box"><h3>帶入外撥專案</h3>' +
-        '<p class="seg-hint">篩選結果將整批帶入新外撥專案之名單（隊編＋行動電話自隊員主檔帶出，REQ-SEG-004）。</p>' +
+        '<p class="seg-hint">篩選結果將整批帶入新外撥專案之名單——僅帶隊編＋姓名；行動電話非批次可得資訊，為外撥專案之保留欄位、由客服撥打作業時填寫（REQ-SEG-004）。</p>' +
         '<label for="seg-pname">專案名稱</label><input type="text" id="seg-pname">' +
         '<label>名單筆數</label><div style="font-size:22px;font-weight:600" id="seg-pcount"></div>' +
-        '<label>名單預覽（前 5 筆）</label><div class="chart-wrap" style="overflow-x:auto"><table class="seg-table"><thead><tr><th>隊編</th><th>姓名</th><th>行動電話</th></tr></thead><tbody id="seg-preview"></tbody></table></div>' +
+        '<label>名單預覽（前 5 筆）</label><div class="chart-wrap" style="overflow-x:auto"><table class="seg-table"><thead><tr><th>隊編</th><th>姓名</th><th>行動電話（保留欄位）</th></tr></thead><tbody id="seg-preview"></tbody></table></div>' +
         '<div class="seg-actions" style="margin-top:16px"><button type="button" class="seg-btn primary" id="seg-pok">建立專案（示意）</button><button type="button" class="seg-btn" id="seg-pcancel">取消</button></div>' +
         '</div></div>';
 
@@ -248,7 +243,7 @@
       document.getElementById('seg-count').textContent = CRM.fmt(result.length);
       document.getElementById('seg-cond-sum').textContent = condSummary(cond);
       var rows = result.slice(0, 50).map(function (m) {
-        return '<tr class="mrow" data-code="' + m.code + '" tabindex="0" aria-label="檢視 ' + m.name + ' 的 Profile"><td>' + m.code + '</td><td>' + m.name + '</td><td>' + m.identity + '</td><td>' + m.branch + '</td><td>' + m.region + '</td><td>' + m.monthOnline + ' 天</td><td>' + m.evePeak + ' 天</td><td>' + m.acceptRate + '%</td><td>' + (m.joined ? '是' : '否') + '</td><td>' + phoneOf(m) + '</td></tr>';
+        return '<tr class="mrow" data-code="' + m.code + '" tabindex="0" aria-label="檢視隊編 ' + m.code + ' 的 Profile"><td>' + m.code + '</td><td>' + CRM.maskName(m.name) + '</td><td>' + m.identity + '</td><td>' + m.branch + '</td><td>' + m.region + '</td><td>' + m.monthOnline + ' 天</td><td>' + m.evePeak + ' 天</td><td>' + m.acceptRate + '%</td><td>' + (m.joined ? '是' : '否') + '</td></tr>';
       }).join('');
       document.getElementById('seg-rows').innerHTML = rows || '<tr><td colspan="10" style="color:var(--meta)">無符合條件之隊員（調整條件試試）</td></tr>';
       document.getElementById('seg-more').textContent = result.length > 50 ? '共 ' + CRM.fmt(result.length) + ' 人，清單示意前 50 筆；正式版為分頁完整清單。點任一列可進入該隊員 Profile。' : (result.length ? '點任一列可進入該隊員 Profile。' : '');
@@ -352,7 +347,7 @@
       document.getElementById('seg-pname').value = '外撥專案：' + condSummary(cond).slice(0, 24);
       document.getElementById('seg-pcount').textContent = CRM.fmt(result.length) + ' 筆（＝篩選結果數）';
       document.getElementById('seg-preview').innerHTML = result.slice(0, 5).map(function (m) {
-        return '<tr><td>' + m.code + '</td><td>' + m.name + '</td><td>' + phoneOf(m) + '</td></tr>';
+        return '<tr><td>' + m.code + '</td><td>' + CRM.maskName(m.name) + '</td><td style="color:var(--meta)">—（由客服填寫）</td></tr>';
       }).join('');
       modal.classList.add('show');
     });

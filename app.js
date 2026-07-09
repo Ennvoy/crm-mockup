@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  var STORE_KEY = 'crm55688_proto_v11';
+  var STORE_KEY = 'crm55688_proto_v12';
 
   /* 活動參加名單生成（deterministic；每活動 40 筆示意，前 3 筆為完整 Profile 假資料隊員） */
   function buildParticipants() {
@@ -100,14 +100,14 @@
       // 每卡 d7/d30＝主數字與 7／30 天前之差（REQ-OV-011）；運力卡主數字＝b1+b2+b3（0 天 b0 不計入，REQ-OV-003）
       keyCards: [
         { id: 'k1', kind: 'simple', label: '全台隊員總數', value: 21847, d7: 38, d30: 156, note: '正式隊員',
-          info: '隊員主檔最近一次匯入之正式（在職）隊員數（車發最新數據）' },
+          info: '最新一次隊員主檔匯入之正式隊員數（車發最新數據；退隊者由名冊全量比對自動排除）' },
         { id: 'k2', kind: 'simple', label: '雙北地區隊員數', value: 9326, d7: 12, d30: -61,
           note: '包含車隊：' + branchRegions['台北'].join('、'),
-          info: '所屬車隊之車隊地區＝台北（雙北）的在職隊員數。包含車隊：' + branchRegions['台北'].join('、') + '（車隊→地區對照可於系統設定維護）' },
+          info: '所屬車隊之車隊地區＝台北（雙北）的正式隊員數。包含車隊：' + branchRegions['台北'].join('、') + '（車隊→地區對照可於系統設定維護）' },
         { id: 'k3', kind: 'buckets', label: '全台・早尖峰可用運力', b0: 14192, b1: 1204, b2: 2861, b3: 3590, d7: 85, d30: -142, note: '上個月的上線天數',
-          info: '上個月早尖峰（07:00–08:59）有上線（≥1 天）之隊員數＝1~10／11~20／21 天以上三桶加總；0 天＝上個月未上線之在職隊員，列示供參考、不計入主數字；級距切點後台可調' },
+          info: '上個月早尖峰（07:00–08:59）有上線（≥1 天）之隊員數＝1~10／11~20／21 天以上三桶加總；0 天＝上個月未上線之正式隊員，列示供參考、不計入主數字；級距切點後台可調' },
         { id: 'k4', kind: 'buckets', label: '全台・晚尖峰可用運力', b0: 13525, b1: 1436, b2: 3012, b3: 3874, d7: 47, d30: 203, note: '上個月的上線天數',
-          info: '上個月晚尖峰（17:00–18:59）有上線（≥1 天）之隊員數＝1~10／11~20／21 天以上三桶加總；0 天＝上個月未上線之在職隊員，列示供參考、不計入主數字；級距切點後台可調' },
+          info: '上個月晚尖峰（17:00–18:59）有上線（≥1 天）之隊員數＝1~10／11~20／21 天以上三桶加總；0 天＝上個月未上線之正式隊員，列示供參考、不計入主數字；級距切點後台可調' },
         { id: 'k5', kind: 'buckets', label: '雙北・早尖峰可用運力', b0: 5844, b1: 543, b2: 1288, b3: 1651, d7: 36, d30: -58, note: '上個月的上線天數',
           info: '雙北（車隊地區＝台北）隊員上個月早尖峰有上線（≥1 天）之人數＝三桶加總；0 天列示供參考、不計入主數字；級距切點後台可調' },
         { id: 'k6', kind: 'buckets', label: '雙北・晚尖峰可用運力', b0: 5504, b1: 647, b2: 1395, b3: 1780, d7: -21, d30: 94, note: '上個月的上線天數',
@@ -203,6 +203,14 @@
     return Number(n).toLocaleString('zh-TW');
   }
   function pct(n) { return (n === null || n === undefined) ? '–' : (Math.round(n * 10) / 10) + '%'; }
+
+  /* 姓名去識別化（REQ-PROF-007：各清單/報表預設遮罩——陳大明→陳○明、王明→王○；具權限者見全名） */
+  function maskName(n) {
+    n = String(n || '');
+    if (n.length <= 1) return n;
+    if (n.length === 2) return n.charAt(0) + '○';
+    return n.charAt(0) + new Array(n.length - 1).join('○') + n.charAt(n.length - 1);
+  }
 
   /* ── Toast（提示未完成頁面等） ── */
   function toast(msg) {
@@ -377,7 +385,7 @@
   /* ── 匯出到全域 ── */
   window.CRM = {
     load: load, save: save, reset: reset,
-    fmt: fmt, pct: pct, toast: toast,
+    fmt: fmt, pct: pct, maskName: maskName, toast: toast,
     mountStateSwitcher: mountStateSwitcher,
     mountNav: mountNav,
     infoIcon: infoIcon

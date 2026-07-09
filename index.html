@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>走查台 — 55688 隊員 CRM 互動原型</title>
-<link rel="stylesheet" href="tokens.css?v=19">
+<link rel="stylesheet" href="tokens.css?v=20">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.6; padding: 48px 24px 96px; }
@@ -107,7 +107,7 @@
         <li>手動調條件感受 AND/OR：多勾一個身份別（同欄位 OR）、再加承接率區間（跨欄位 AND）</li>
         <li>「不願承接任務的原因」條件留意 🔒 需 callrecord.view_all 標示（防繞過客服 scope）</li>
         <li>點「儲存為名單條件」→ 左下 segment 清單出現 → 點「執行」以最新資料重算</li>
-        <li>點「帶入外撥專案」→ 確認名單筆數＝篩選人數、預覽含隊編＋電話（敏感遮罩）→ 建立（示意）</li>
+        <li>點「帶入外撥專案」→ 確認名單筆數＝篩選人數、名單僅隊編＋姓名、電話為空白保留欄位（主管確認：電話非批次資訊、由客服填寫）→ 建立（示意）</li>
         <li>名單點任一列 → 進入該隊員個人 Profile</li>
       </ol>
       <a class="go" href="pages/profile.html?tab=seg">開始走查 → 分群篩選（Profile 頁內 tab）</a>

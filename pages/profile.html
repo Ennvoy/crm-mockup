@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>隊員 Profile — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=19">
+<link rel="stylesheet" href="../tokens.css?v=20">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -155,9 +155,9 @@
     </div>
     <button class="btn btn-primary" id="btn-search" type="button">搜尋</button>
     <div class="chips"><span>示例：</span>
-      <button class="chip-btn" data-q="123456" type="button">123456 陳大明</button>
-      <button class="chip-btn" data-q="0103" type="button">0103 林志偉</button>
-      <button class="chip-btn" data-q="0217" type="button">0217 張淑芬</button>
+      <button class="chip-btn" data-q="123456" type="button">123456 陳○明</button>
+      <button class="chip-btn" data-q="0103" type="button">0103 林○偉</button>
+      <button class="chip-btn" data-q="0217" type="button">0217 張○芬</button>
     </div>
   </div>
 
@@ -171,7 +171,7 @@
         <div class="stat-card"><div class="k">月上線 21 天以上</div><div class="v">7,464</div>
           <div class="sub">11~20 天 5,873・1~10 天 2,640・0 天 5,870</div></div>
         <div class="stat-card"><div class="k">曾參與活動</div><div class="v">9,182</div>
-          <div class="sub">佔在職隊員 42%</div></div>
+          <div class="sub">佔正式隊員 42%</div></div>
         <div class="stat-card"><div class="k">歷史承接率中位數</div><div class="v">24%</div>
           <div class="sub">最近 90 天・個人承接率口徑</div></div>
       </div>
@@ -218,11 +218,11 @@
 </main>
 
 <footer class="proto-note">
-  原型說明：Profile 卡對應協理 11 維度示意圖（依訪談拿掉評分與優良司機標章）。「隊員平均每月收入」「行動電話」為敏感欄位——原型以已授權（profile.view_sensitive）的管理員視角展示，未授權者將顯示 ***。「不願承接任務的原因」取自客服外撥最新回覆；溝通歷程對應跨專案聯繫紀錄時間軸。
+  原型說明：Profile 卡對應協理 11 維度示意圖（依訪談拿掉評分與優良司機標章）。「隊員平均每月收入」為敏感欄位——原型以已授權（profile.view_sensitive）的管理員視角展示，未授權者將顯示 ***。行動電話非批次可得資訊、不在 Profile（僅存在於外撥專案、由客服填寫，主管確認 2026-07-09）。姓名屬個資、各處預設去識別化顯示（陳○明；具權限者可見全名，使用者指示 2026-07-09）。「不願承接任務的原因」取自客服外撥最新回覆；溝通歷程對應跨專案聯繫紀錄時間軸。
 </footer>
 
-<script src="../app.js?v=19"></script>
-<script src="../seg.js?v=19"></script>
+<script src="../app.js?v=20"></script>
+<script src="../seg.js?v=20"></script>
 <script>
 (function () {
   'use strict';
@@ -292,7 +292,7 @@
     // 左欄
     html += '<aside class="p-side">' +
       '<div class="avatar" aria-hidden="true">' + initials + '</div>' +
-      '<div class="p-name">' + m.name + '</div>' +
+      '<div class="p-name">' + CRM.maskName(m.name) + '</div>' +
       '<div class="p-code">隊編 ' + m.code + '</div>' +
       '<span class="id-badge id-' + m.identity + '">' + m.identity + '</span>' +
       '<div class="p-meta">' +
@@ -302,7 +302,6 @@
         '<div><span class="k">車組</span><span class="fleet-chips">' +
           (m.fleetGroups.length ? m.fleetGroups.map(function (g) { return '<span class="fleet-chip">' + g + '</span>'; }).join('') : '—') +
         '</span></div>' +
-        '<div><span class="k">行動電話 <span class="sensitive-tag">敏感</span></span><span>0912-***-' + m.code.slice(-3) + '</span></div>' +
       '</div>' +
       '<button class="btn" type="button" onclick="CRM.toast(\'溝通歷程見下方時間軸；正式版此鈕捲動定位\')">溝通歷程</button>' +
       '</aside>';
@@ -374,7 +373,7 @@
       vals = tasks; color = 'var(--chart-2)'; unit = ' 趟';
       desc = GRAN_DESC[trendState.gran] + '承接任務數（趟）';
     }
-    el.innerHTML = '<p style="color:var(--muted);font-size:13px;margin-bottom:6px">' + m.name + '（' + m.code + '）・' + desc + '・資料截至 ' + DB.meta.dataAsOf + '</p>' +
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;margin-bottom:6px">' + CRM.maskName(m.name) + '（' + m.code + '）・' + desc + '・資料截至 ' + DB.meta.dataAsOf + '</p>' +
       sparkline(vals, color, TREND_LABELS[trendState.gran], unit);
   }
 
