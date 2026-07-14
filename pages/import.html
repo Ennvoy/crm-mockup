@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>資料匯入｜55688 隊員 CRM</title>
+<link rel="stylesheet" href="../tokens.css?v=25">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: var(--leading-body); min-height: 100dvh; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; }
+  :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 8px; }
+
+  #crm-nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border-soft); }
+  .nav-inner { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--container-gutter-desktop); display: flex; align-items: center; gap: 20px; height: 60px; }
+  .nav-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .brand-badge { background: var(--brand-55688); color: var(--brand-55688-on); font-weight: 700; font-style: italic; padding: 3px 9px; border-radius: 8px; font-size: 15px; letter-spacing: .5px; }
+  .brand-title { font-family: var(--font-display); font-weight: 500; font-size: 17px; }
+  .nav-links { display: flex; gap: 2px; overflow-x: auto; flex: 1; }
+  .nav-link { padding: 8px 11px; border-radius: 8px; font-size: 15px; color: var(--muted); white-space: nowrap; transition: color var(--motion-fast), background var(--motion-fast); min-height: 36px; display: inline-flex; align-items: center; }
+  .nav-link:hover { color: var(--fg); background: var(--surface-warm); }
+  .nav-link.active { color: var(--fg); font-weight: 500; box-shadow: inset 0 -2px 0 var(--brand-55688); border-radius: 8px 8px 0 0; }
+  .nav-link.pending { opacity: .55; }
+  .nav-meta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .data-chip { font-size: 12.5px; color: var(--muted); background: var(--surface-warm); padding: 4px 10px; border-radius: 9999px; }
+  .nav-user { font-size: 14px; color: var(--fg-2); }
+
+  .page { max-width: var(--container-max); margin: 0 auto; padding: 28px var(--container-gutter-desktop) 96px; }
+  h1 { font-family: var(--font-display); font-weight: 500; font-size: 32px; line-height: 1.2; }
+  .page-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  /* tabs */
+  .tabs { display: flex; gap: 4px; background: var(--surface-warm); border-radius: 12px; padding: 4px; width: fit-content; max-width: 100%; overflow-x: auto; margin: 18px 0 20px; }
+  .tab { border: none; background: transparent; padding: 9px 18px; border-radius: 9px; font-size: 14.5px; color: var(--muted); cursor: pointer; white-space: nowrap; min-height: 40px; transition: background var(--motion-fast), color var(--motion-fast); }
+  .tab[aria-selected="true"] { background: var(--surface); color: var(--fg); font-weight: 500; box-shadow: 0 0 0 1px var(--border-soft); }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .panel + .panel { margin-top: 16px; }
+  .panel-title { font-family: var(--font-display); font-weight: 500; font-size: 19px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .panel-note { color: var(--meta); font-size: 12.5px; margin: -6px 0 14px; }
+
+  select {
+    appearance: none; background: var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%235e5d59" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+    border: 1px solid var(--border-soft); border-radius: 12px; padding: 8px 32px 8px 14px; width: 100%;
+    font-size: 14.5px; color: var(--fg); cursor: pointer; min-height: 42px; font-family: inherit;
+  }
+  select:hover { border-color: #d1cfc5; }
+  .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .field label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  .field-hint { font-size: 12.5px; color: var(--meta); line-height: 1.6; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer; border-radius: 8px; font-size: 14px; padding: 8px 16px; min-height: 42px; background: var(--surface-warm); color: var(--fg-2); box-shadow: 0 0 0 1px #d1cfc5; transition: background var(--motion-fast); }
+  .btn:hover { background: #e0ddd1; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn:disabled:hover { background: var(--surface-warm); }
+  .btn-primary { background: var(--accent); color: var(--accent-on); box-shadow: 0 0 0 1px var(--accent); }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-danger { background: var(--danger); color: var(--surface); box-shadow: 0 0 0 1px var(--danger); }
+  .btn-danger:hover { background: color-mix(in oklab, var(--danger), black 10%); }
+  .btn-sm { padding: 5px 12px; min-height: 32px; font-size: 13px; }
+
+  .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .upload-grid > * { min-width: 0; }
+  @media (max-width: 900px) { .upload-grid { grid-template-columns: 1fr; } }
+
+  .dropzone { border: 2px dashed var(--border-soft); border-radius: 16px; padding: 34px 20px; text-align: center; color: var(--muted); cursor: pointer; transition: border-color var(--motion-fast), background var(--motion-fast); margin-top: 16px; }
+  .dropzone:hover, .dropzone:focus-visible { border-color: var(--accent); background: var(--surface-warm); }
+  .dropzone .dz-icon { font-size: 30px; margin-bottom: 8px; }
+  .dropzone .dz-main { font-size: 14.5px; color: var(--fg-2); }
+  .dropzone .dz-sub { font-size: 12.5px; color: var(--meta); margin-top: 4px; }
+  .limit-note { color: var(--meta); font-size: 12.5px; margin-top: 10px; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  th { color: var(--muted); font-weight: 500; background: var(--bg); white-space: nowrap; }
+  tbody tr:hover { background: var(--bg); }
+  .chart-wrap { overflow-x: auto; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mrow { cursor: pointer; }
+  .mrow:hover { background: var(--bg); }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 11px; border-radius: 9999px; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+  .badge-wait { background: var(--surface-warm); color: var(--fg-2); }
+  .badge-processing { background: rgba(201,100,66,.12); color: var(--accent); }
+  .badge-success { background: rgba(23,163,74,.1); color: var(--success); }
+  .badge-fail { background: rgba(181,51,51,.08); color: var(--danger); }
+  .badge-auto { background: rgba(125,140,92,.16); color: #4a5636; }
+  .badge-pending { background: rgba(234,179,8,.16); color: #8a6d00; }
+  .badge-resolved { background: rgba(23,163,74,.1); color: var(--success); }
+  .badge-latest { background: rgba(201,100,66,.12); color: var(--accent); }
+  .badge-covered { background: var(--surface-warm); color: var(--muted); }
+
+  .progress-track { background: var(--surface-warm); border-radius: 9999px; height: 8px; width: 110px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .progress-fill { background: var(--accent); height: 100%; border-radius: 9999px; }
+  .progress-label { font-size: 12px; color: var(--meta); margin-left: 8px; font-variant-numeric: tabular-nums; }
+
+  .summary-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+  .summary-row > * { min-width: 0; }
+  @media (max-width: 700px) { .summary-row { grid-template-columns: 1fr; } }
+  .summary-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .summary-row-3 > * { min-width: 0; }
+  @media (max-width: 700px) { .summary-row-3 { grid-template-columns: 1fr; } }
+  .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .stat-card .k { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  .stat-card .v { font-size: 26px; font-weight: 600; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .stat-card.add .v { color: var(--success); }
+  .stat-card.leave .v { color: var(--danger); }
+  .stat-card.change .v { color: #8a6d00; }
+
+  details.exp-list { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 10px; }
+  details.exp-list summary { cursor: pointer; padding: 12px 16px; font-weight: 500; list-style: none; display: flex; align-items: center; justify-content: space-between; background: var(--surface-warm); gap: 10px; }
+  details.exp-list summary::-webkit-details-marker { display: none; }
+  details.exp-list summary::after { content: '展開 ▸'; font-weight: 400; font-size: 12.5px; color: var(--muted); transition: transform var(--motion-fast); flex-shrink: 0; }
+  details.exp-list[open] summary::after { content: '收合 ▾'; }
+  details.exp-list .exp-body { padding: 4px 16px 14px; }
+
+  .warn-banner { background: rgba(181,51,51,.08); border: 1px solid rgba(181,51,51,.25); border-radius: 12px; padding: 12px 16px; color: var(--danger); font-size: 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .dict-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .dict-row:last-child { border-bottom: none; }
+  .dict-raw { font-weight: 500; font-size: 14.5px; }
+  .dict-meta { color: var(--meta); font-size: 12.5px; margin-top: 3px; }
+  .link-btn { color: var(--accent); font-size: 13.5px; text-decoration: underline; white-space: nowrap; flex-shrink: 0; }
+  .link-btn:hover { color: var(--accent-hover); }
+
+  .disambig-row { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+  .disambig-row:last-child { margin-bottom: 0; }
+  .disambig-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .disambig-flow { font-size: 14.5px; }
+  .disambig-note { color: var(--meta); font-size: 12.5px; margin-top: 6px; line-height: 1.6; }
+  .disambig-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+  .toggle-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider { position: absolute; cursor: pointer; inset: 0; background: var(--surface-warm); border-radius: 9999px; transition: background var(--motion-fast); box-shadow: 0 0 0 1px var(--border-soft); }
+  .switch .slider::before { content: ''; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px; background: var(--surface); border-radius: 50%; transition: transform var(--motion-fast); }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+
+  .crm-info { position: relative; display: inline-flex; color: var(--meta); cursor: help; vertical-align: middle; }
+  .crm-info:hover, .crm-info:focus-visible { color: var(--fg-2); }
+  .crm-info-tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--surface); font-size: 12px; line-height: 1.5; padding: 8px 12px; border-radius: 8px; width: max-content; max-width: 280px; opacity: 0; pointer-events: none; transition: opacity var(--motion-fast); z-index: 500; text-align: left; }
+  .crm-info:hover .crm-info-tip, .crm-info:focus-visible .crm-info-tip { opacity: 1; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,20,19,.45); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+  .modal-box { background: var(--surface); border-radius: 16px; padding: 24px; max-width: 460px; width: 100%; box-shadow: rgba(0,0,0,.2) 0 12px 48px; }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .modal-head h3 { font-family: var(--font-display); font-weight: 500; font-size: 19px; }
+  .modal-close { border: none; background: transparent; font-size: 18px; cursor: pointer; color: var(--muted); min-width: 32px; min-height: 32px; border-radius: 8px; }
+  .modal-close:hover { background: var(--surface-warm); }
+  .modal-body { font-size: 14px; color: var(--fg-2); line-height: 1.75; }
+  .modal-body ul { margin: 8px 0 0 18px; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+  .state-layer { display: none; padding: 72px 24px; text-align: center; }
+  .state-layer.show { display: block; }
+  .state-icon { font-size: 40px; margin-bottom: 12px; }
+  .state-title { font-family: var(--font-display); font-weight: 500; font-size: 20px; }
+  .state-desc { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .skeleton { border-radius: 12px; background: linear-gradient(90deg, var(--surface-warm) 25%, #f0eee4 50%, var(--surface-warm) 75%); background-size: 200% 100%; animation: shim 1.4s infinite; }
+  @keyframes shim { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } * { transition-duration: 0ms !important; } }
+
+  footer.proto-note { max-width: var(--container-max); margin: 0 auto; padding: 0 24px 120px; color: var(--meta); font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<nav id="crm-nav" aria-label="全站導覽"></nav>
+
+<main class="page">
+  <h1>資料匯入</h1>
+  <div class="page-sub">8 種來源資料上傳與佇列狀態、匯入結果核對（含隊編消歧警告）、匯入歷史、批次刪除管理</div>
+
+  <div class="tabs" role="tablist" aria-label="資料匯入功能切換">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" data-tab="upload">上傳與佇列</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" data-tab="result">匯入結果</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" data-tab="history">匯入歷史</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" data-tab="batch">批次管理</button>
+  </div>
+
+  <div id="content-normal">
+
+    <!-- Tab 1：上傳與佇列 -->
+    <section class="panel" id="pane-upload" role="tabpanel" aria-labelledby="tab-1">
+      <div class="panel-title">新增匯入任務</div>
+      <div class="upload-grid">
+        <div class="field">
+          <label for="f-dataset">資料類型</label>
+          <select id="f-dataset" aria-label="選擇資料類型"></select>
+          <div class="field-hint" id="dataset-hint"></div>
+        </div>
+        <div class="field">
+          <label for="f-template">欄位映射範本</label>
+          <div style="display:flex;gap:8px">
+            <select id="f-template" aria-label="選擇欄位映射範本" style="flex:1"></select>
+            <button class="btn" id="btn-manage-template" type="button">管理範本</button>
+          </div>
+          <div class="field-hint">依資料類型套用對應之欄位對應規則（REQ-IMP-002）</div>
+        </div>
+        <div class="field" id="target-activity-wrap" style="display:none">
+          <label for="f-activity">需指定目標活動</label>
+          <select id="f-activity" aria-label="選擇目標活動"></select>
+          <div class="field-hint">活動報名／活動成效需明確指定目標活動，避免以名稱字串比對錯誤</div>
+        </div>
+      </div>
+
+      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="拖放或點擊上傳檔案">
+        <div class="dz-icon" aria-hidden="true">📥</div>
+        <div class="dz-main">拖放檔案至此，或點擊選擇檔案</div>
+        <div class="dz-sub">支援 .csv / .xlsx；上傳後將依所選範本解析並加入下方佇列</div>
+      </div>
+      <div class="limit-note">單檔上限 50 萬列或 100MB（可由系統設定調整）；超過限制將直接拒收並於佇列標示失敗原因（REQ-IMP-014）。</div>
+
+      <div class="panel-title" style="margin-top:24px">匯入佇列<span id="queue-info"></span></div>
+      <div class="chart-wrap"><table id="queue-table" aria-label="匯入佇列清單">
+        <thead><tr><th>檔名</th><th>資料類型</th><th class="num">檔案大小</th><th class="num">列數</th><th>狀態</th><th>備註</th></tr></thead>
+        <tbody id="queue-tbody"></tbody>
+      </table></div>
+    </section>
+
+    <!-- Tab 2：匯入結果 -->
+    <section class="panel" id="pane-result" role="tabpanel" aria-labelledby="tab-2" hidden>
+      <div class="panel-title">members 匯入結果（本次批次）<span id="result-info"></span></div>
+      <div class="panel-note" id="result-batch-note"></div>
+      <div class="summary-row" id="result-summary"></div>
+      <div id="result-lists"></div>
+    </section>
+    <section class="panel" id="pane-fleetdict" hidden>
+      <div class="panel-title">fleet_dictionary 匯入結果<span id="fleetdict-info"></span></div>
+      <div class="panel-note" id="fleetdict-batch-note"></div>
+      <div class="summary-row-3" id="fleetdict-summary"></div>
+      <div id="fleetdict-lists"></div>
+    </section>
+    <section class="panel" id="pane-actresult" hidden>
+      <div class="panel-title">活動每日結算檔匯入結果<span id="actresult-info"></span></div>
+      <div class="panel-note" id="actresult-batch-note"></div>
+      <div class="summary-row-3" id="actresult-summary"></div>
+      <div id="actresult-lists"></div>
+    </section>
+    <section class="panel" id="pane-disambig" hidden>
+      <div class="panel-title">隊編消歧警告<span id="disambig-info"></span></div>
+      <div id="disambig-body"></div>
+    </section>
+    <section class="panel" id="pane-dict" hidden>
+      <div class="panel-title">字典查無對照<span id="dict-info"></span></div>
+      <div id="dict-body"></div>
+    </section>
+    <section class="panel" id="pane-taskfail" hidden>
+      <div class="panel-title">task_details 匯入失敗</div>
+      <div id="taskfail-body"></div>
+    </section>
+
+    <!-- Tab 3：匯入歷史 -->
+    <section class="panel" id="pane-history" role="tabpanel" aria-labelledby="tab-3" hidden>
+      <div class="panel-title">匯入歷史（REQ-IMP-006）
+        <div class="toggle-row">
+          <span id="history-chip"></span>
+          <label class="switch"><input type="checkbox" id="stale-toggle" aria-label="模擬超過 2 天未更新"><span class="slider"></span></label>
+          <span style="font-size:13px;color:var(--muted)">模擬超過 2 天未更新</span>
+        </div>
+      </div>
+      <div id="stale-banner"></div>
+      <div class="chart-wrap"><table id="history-table" aria-label="匯入歷史清單">
+        <thead><tr><th>檔名</th><th>資料類型</th><th>執行者</th><th>開始時間</th><th>結束時間</th><th>結果</th><th class="num">列數</th></tr></thead>
+        <tbody id="history-tbody"></tbody>
+      </table></div>
+    </section>
+
+    <!-- Tab 4：批次管理 -->
+    <section class="panel" id="pane-batch" role="tabpanel" aria-labelledby="tab-4" hidden>
+      <div class="panel-title">批次管理（REQ-IMP-010）<span id="batch-info"></span></div>
+      <div class="panel-note">僅「最新來源批次」可刪除；較舊批次已被覆蓋，刪除鈕停用（滑鼠停留看說明）。</div>
+      <div class="chart-wrap"><table id="batch-table" aria-label="批次清單">
+        <thead><tr><th>批次編號</th><th>資料類型</th><th>匯入時間</th><th>執行者</th><th class="num">列數</th><th>來源狀態</th><th>操作</th></tr></thead>
+        <tbody id="batch-tbody"></tbody>
+      </table></div>
+    </section>
+    <section class="panel" id="pane-batch-note" hidden>
+      <div class="panel-title">匯入 API 與權杖規則</div>
+      <p style="font-size:13.5px;color:var(--fg-2);line-height:1.8">
+        匯入 API（<code style="font-family:var(--font-mono)">POST /api/import</code>）行為與本頁 UI 一致，支援相同 8 種資料類型與欄位映射範本規則（REQ-IMP-001／002）。<br>
+        呼叫需附帶匯入權杖（token），權杖由「系統設定」核發與管理，綁定最小 scope、效期、可隨時撤銷，核發與撤銷全數寫入審計（REQ-IMP-013）。<br>
+        同一權杖超過頻率限制時，API 回應 <code style="font-family:var(--font-mono)">429 Too Many Requests</code>（REQ-IMP-014）。<br>
+        刪除批次（<code style="font-family:var(--font-mono)">admin.delete</code>）僅移除「最新來源批次」之列，且動作全數寫入審計（REQ-IMP-010）。
+      </p>
+    </section>
+  </div>
+
+  <div class="state-layer" id="st-empty">
+    <div class="state-icon" aria-hidden="true">🗂️</div>
+    <div class="state-title">尚無匯入紀錄</div>
+    <div class="state-desc">尚未有任何檔案匯入，請於「上傳與佇列」新增檔案。</div>
+  </div>
+  <div class="state-layer" id="st-loading" aria-label="載入中">
+    <div style="display:grid;gap:12px;max-width:960px;margin:0 auto">
+      <div class="skeleton" style="height:160px"></div>
+      <div class="skeleton" style="height:280px"></div>
+    </div>
+  </div>
+  <div class="state-layer" id="st-error">
+    <div class="state-icon" aria-hidden="true">⚠️</div>
+    <div class="state-title">資料載入失敗</div>
+    <div class="state-desc">連線發生問題（HTTP 500），請稍後再試。</div>
+  </div>
+  <div class="state-layer" id="st-forbidden">
+    <div class="state-icon" aria-hidden="true">🔒</div>
+    <div class="state-title">無權限檢視此頁</div>
+    <div class="state-desc">你的帳號沒有「資料匯入（import.manage）」權限，需要存取請聯絡系統管理員。</div>
+  </div>
+</main>
+
+<footer class="proto-note">
+  原型說明：佇列／歷史／批次資料為原型模擬產生，實際匯入解析與 API 行為（REQ-IMP-001~016）將於正式版依規格串接後台。姓名一律去識別化顯示（陳○明），本頁非客服作業範圍不顯示全名；members 匯入欄位不含行動電話（電話僅存在客服模組）。members 每批視為正式隊員全量快照：未出現之既有正式隊員自動標記退隊，再出現時依隊編消歧規則自動或由管理員判定復原。新增／退隊清單之隊編可點擊直接查看該隊員 Profile（沿用既有隊編查詢邏輯，示意用生成資料，不代表與本頁人名一致）。
+</footer>
+
+<script src="../app.js?v=25"></script>
+<script>
+(function () {
+  'use strict';
+  var DB = CRM.load();
+  CRM.mountNav('import', DB.meta.dataAsOf);
+
+  /* ── deterministic 假資料工具（禁 Math.random / Date.now / 無參數 new Date） ── */
+  function rnd(s, k) { var x = Math.sin(s * 12.9898 + (k || 1) * 78.233) * 43758.5453; return x - Math.floor(x); }
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+  function baseDate() { var p = DB.meta.dataAsOf.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function shiftDate(deltaDaysBefore) { var b = baseDate(); return new Date(b.getFullYear(), b.getMonth(), b.getDate() - deltaDaysBefore); }
+  function ymd(dt) { return dt.getFullYear() + '-' + p2(dt.getMonth() + 1) + '-' + p2(dt.getDate()); }
+  function ymdhm(deltaDaysBefore, hh, mm) { return ymd(shiftDate(deltaDaysBefore)) + ' ' + p2(hh) + ':' + p2(mm); }
+
+  var SURNAMES = ['王', '林', '張', '李', '陳', '黃', '吳', '劉', '蔡', '楊', '鄭', '許'];
+  var GIVEN = ['志明', '淑惠', '建宏', '雅婷', '俊傑', '美玲', '文雄', '麗華', '家豪', '怡君', '思穎', '冠宇'];
+  function genName(seed) { var r = function (k) { return rnd(seed, k); }; return SURNAMES[Math.floor(r(1) * SURNAMES.length)] + GIVEN[Math.floor(r(2) * GIVEN.length)]; }
+
+  var ALL_BRANCHES = (function () {
+    var out = [];
+    Object.keys(DB.branchRegions).forEach(function (region) {
+      DB.branchRegions[region].forEach(function (b) { out.push({ branch: b, region: region }); });
+    });
+    return out;
+  })();
+  function genPerson(seed, codeBase) {
+    var r = function (k) { return rnd(seed, k); };
+    var pick = ALL_BRANCHES[Math.floor(r(1) * ALL_BRANCHES.length)];
+    var code = String(codeBase + Math.floor(r(2) * 89999));
+    return { code: code, name: genName(seed + 7), branch: pick.branch, region: pick.region };
+  }
+
+  /* ── §1 資料類型定義 ── */
+  var DATASETS = [
+    { v: 'task_details', t: '任務明細', hint: '自然鍵：任務編號（task_id）' },
+    { v: 'online_records', t: '上線紀錄', hint: '自然鍵：隊編＋日期＋時段' },
+    { v: 'members', t: '隊員主檔', hint: '隊管系統逐組織匯出、腳本合併全量後傳入（任一組織缺→當日不傳，防誤標退隊）；隊編字串保留前導零；branch 拆複合前綴；不含地址/車牌/電話等欄（個資最小化）' },
+    { v: 'activity_registrations', t: '活動報名', hint: '自然鍵：活動 ID＋隊編；含報名方式（預先報名／外撥同意-次週／外撥同意-即刻）與同意／通知日（外撥兩情境必填，起算日由系統推導，REQ-ACT-016）' },
+    { v: 'activity_results', t: '活動每日結算檔', hint: '同仁每日結算一批（隊員、任務數、金額）；達標與獎勵之唯一事實來源。欄位：member_code、date（結算日）、actual_completed、reward_amount、source（時段）、activity_name（REQ-ACT-017／020）' },
+    { v: 'driver_inquiry_stats', t: '司機承接統計', hint: '自然鍵：隊編＋日期' },
+    { v: 'outbound_history', t: '外撥歷史', hint: '自然鍵：外撥紀錄 ID（隊編＋聯繫時間）' },
+    { v: 'fleet_dictionary', t: '車隊對照表', hint: '自然鍵 fleet_name・全量替換快照・來源 Tableau 車隊表（注意來源欄名錯位：『車隊』欄=類別、『隊員所屬分公司』欄=車隊名）' }
+  ];
+  var DATASET_LABEL = {};
+  DATASETS.forEach(function (d) { DATASET_LABEL[d.v] = d.t; });
+  var TEMPLATES = ['標準範本 v3（預設）', '舊版 Excel 匯出格式', '自訂範本 A（新北分公司）'];
+
+  var dsSel = document.getElementById('f-dataset');
+  dsSel.innerHTML = DATASETS.map(function (d) { return '<option value="' + d.v + '"' + (d.v === 'members' ? ' selected' : '') + '>' + d.v + '｜' + d.t + '</option>'; }).join('');
+  document.getElementById('f-template').innerHTML = TEMPLATES.map(function (t, i) { return '<option' + (i === 0 ? ' selected' : '') + '>' + t + '</option>'; }).join('');
+  document.getElementById('f-activity').innerHTML = DB.activities.map(function (a) { return '<option value="' + a.id + '">' + a.id + '｜' + a.name + '</option>'; }).join('');
+
+  function updateDatasetHint() {
+    var v = dsSel.value;
+    var found = DATASETS.filter(function (d) { return d.v === v; })[0];
+    document.getElementById('dataset-hint').textContent = found ? found.hint : '';
+    var showActivity = (v === 'activity_registrations' || v === 'activity_results');
+    document.getElementById('target-activity-wrap').style.display = showActivity ? '' : 'none';
+  }
+  dsSel.addEventListener('change', updateDatasetHint);
+  updateDatasetHint();
+
+  document.getElementById('btn-manage-template').addEventListener('click', function () {
+    CRM.toast('原型示意：正式版可於此新增／編輯／刪除欄位映射範本（REQ-IMP-002）');
+  });
+  function dzActivate() { CRM.toast('原型示意：正式版將解析檔案並加入下方佇列（單檔上限 50 萬列或 100MB）'); }
+  var dz = document.getElementById('dropzone');
+  dz.addEventListener('click', dzActivate);
+  dz.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dzActivate(); } });
+
+  /* ── §2 匯入佇列（4 檔示意） ── */
+  document.getElementById('queue-info').innerHTML = CRM.infoIcon('等待中／處理中／成功／失敗四種狀態；處理中顯示即時解析進度（REQ-IMP-005）');
+  var QUEUE = [
+    { file: 'members_full_20260707.csv', type: 'members', size: '3.1 MB', rows: 21847, status: 'processing', progress: 62 },
+    { file: 'task_details_20260706.csv', type: 'task_details', size: '18.6 MB', rows: 88204, status: 'waiting', note: '排隊中，等待前一檔處理完成' },
+    { file: 'activity_results_ACT202607A.xlsx', type: 'activity_results', size: '0.8 MB', rows: 1284, status: 'success', note: '完成於 ' + ymdhm(-1, 6, 32) },
+    { file: 'online_records_20260706.csv', type: 'online_records', size: '106.4 MB', rows: 612340, status: 'fail', note: '超過單檔 100MB／50 萬列上限，拒收（REQ-IMP-014）' }
+  ];
+  var STATUS_BADGE = { waiting: ['badge-wait', '等待中'], processing: ['badge-processing', '處理中'], success: ['badge-success', '成功'], fail: ['badge-fail', '失敗'] };
+  function renderQueue() {
+    var html = QUEUE.map(function (q) {
+      var b = STATUS_BADGE[q.status];
+      var noteHtml;
+      if (q.status === 'processing') {
+        noteHtml = '<span class="progress-track" role="progressbar" aria-valuenow="' + q.progress + '" aria-valuemin="0" aria-valuemax="100" aria-label="處理進度 ' + q.progress + '%"><span class="progress-fill" style="width:' + q.progress + '%"></span></span><span class="progress-label">' + q.progress + '%</span>';
+      } else {
+        noteHtml = q.note || '—';
+      }
+      return '<tr><td>' + q.file + '</td><td>' + DATASET_LABEL[q.type] + '</td><td class="num">' + q.size + '</td><td class="num">' + CRM.fmt(q.rows) + '</td>' +
+        '<td><span class="badge ' + b[0] + '">' + b[1] + '</span></td><td>' + noteHtml + '</td></tr>';
+    }).join('');
+    document.getElementById('queue-tbody').innerHTML = html;
+  }
+  renderQueue();
+
+  /* ── §3 匯入結果（members 主場景） ── */
+  document.getElementById('result-info').innerHTML = CRM.infoIcon('全量快照口徑：名冊缺席自動標退隊、再出現自動復原正式、漏傳誤標下次匯入自動復原、歷史統計不受影響（REQ-IMP-015）');
+  document.getElementById('result-batch-note').textContent = '批次來源：members_full_20260707.csv・匯入時間 ' + ymdhm(-1, 6, 30) + '・資料截至 ' + DB.meta.dataAsOf;
+
+  var ADDED = [];
+  for (var ai = 0; ai < 12; ai++) ADDED.push(genPerson(300 + ai, 700000));
+  var LEFT = [];
+  for (var li = 0; li < 5; li++) LEFT.push(genPerson(600 + li, 810000));
+
+  function renderResultLists() {
+    document.getElementById('result-summary').innerHTML =
+      '<div class="stat-card add"><div class="k">本次新增</div><div class="v">' + ADDED.length + ' 人</div></div>' +
+      '<div class="stat-card leave"><div class="k">標記退隊</div><div class="v">' + LEFT.length + ' 人</div></div>';
+    function addedRow(m) {
+      return '<tr class="mrow" tabindex="0" data-code="' + m.code + '"><td>' + m.code + '</td><td>' + CRM.maskName(m.name) + '</td><td>' + m.branch + '</td><td>' + m.region + '</td></tr>';
+    }
+    function leftRow(m) {
+      return '<tr class="mrow" tabindex="0" data-code="' + m.code + '"><td>' + m.code + '</td><td>' + CRM.maskName(m.name) + '</td><td>' + m.branch + '</td><td>' + DB.meta.dataAsOf + '</td></tr>';
+    }
+    var html = '<details class="exp-list" open><summary>新增名單（' + ADDED.length + ' 人）</summary><div class="exp-body chart-wrap"><table aria-label="本次新增隊員清單">' +
+      '<thead><tr><th>隊編</th><th>姓名</th><th>車隊</th><th>地區</th></tr></thead><tbody>' + ADDED.map(addedRow).join('') + '</tbody></table></div></details>' +
+      '<details class="exp-list"><summary>退隊名單（' + LEFT.length + ' 人）</summary><div class="exp-body chart-wrap"><table aria-label="本次標記退隊隊員清單">' +
+      '<thead><tr><th>隊編</th><th>姓名</th><th>車隊</th><th>退隊日</th></tr></thead><tbody>' + LEFT.map(leftRow).join('') + '</tbody></table></div></details>';
+    document.getElementById('result-lists').innerHTML = html;
+    document.querySelectorAll('#result-lists .mrow').forEach(function (row) {
+      function go() { window.location.href = 'profile.html?m=' + encodeURIComponent(row.dataset.code); }
+      row.addEventListener('click', go);
+      row.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    });
+  }
+
+  /* ── §3.5 fleet_dictionary 匯入結果（REQ-SET-007／REQ-IMP-017：全量替換快照） ── */
+  document.getElementById('fleetdict-info').innerHTML = CRM.infoIcon('全量替換快照口徑：照單全收含分公司統稱列與保留類；變更不回溯重算每日快照');
+  document.getElementById('fleetdict-batch-note').textContent = '批次來源：fleet_dictionary_20260707.xlsx（Tableau 車隊表匯出）・匯入時間 ' + ymdhm(-1, 7, 5) + '・資料截至 ' + DB.meta.dataAsOf;
+  var FLEET_ADDED = [{ name: '大都會苗栗車隊', category: '小黃', region: '台中' }];
+  var FLEET_REMOVED = [];
+  var FLEET_CHANGED = [{ name: '新利達車隊', field: '地區', from: '台北', to: '桃園' }];
+  function renderFleetDictResult() {
+    document.getElementById('fleetdict-summary').innerHTML =
+      '<div class="stat-card add"><div class="k">新增車隊</div><div class="v">' + FLEET_ADDED.length + '</div></div>' +
+      '<div class="stat-card leave"><div class="k">移除車隊</div><div class="v">' + FLEET_REMOVED.length + '</div></div>' +
+      '<div class="stat-card change"><div class="k">地區或類別變更</div><div class="v">' + FLEET_CHANGED.length + '</div></div>';
+    var addedRows = FLEET_ADDED.map(function (f) {
+      return '<tr><td>' + f.name + '</td><td>' + f.category + '</td><td>' + f.region + '</td></tr>';
+    }).join('');
+    var changedRows = FLEET_CHANGED.map(function (f) {
+      return '<tr><td>' + f.name + '</td><td>' + f.field + '</td><td>' + f.from + '</td><td>' + f.to + '</td></tr>';
+    }).join('');
+    var html = '<details class="exp-list" open><summary>新增車隊（' + FLEET_ADDED.length + '）</summary><div class="exp-body chart-wrap"><table aria-label="本次新增車隊清單">' +
+      '<thead><tr><th>車隊名稱</th><th>類別</th><th>地區</th></tr></thead><tbody>' + (addedRows || '<tr><td colspan="3">無</td></tr>') + '</tbody></table></div></details>' +
+      '<details class="exp-list"><summary>地區或類別變更（' + FLEET_CHANGED.length + '）</summary><div class="exp-body chart-wrap"><table aria-label="本次地區或類別變更車隊清單">' +
+      '<thead><tr><th>車隊名稱</th><th>變更項目</th><th>原值</th><th>新值</th></tr></thead><tbody>' + (changedRows || '<tr><td colspan="4">無</td></tr>') + '</tbody></table></div></details>';
+    document.getElementById('fleetdict-lists').innerHTML = html;
+  }
+
+  /* ── §3.6 activity_results（活動每日結算檔）匯入結果（REQ-ACT-023⑥／REQ-ACT-015 結算補入） ── */
+  document.getElementById('actresult-info').innerHTML = CRM.infoIcon('每日結算為達標與獎勵之唯一事實來源，系統只彙總不試算；reward_amount 允許負值（沖銷／調整），單筆絕對值上限預設 100,000（管理員可調），超限列入錯誤清單（REQ-ACT-023⑥）');
+  document.getElementById('actresult-batch-note').textContent = '批次來源：activity_results_ACT202607A.xlsx・匯入時間 ' + ymdhm(-1, 6, 32) + '・資料截至 ' + DB.meta.dataAsOf;
+  var ACTRESULT_SUMMARY = { people: 1284, total: 386400, negativeRows: 6 };
+  var ACTRESULT_ERRORS = [
+    { line: 812, reason: 'reward_amount 超限：120,000（單筆絕對值上限 100,000，REQ-ACT-023⑥）' }
+  ];
+  var ACTRESULT_WARNINGS = [
+    { code: '449102', reason: '隊編不在目前 TA 名單，已自動納入為「結算補入」TA（REQ-ACT-015 SR-RT-140）' }
+  ];
+  function renderActResult() {
+    document.getElementById('actresult-summary').innerHTML =
+      '<div class="stat-card"><div class="k">結算人數</div><div class="v">' + CRM.fmt(ACTRESULT_SUMMARY.people) + ' 人</div></div>' +
+      '<div class="stat-card"><div class="k">結算總額</div><div class="v">$' + CRM.fmt(ACTRESULT_SUMMARY.total) + '</div></div>' +
+      '<div class="stat-card change"><div class="k">負值筆數</div><div class="v">' + ACTRESULT_SUMMARY.negativeRows + ' 筆</div></div>';
+    var html = '<div class="warn-banner">⚠️ 請確認：以上為本批結算彙總（人數／總額／負值筆數），請執行者核對金額與沖銷／調整筆數無誤後再放行（REQ-ACT-023⑥）</div>' +
+      '<div class="chart-wrap"><table aria-label="reward_amount 超限錯誤清單"><thead><tr><th>列號</th><th>原因</th></tr></thead><tbody>' +
+      ACTRESULT_ERRORS.map(function (r) { return '<tr><td class="num">' + CRM.fmt(r.line) + '</td><td>' + r.reason + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' +
+      '<div class="chart-wrap" style="margin-top:12px"><table aria-label="結算補入 TA 警告清單"><thead><tr><th>隊編</th><th>原因</th></tr></thead><tbody>' +
+      ACTRESULT_WARNINGS.map(function (w) { return '<tr><td>' + w.code + '</td><td>' + w.reason + '</td></tr>'; }).join('') +
+      '</tbody></table></div>';
+    document.getElementById('actresult-lists').innerHTML = html;
+  }
+
+  /* ── §4 隊編消歧警告（REQ-IMP-016） ── */
+  document.getElementById('disambig-info').innerHTML = CRM.infoIcon('內部代碼為唯一鍵、隊編可回收；同隊編再現姓名相同→回隊接回歷史，姓名不同→視為新人接手；正式隊員任內姓名變動則列入待判定清單');
+  var caseBStatus = 'pending';
+  function renderDisambig() {
+    var caseA = { code: '881205', oldName: '陳大明', newName: '王志成', branch: '台北分公司' };
+    var caseB = { code: '452201', oldName: '林淑惠', newName: '林淑雯', branch: '幸福車隊' };
+    var html = '';
+    html += '<div class="disambig-row"><div class="disambig-head"><span class="badge badge-auto">新人接手（系統自動判定）</span><span style="color:var(--meta);font-size:12.5px">隊編 ' + caseA.code + '・' + caseA.branch + '</span></div>' +
+      '<div class="disambig-flow">前任持有人 <strong>' + CRM.maskName(caseA.oldName) + '</strong> → 本次名冊 <strong>' + CRM.maskName(caseA.newName) + '</strong>（同隊編、姓名不同）</div>' +
+      '<div class="disambig-note">系統自動建立新內部代碼並接手此隊編；前任歷史依原內部代碼封存、不繼承給新人；Profile 頁可切換檢視前任持有人歷史。</div></div>';
+    var bBadge = caseBStatus === 'pending' ? '<span class="badge badge-pending">待管理員判定</span>' :
+      (caseBStatus === 'rename' ? '<span class="badge badge-resolved">已判定：改名（同一人）</span>' : '<span class="badge badge-resolved">已判定：換人（新人接手）</span>');
+    html += '<div class="disambig-row"><div class="disambig-head">' + bBadge + '<span style="color:var(--meta);font-size:12.5px">隊編 ' + caseB.code + '・' + caseB.branch + '</span></div>' +
+      '<div class="disambig-flow">主檔曾用姓名 <strong>' + CRM.maskName(caseB.oldName) + '</strong> → 本次名冊 <strong>' + CRM.maskName(caseB.newName) + '</strong>（同隊編、正式隊員任內姓名變動）</div>' +
+      '<div class="disambig-note">系統無法自動判定是否為同一人，需管理員確認。</div>' +
+      '<div class="disambig-actions">' +
+      '<button class="btn btn-sm" type="button" id="btn-rename" ' + (caseBStatus !== 'pending' ? 'disabled' : '') + '>改名（同一人）</button>' +
+      '<button class="btn btn-sm" type="button" id="btn-newperson" ' + (caseBStatus !== 'pending' ? 'disabled' : '') + '>換人（新人接手）</button>' +
+      '</div></div>';
+    document.getElementById('disambig-body').innerHTML = html;
+    if (caseBStatus === 'pending') {
+      document.getElementById('btn-rename').addEventListener('click', function () { caseBStatus = 'rename'; renderDisambig(); CRM.toast('已判定並寫入審計：改名（同一人）'); });
+      document.getElementById('btn-newperson').addEventListener('click', function () { caseBStatus = 'newperson'; renderDisambig(); CRM.toast('已判定並寫入審計：換人（新人接手）'); });
+    }
+  }
+
+  /* ── §5 字典查無對照（REQ-SET-006／007） ── */
+  document.getElementById('dict-info').innerHTML = CRM.infoIcon('匯入資料中出現字典查無對照之字串，先入庫並標記警告：行政區（district）待管理員於系統設定補齊後自動生效；車隊（branch）待下一次車隊對照表更新（後台不提供人工補齊，REQ-SET-007）');
+  function renderDict() {
+    var html = '<div class="dict-row"><div><div class="dict-raw">行政區查無對照：「三峽區」<span class="badge badge-pending" style="margin-left:8px">district</span></div>' +
+      '<div class="dict-meta">影響 47 筆任務明細／上線紀錄（REQ-SET-006）</div></div>' +
+      '<a class="link-btn" href="settings.html">前往系統設定補齊 →</a></div>' +
+      '<div class="dict-row"><div><div class="dict-raw">車隊查無對照：「阿波羅車隊」<span class="badge badge-pending" style="margin-left:8px">branch</span></div>' +
+      '<div class="dict-meta">影響 12 筆隊員主檔（REQ-SET-007）</div></div>' +
+      '<span style="color:var(--meta);font-size:12.5px;line-height:1.6;max-width:320px;text-align:right">待下一次車隊對照表更新（後台不提供人工補齊，REQ-SET-007）；期間該隊員地區歸「未對照」分組</span></div>';
+    document.getElementById('dict-body').innerHTML = html;
+  }
+
+  /* ── §6 task_details 匯入失敗（全有全無） ── */
+  function renderTaskFail() {
+    var errRows = [
+      { line: 128, reason: '任務編號重複於同檔內（違反自然鍵唯一性）' },
+      { line: 4032, reason: '日期格式錯誤，應為 YYYY-MM-DD' },
+      { line: 60021, reason: '隊編對應不到任何隊員主檔（含已退隊隊員）' }
+    ];
+    var html = '<div class="warn-banner">⚠️ 驗證失敗，整檔不入庫（全有全無，REQ-IMP-003）：task_details_20260706.csv</div>' +
+      '<button class="btn" type="button" id="btn-view-errors">查看錯誤報告</button>' +
+      '<div class="chart-wrap" id="err-report-wrap" style="display:none;margin-top:14px"><table aria-label="錯誤報告"><thead><tr><th>列號</th><th>原因</th></tr></thead><tbody>' +
+      errRows.map(function (r) { return '<tr><td class="num">' + CRM.fmt(r.line) + '</td><td>' + r.reason + '</td></tr>'; }).join('') +
+      '</tbody></table></div>';
+    document.getElementById('taskfail-body').innerHTML = html;
+    document.getElementById('btn-view-errors').addEventListener('click', function () {
+      var wrap = document.getElementById('err-report-wrap');
+      var show = wrap.style.display === 'none';
+      wrap.style.display = show ? '' : 'none';
+      this.textContent = show ? '隱藏錯誤報告' : '查看錯誤報告';
+    });
+  }
+
+  var resultRendered = false;
+  function ensureResultRendered() {
+    if (resultRendered) return;
+    renderResultLists(); renderFleetDictResult(); renderActResult(); renderDisambig(); renderDict(); renderTaskFail();
+    resultRendered = true;
+  }
+
+  /* ── §7 匯入歷史（REQ-IMP-006／011／012） ── */
+  var HISTORY = [
+    { file: 'members_full_20260707.csv', type: 'members', executor: '匯入排程(system)', delta: -1, sh: [6, 28], eh: [6, 30], result: 'success', rows: 21847 },
+    { file: 'task_details_20260706.csv', type: 'task_details', executor: '匯入排程(system)', delta: 0, sh: [7, 10], eh: [7, 14], result: 'fail', rows: 0 },
+    { file: 'activity_results_ACT202607A.xlsx', type: 'activity_results', executor: '李專員', delta: 0, sh: [6, 30], eh: [6, 32], result: 'success', rows: 1284 },
+    { file: 'online_records_20260706.csv', type: 'online_records', executor: '匯入排程(system)', delta: 0, sh: [5, 40], eh: [5, 41], result: 'fail', rows: 0 },
+    { file: 'driver_inquiry_stats_20260705.csv', type: 'driver_inquiry_stats', executor: '陳分析師', delta: 1, sh: [9, 5], eh: [9, 8], result: 'success', rows: 15420 },
+    { file: 'outbound_history_20260703.csv', type: 'outbound_history', executor: '王營管', delta: 3, sh: [10, 12], eh: [10, 14], result: 'success', rows: 3208 },
+    { file: 'activity_registrations_ACT202607B.xlsx', type: 'activity_registrations', executor: '李專員', delta: 5, sh: [9, 0], eh: [9, 1], result: 'success', rows: 962 },
+    { file: 'members_full_20260630.csv', type: 'members', executor: '匯入排程(system)', delta: 6, sh: [6, 20], eh: [6, 22], result: 'success', rows: 21802 }
+  ];
+  function renderHistory() {
+    var html = HISTORY.map(function (h) {
+      var badge = h.result === 'success' ? '<span class="badge badge-success">成功</span>' : '<span class="badge badge-fail">失敗</span>';
+      return '<tr><td>' + h.file + '</td><td>' + DATASET_LABEL[h.type] + '</td><td>' + h.executor + '</td>' +
+        '<td>' + ymdhm(h.delta, h.sh[0], h.sh[1]) + '</td><td>' + ymdhm(h.delta, h.eh[0], h.eh[1]) + '</td>' +
+        '<td>' + badge + '</td><td class="num">' + (h.rows ? CRM.fmt(h.rows) : '—') + '</td></tr>';
+    }).join('');
+    document.getElementById('history-tbody').innerHTML = html;
+    renderStaleChip();
+  }
+  function renderStaleChip() {
+    var stale = document.getElementById('stale-toggle').checked;
+    var chip = document.getElementById('history-chip');
+    var banner = document.getElementById('stale-banner');
+    if (stale) {
+      chip.innerHTML = '<span class="data-chip" style="background:rgba(181,51,51,.12);color:var(--danger)">資料截至 ' + DB.meta.dataAsOf + '（模擬：已 3 天未更新）</span>';
+      banner.innerHTML = '<div class="warn-banner">⚠️ 資料已超過 2 天未成功匯入，請確認匯入排程是否正常（REQ-IMP-011／012）</div>';
+    } else {
+      chip.innerHTML = '<span class="data-chip">資料截至 ' + DB.meta.dataAsOf + '</span>';
+      banner.innerHTML = '';
+    }
+  }
+  document.getElementById('stale-toggle').addEventListener('change', renderStaleChip);
+  var historyRendered = false;
+  function ensureHistoryRendered() { if (historyRendered) return; renderHistory(); historyRendered = true; }
+
+  /* ── §8 批次管理（REQ-IMP-010） ── */
+  document.getElementById('batch-info').innerHTML = CRM.infoIcon('刪除批次僅移除該批次之列；已被較新批次覆蓋之列不受影響，相關統計將回滾（admin.delete）');
+  var BATCHES = [
+    { id: 'M-088', type: 'members', delta: -1, h: [6, 30], executor: '匯入排程(system)', rows: 21847, latest: true },
+    { id: 'M-087', type: 'members', delta: 6, h: [6, 22], executor: '匯入排程(system)', rows: 21802, latest: false },
+    { id: 'T-233', type: 'task_details', delta: 1, h: [9, 8], executor: '陳分析師', rows: 86910, latest: true },
+    { id: 'T-232', type: 'task_details', delta: 8, h: [9, 5], executor: '陳分析師', rows: 85204, latest: false },
+    { id: 'AR-014', type: 'activity_results', delta: 0, h: [6, 32], executor: '李專員', rows: 1284, latest: true },
+    { id: 'AR-013', type: 'activity_results', delta: 16, h: [10, 11], executor: '李專員', rows: 1190, latest: false }
+  ];
+  function renderBatches() {
+    var html = BATCHES.map(function (b) {
+      var statusBadge = b.latest ? '<span class="badge badge-latest">最新來源批次</span>' : '<span class="badge badge-covered">已被覆蓋</span>';
+      var actionCell = b.latest
+        ? '<button class="btn btn-sm btn-danger" type="button" data-del="' + b.id + '">刪除批次</button>'
+        : '<button class="btn btn-sm" type="button" disabled title="僅最新來源批次可移除">刪除批次</button>';
+      return '<tr data-row="' + b.id + '"><td>' + b.id + '</td><td>' + DATASET_LABEL[b.type] + '</td><td>' + ymdhm(b.delta, b.h[0], b.h[1]) + '</td>' +
+        '<td>' + b.executor + '</td><td class="num">' + CRM.fmt(b.rows) + '</td><td>' + statusBadge + '</td><td>' + actionCell + '</td></tr>';
+    }).join('');
+    document.getElementById('batch-tbody').innerHTML = html;
+    document.querySelectorAll('#batch-tbody [data-del]').forEach(function (btn) {
+      btn.addEventListener('click', function () { confirmDeleteBatch(btn.dataset.del); });
+    });
+  }
+  function confirmDeleteBatch(id) {
+    var b = BATCHES.filter(function (x) { return x.id === id; })[0];
+    if (!b) return;
+    openModal('刪除批次 ' + b.id,
+      '<p>即將刪除批次 <strong>' + b.id + '</strong>（' + DATASET_LABEL[b.type] + '）。</p><ul>' +
+      '<li>將移除本批 ' + CRM.fmt(b.rows) + ' 列</li>' +
+      '<li>已被較新批次覆蓋之列不受影響</li>' +
+      '<li>相關統計將回滾</li></ul>',
+      '確認刪除',
+      function () {
+        BATCHES = BATCHES.filter(function (x) { return x.id !== id; });
+        renderBatches();
+        CRM.toast('已刪除批次 ' + id + '，並寫入審計');
+      });
+  }
+  var batchRendered = false;
+  function ensureBatchRendered() { if (batchRendered) return; renderBatches(); batchRendered = true; }
+
+  /* ── 通用頁內 modal（禁 alert/confirm/prompt） ── */
+  function openModal(titleText, bodyHtml, confirmLabel, onConfirm) {
+    var ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    ov.innerHTML = '<div class="modal-box" role="dialog" aria-modal="true" aria-label="' + titleText + '">' +
+      '<div class="modal-head"><h3>' + titleText + '</h3><button type="button" class="modal-close" aria-label="關閉">✕</button></div>' +
+      '<div class="modal-body">' + bodyHtml + '</div>' +
+      '<div class="modal-foot"><button type="button" class="btn" id="modal-cancel">取消</button>' +
+      '<button type="button" class="btn btn-danger" id="modal-confirm">' + confirmLabel + '</button></div></div>';
+    document.body.appendChild(ov);
+    function close() { ov.remove(); document.removeEventListener('keydown', escHandler); }
+    function escHandler(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', escHandler);
+    ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+    ov.querySelector('.modal-close').addEventListener('click', close);
+    ov.querySelector('#modal-cancel').addEventListener('click', close);
+    ov.querySelector('#modal-confirm').addEventListener('click', function () { onConfirm(); close(); });
+    ov.querySelector('.modal-close').focus();
+  }
+
+  /* ── tabs ── */
+  var PANES = {
+    upload: ['pane-upload'],
+    result: ['pane-result', 'pane-fleetdict', 'pane-actresult', 'pane-disambig', 'pane-dict', 'pane-taskfail'],
+    history: ['pane-history'],
+    batch: ['pane-batch', 'pane-batch-note']
+  };
+  function switchTab(key) {
+    document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.tab === key)); });
+    Object.keys(PANES).forEach(function (k) {
+      PANES[k].forEach(function (id) { document.getElementById(id).hidden = (k !== key); });
+    });
+    if (key === 'result') ensureResultRendered();
+    if (key === 'history') ensureHistoryRendered();
+    if (key === 'batch') ensureBatchRendered();
+  }
+  document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { switchTab(t.dataset.tab); }); });
+
+  /* ── 異常狀態切換器 ── */
+  CRM.mountStateSwitcher(function (state) {
+    document.getElementById('content-normal').style.display = (state === 'normal') ? '' : 'none';
+    ['empty', 'loading', 'error', 'forbidden'].forEach(function (k) {
+      document.getElementById('st-' + k).classList.toggle('show', state === k);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

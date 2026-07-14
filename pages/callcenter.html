@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>客服紀錄｜55688 隊員 CRM</title>
+<link rel="stylesheet" href="../tokens.css?v=25">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: var(--leading-body); min-height: 100dvh; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; }
+  :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 8px; }
+
+  #crm-nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border-soft); }
+  .nav-inner { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--container-gutter-desktop); display: flex; align-items: center; gap: 20px; height: 60px; }
+  .nav-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .brand-badge { background: var(--brand-55688); color: var(--brand-55688-on); font-weight: 700; font-style: italic; padding: 3px 9px; border-radius: 8px; font-size: 15px; letter-spacing: .5px; }
+  .brand-title { font-family: var(--font-display); font-weight: 500; font-size: 17px; }
+  .nav-links { display: flex; gap: 2px; overflow-x: auto; flex: 1; }
+  .nav-link { padding: 8px 11px; border-radius: 8px; font-size: 15px; color: var(--muted); white-space: nowrap; transition: color var(--motion-fast), background var(--motion-fast); min-height: 36px; display: inline-flex; align-items: center; }
+  .nav-link:hover { color: var(--fg); background: var(--surface-warm); }
+  .nav-link.active { color: var(--fg); font-weight: 500; box-shadow: inset 0 -2px 0 var(--brand-55688); border-radius: 8px 8px 0 0; }
+  .nav-link.pending { opacity: .55; }
+  .nav-meta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .data-chip { font-size: 12.5px; color: var(--muted); background: var(--surface-warm); padding: 4px 10px; border-radius: 9999px; }
+  .nav-user { font-size: 14px; color: var(--fg-2); }
+
+  .page { max-width: var(--container-max); margin: 0 auto; padding: 28px var(--container-gutter-desktop) 96px; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  h1 { font-family: var(--font-display); font-weight: 500; font-size: 32px; line-height: 1.2; }
+  .page-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .role-bar { display: flex; align-items: center; gap: 8px; }
+  .role-bar label { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  select {
+    appearance: none; background: var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%235e5d59" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+    border: 1px solid var(--border-soft); border-radius: 12px; padding: 8px 32px 8px 14px;
+    font-size: 14px; color: var(--fg); cursor: pointer; min-height: 40px; font-family: inherit;
+  }
+  select:hover { border-color: #d1cfc5; }
+  select:disabled { opacity: .5; cursor: not-allowed; }
+
+  .tabs { display: flex; gap: 4px; background: var(--surface-warm); border-radius: 12px; padding: 4px; width: fit-content; max-width: 100%; overflow-x: auto; margin-bottom: 20px; }
+  .tab { border: none; background: transparent; padding: 9px 16px; border-radius: 9px; font-size: 14.5px; color: var(--muted); cursor: pointer; white-space: nowrap; min-height: 40px; transition: background var(--motion-fast), color var(--motion-fast); }
+  .tab[aria-selected="true"] { background: var(--surface); color: var(--fg); font-weight: 500; box-shadow: 0 0 0 1px var(--border-soft); }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .panel-title { font-family: var(--font-display); font-weight: 500; font-size: 19px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .panel-note { color: var(--meta); font-size: 12.5px; line-height: 1.6; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer; border-radius: 8px; font-size: 13.5px; padding: 8px 14px; min-height: 40px; background: var(--surface-warm); color: var(--fg-2); box-shadow: 0 0 0 1px #d1cfc5; transition: background var(--motion-fast); }
+  .btn:hover { background: #e0ddd1; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: var(--accent-on); box-shadow: 0 0 0 1px var(--accent); }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .chip-btn { border: 1px solid var(--border-soft); background: var(--surface); border-radius: 9999px; padding: 5px 14px; font-size: 12.5px; color: var(--fg-2); cursor: pointer; min-height: 30px; }
+  .chip-btn:hover { border-color: var(--accent); color: var(--accent); }
+  /* grid 直接子元素防 375px 橫向溢出（鐵則） */
+  .proj-grid > *, .stat-grid > *, .agent-progress > *, .agent-row > *, .field-chips-wrap > *, .form-grid > *, .timeline > *, .tl-item > * { min-width: 0; }
+
+  /* 專案卡列表 */
+  .proj-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .proj-grid { grid-template-columns: 1fr; } }
+  .proj-card { display: block; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; cursor: pointer; transition: box-shadow var(--motion-fast); font-family: inherit; }
+  .proj-card:hover { box-shadow: var(--elev-raised); }
+  .proj-card[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--accent); }
+  .proj-name { font-weight: 500; font-size: 15px; margin: 8px 0 4px; }
+  .proj-meta { font-size: 12px; color: var(--meta); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 11.5px; font-weight: 500; }
+  .badge-draft { background: var(--surface-warm); color: var(--fg-2); }
+  .badge-active { background: rgba(23,163,74,.12); color: var(--success); }
+  .badge-closed { background: var(--border-soft); color: var(--muted); }
+
+  /* 統計卡 */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 6px; }
+  @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .stat-card .k { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  .stat-card .v { font-size: 21px; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .stat-card .sub { font-size: 11.5px; color: var(--meta); margin-top: 5px; line-height: 1.5; }
+
+  /* 客服分配進度 */
+  .agent-progress { display: grid; gap: 9px; }
+  .agent-row { display: grid; grid-template-columns: 96px 1fr 64px; gap: 10px; align-items: center; font-size: 13px; }
+  .agent-row .bar-track { background: var(--surface-warm); border-radius: 9999px; height: 9px; overflow: hidden; }
+  .agent-row .bar-fill { background: var(--accent); height: 100%; border-radius: 9999px; }
+  .agent-row .cnt { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* 欄位設定 chips */
+  .field-chips-wrap { display: grid; gap: 10px; }
+  .field-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .fg-label { font-size: 12px; color: var(--meta); min-width: 62px; }
+  .field-chip { border-radius: 9999px; padding: 4px 12px; font-size: 12px; white-space: nowrap; }
+  .field-chip.fixed { background: rgba(201,100,66,.1); color: var(--accent); }
+  .field-chip.hideable { background: var(--surface-warm); color: var(--fg-2); }
+  .field-chip.hideable::after { content: '（可隱藏）'; color: var(--meta); font-size: 10.5px; }
+  .field-chip.custom { background: rgba(125,140,92,.14); color: #5c6b3f; }
+
+  /* 表格 */
+  .chart-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; background: var(--bg); white-space: nowrap; }
+  tbody tr:hover { background: var(--bg); }
+  .mrow { cursor: pointer; }
+  .mrow:focus-visible { box-shadow: var(--focus-ring) inset; }
+  .active-row { background: rgba(201,100,66,.08); }
+  .warn-badge { background: rgba(181,51,51,.08); color: var(--danger); border-radius: 9999px; padding: 2px 8px; font-size: 10.5px; margin-left: 6px; white-space: nowrap; }
+
+  /* 逐筆撥打工作卡 */
+  .work-progress { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .work-progress b { color: var(--fg); font-size: 16px; }
+  .work-person { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 2px 0 14px; }
+  .wp-name { font-family: var(--font-display); font-size: 21px; font-weight: 500; }
+  .wp-code { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
+  @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
+  .f-field { display: flex; flex-direction: column; gap: 6px; }
+  .f-field.full { grid-column: 1 / -1; }
+  .f-field label { font-size: 12.5px; color: var(--muted); }
+  .f-field input[type="text"], .f-field input[type="tel"], .f-field select, .f-field textarea {
+    border: 1px solid var(--border-soft); border-radius: 10px; padding: 9px 12px; font-size: 14px; font-family: inherit; background: var(--surface); color: var(--fg); appearance: auto;
+  }
+  .f-field textarea { resize: vertical; min-height: 60px; }
+  .radio-row, .check-row { display: flex; gap: 14px; flex-wrap: wrap; padding-top: 4px; }
+  .radio-row label, .check-row label { display: flex; align-items: center; gap: 5px; font-size: 13.5px; color: var(--fg-2); cursor: pointer; }
+  .radio-row input, .check-row input { width: 16px; height: 16px; }
+
+  /* 搜尋列 */
+  .search-input { flex: 1; min-width: 220px; max-width: 380px; display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: 12px; padding: 0 14px; min-height: 44px; }
+  .search-input svg { color: var(--meta); flex-shrink: 0; }
+  .search-input input { border: none; outline: none; background: transparent; font-size: 14.5px; width: 100%; font-family: inherit; color: var(--fg); }
+  .filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+
+  /* 溝通歷程 timeline */
+  .timeline { display: grid; gap: 0; }
+  .tl-item { display: grid; grid-template-columns: 20px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  .tl-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); margin-top: 5px; box-shadow: 0 0 0 3px rgba(201,100,66,.15); }
+  .tl-item:not(:last-child)::before { content: ''; position: absolute; left: 5.5px; top: 20px; bottom: 0; width: 1.5px; background: var(--border-soft); }
+  .tl-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .tl-date { font-size: 12.5px; color: var(--meta); font-variant-numeric: tabular-nums; }
+  .tl-project { font-weight: 500; font-size: 14.5px; }
+  .tl-content { color: var(--muted); font-size: 13px; margin-top: 3px; line-height: 1.6; }
+  .tl-result { font-size: 11.5px; border-radius: 9999px; padding: 2px 10px; white-space: nowrap; }
+  .tl-result.yes { background: rgba(23,163,74,.1); color: var(--success); }
+  .tl-result.no { background: rgba(181,51,51,.08); color: var(--danger); }
+  .tl-result.na { background: var(--surface-warm); color: var(--fg-2); }
+  .tl-guide { color: var(--meta); font-size: 13.5px; padding: 48px 12px; text-align: center; }
+
+  /* 口徑 info icon */
+  .crm-info { position: relative; display: inline-flex; color: var(--meta); cursor: help; vertical-align: middle; }
+  .crm-info:hover, .crm-info:focus-visible { color: var(--fg-2); }
+  .crm-info-tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--surface); font-size: 12px; line-height: 1.5; padding: 8px 12px; border-radius: 8px; width: max-content; max-width: 280px; opacity: 0; pointer-events: none; transition: opacity var(--motion-fast); z-index: 500; text-align: left; }
+  .crm-info:hover .crm-info-tip, .crm-info:focus-visible .crm-info-tip { opacity: 1; }
+
+  /* 權限灰化遮罩 */
+  .locked { position: relative; }
+  .lock-veil { position: absolute; inset: 0; background: rgba(250,249,245,.88); backdrop-filter: blur(1px); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border-radius: 16px; z-index: 5; text-align: center; padding: 20px; }
+  .lock-icon { font-size: 26px; }
+  .lock-text { font-size: 13px; color: var(--muted); max-width: 320px; line-height: 1.6; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,20,19,.45); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+  .modal-box { background: var(--surface); border-radius: 16px; max-width: 560px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 24px; box-shadow: var(--elev-raised); }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; }
+  .modal-title { font-family: var(--font-display); font-weight: 500; font-size: 19px; }
+  .modal-close { border: none; background: transparent; cursor: pointer; color: var(--muted); padding: 6px; border-radius: 8px; font-size: 15px; line-height: 1; }
+  .modal-close:hover { background: var(--surface-warm); color: var(--fg); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+  .assign-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; cursor: pointer; }
+  .assign-row input { width: 17px; height: 17px; }
+  .assign-preview { margin-top: 12px; padding: 12px; background: var(--surface-warm); border-radius: 10px; font-size: 13px; color: var(--fg-2); line-height: 1.7; }
+
+  .state-layer { display: none; padding: 72px 24px; text-align: center; }
+  .state-layer.show { display: block; }
+  .state-icon { font-size: 40px; margin-bottom: 12px; }
+  .state-title { font-family: var(--font-display); font-weight: 500; font-size: 20px; }
+  .state-desc { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .skeleton { border-radius: 12px; background: linear-gradient(90deg, var(--surface-warm) 25%, #f0eee4 50%, var(--surface-warm) 75%); background-size: 200% 100%; animation: shim 1.4s infinite; }
+  @keyframes shim { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } * { transition-duration: 0ms !important; } }
+
+  footer.proto-note { max-width: var(--container-max); margin: 0 auto; padding: 0 24px 120px; color: var(--meta); font-size: 12.5px; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<nav id="crm-nav" aria-label="全站導覽"></nav>
+
+<main class="page">
+  <div class="page-head">
+    <div>
+      <h1>客服紀錄</h1>
+      <div class="page-sub">外撥專案管理・逐筆撥打作業・跨專案回覆篩選・司機溝通歷程<span id="scope-info-host"></span></div>
+    </div>
+    <div class="role-bar">
+      <label for="role-select">檢視角色</label>
+      <select id="role-select" aria-label="切換檢視角色">
+        <option value="mgr">主管（callrecord.view_all）</option>
+        <option value="cs">客服・王雅婷（callrecord.edit_assigned）</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="客服紀錄功能切換">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" data-tab="dial" type="button">外撥專案</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" data-tab="work" type="button">逐筆撥打</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" data-tab="reply" type="button">回覆篩選</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" data-tab="history" type="button">溝通歷程</button>
+  </div>
+
+  <div id="content-normal">
+
+    <!-- Tab①：外撥專案 -->
+    <section id="pane-dial" role="tabpanel" aria-labelledby="tab-1">
+      <div class="panel">
+        <div class="panel-title">外撥專案<span style="font-weight:400;font-size:12px;color:var(--meta)">點選卡片展開詳情</span></div>
+        <p class="panel-note" style="margin-bottom:14px">狀態僅能單向前進：草稿 → 進行中 → 已結案；已結案唯讀封存（統計保留、不可再編輯）；任何狀態變更寫入審計日誌（REQ-CS-001）</p>
+        <div class="proj-grid" id="proj-grid"></div>
+      </div>
+      <div id="proj-detail-host" style="margin-top: 16px"></div>
+    </section>
+
+    <!-- Tab②：逐筆撥打 -->
+    <section id="pane-work" role="tabpanel" aria-labelledby="tab-2" style="display:none">
+      <div class="panel" id="work-host"></div>
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-title">我的被分配名單<span id="mylist-scope-note" style="font-weight:400;font-size:12px;color:var(--meta)"></span></div>
+        <div class="chart-wrap"><table id="mylist-table" aria-label="我的被分配名單，點列可載入該筆進行回撥或補記錄"></table></div>
+      </div>
+    </section>
+
+    <!-- Tab③：回覆篩選 -->
+    <section id="pane-reply" role="tabpanel" aria-labelledby="tab-3" style="display:none">
+      <div class="panel locked" id="reply-panel">
+        <div class="panel-title">回覆篩選<span id="reply-info-host"></span></div>
+        <div class="filter-row">
+          <select id="rf-field" aria-label="選擇篩選欄位"></select>
+          <select id="rf-value" aria-label="選擇回答值"></select>
+          <button class="btn" id="btn-reply-export" type="button">匯出</button>
+          <button class="btn btn-primary" id="btn-reply-bring" type="button">一鍵帶入新外撥專案名單</button>
+        </div>
+        <div class="chart-wrap"><table id="reply-table" aria-label="跨專案回覆篩選結果"></table></div>
+        <div class="lock-veil" id="reply-veil" aria-live="polite">
+          <div class="lock-icon" aria-hidden="true">🔒</div>
+          <div class="lock-text">需 <b>callrecord.view_all</b> 權限方可跨專案篩選司機回覆；請於右上角切換為「主管」角色檢視（REQ-CS-017／REQ-SEG-005）。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab④：溝通歷程 -->
+    <section id="pane-history" role="tabpanel" aria-labelledby="tab-4" style="display:none">
+      <div class="panel">
+        <div class="panel-title">溝通歷程<span id="history-info-host"></span></div>
+        <div class="filter-row">
+          <div class="search-input" role="search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="tl-code" type="search" placeholder="輸入隊編查詢（可試 123456 / 0103 / 0217）" aria-label="以隊編查詢溝通歷程">
+          </div>
+          <button class="btn btn-primary" id="btn-history-search" type="button">查詢</button>
+        </div>
+        <div id="history-host"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="state-layer" id="st-empty">
+    <div class="state-icon" aria-hidden="true">🗂️</div>
+    <div class="state-title">尚無資料</div>
+    <div class="state-desc">尚未建立任何外撥專案，請先建立專案並上傳名單。</div>
+  </div>
+  <div class="state-layer" id="st-loading" aria-label="載入中">
+    <div style="display:grid;gap:12px;max-width:960px;margin:0 auto">
+      <div class="skeleton" style="height:120px"></div>
+      <div class="skeleton" style="height:280px"></div>
+    </div>
+  </div>
+  <div class="state-layer" id="st-error">
+    <div class="state-icon" aria-hidden="true">⚠️</div>
+    <div class="state-title">資料載入失敗</div>
+    <div class="state-desc">連線發生問題（HTTP 500），請稍後再試。</div>
+  </div>
+  <div class="state-layer" id="st-forbidden">
+    <div class="state-icon" aria-hidden="true">🔒</div>
+    <div class="state-title">無權限檢視此頁</div>
+    <div class="state-desc">你的帳號沒有「客服紀錄」相關權限，請聯絡系統管理員。</div>
+  </div>
+</main>
+
+<footer class="proto-note">
+  原型說明：本頁是全站唯一顯示隊員全名與行動電話的頁面（外撥作業範圍例外，其餘頁面依個資口徑遮罩姓名、不顯示電話）。名單／統計／溝通歷程皆為 deterministic 假資料即時生成（客服 3 人：王雅婷、李思穎、陳柏宇）；「分配名單」「儲存並帶下一筆」為前端記憶體內示意操作，重新整理頁面將重置。含電話之檢視與匯出，正式版將逐次寫入審計日誌（REQ-GEN-006／REQ-SET-004）。
+</footer>
+
+<script src="../app.js?v=25"></script>
+<script>
+(function () {
+  'use strict';
+  var DB = CRM.load();
+  CRM.mountNav('callcenter', DB.meta.dataAsOf);
+
+  /* ── deterministic 假資料工具（禁 Math.random / Date.now / 無參數 new Date） ── */
+  function rnd(s, k) { var x = Math.sin(s * 12.9898 + (k || 1) * 78.233) * 43758.5453; return x - Math.floor(x); }
+  function strSeed(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function offsetDate(y, m, d, offsetDays, hh, mm) {
+    var dt = new Date(y, m - 1, d + offsetDays, hh, mm);
+    return dt.getFullYear() + '-' + pad2(dt.getMonth() + 1) + '-' + pad2(dt.getDate()) + ' ' + pad2(dt.getHours()) + ':' + pad2(dt.getMinutes());
+  }
+  function genPhone(s) {
+    function dg(k) { return Math.floor(rnd(s, k) * 10); }
+    return '09' + dg(41) + dg(42) + '-' + dg(43) + dg(44) + dg(45) + '-' + dg(46) + dg(47) + dg(48);
+  }
+
+  var AGENTS = ['王雅婷', '李思穎', '陳柏宇'];
+  var CURRENT_AGENT = '王雅婷';
+  var REASONS = ['低價', '距離遠', '目的地不符', '時段不合', '車輛保養中'];
+  var SURNAMES = ['王', '林', '張', '李', '陳', '黃', '吳', '劉', '蔡', '楊'];
+  var GIVEN = ['志明', '淑惠', '建宏', '雅婷', '俊傑', '美玲', '文雄', '麗華', '家豪', '怡君'];
+  var FIXED_FIELDS = ['隊編', '行動電話', '第一次電訪時間', '是否接聽'];
+  var DEFAULT_FIELDS = ['第二次電訪時間', '第二次電訪接聽', '簡訊/LINE 通知', '意願'];
+  var CUSTOM_FIELDS = ['不願承接原因（單選）'];
+
+  var ROLE = 'mgr'; // 'mgr' | 'cs'
+
+  /* ── 名單生成：進行中專案（7月晚尖峰意願調查） ── */
+  function buildProj2() {
+    var seed = strSeed('CS-2026-07A');
+    var known = [{ code: '123456', name: '陳大明' }, { code: '0103', name: '林志偉' }, { code: '0217', name: '張淑芬' }];
+    var N = 32, calledCount = 25;
+    var list = [];
+    for (var i = 0; i < N; i++) {
+      var s = seed + i * 137;
+      var code, name;
+      if (known[i]) { code = known[i].code; name = known[i].name; }
+      else { code = String(200000 + Math.floor(rnd(s, 1) * 799999)); name = SURNAMES[Math.floor(rnd(s, 2) * 10)] + GIVEN[Math.floor(rnd(s, 3) * 10)]; }
+      var r = {
+        code: code, name: name, agent: AGENTS[i % 3],
+        phone: rnd(s, 4) < 0.16 ? '' : genPhone(s),
+        firstCall: '', connected: '', willing: '', sms: false, line: false, refuseReason: null, note: '', missingMaster: false
+      };
+      if (i < calledCount) {
+        r.firstCall = offsetDate(2026, 6, 20, Math.floor(rnd(s, 6) * 15), 9 + Math.floor(rnd(s, 7) * 9), Math.floor(rnd(s, 8) * 6) * 10);
+        var connIdx = Math.floor(rnd(s, 9) * 5);
+        r.connected = ['是', '是', '是', '否', '無效'][connIdx];
+        if (r.connected === '是') {
+          r.willing = rnd(s, 10) > 0.4 ? '參加' : '不參加';
+          r.sms = rnd(s, 12) > 0.5; r.line = rnd(s, 13) > 0.5;
+          if (r.willing === '不參加') r.refuseReason = REASONS[Math.floor(rnd(s, 11) * REASONS.length)];
+        }
+      }
+      list.push(r);
+    }
+    list[N - 1].missingMaster = true;
+    return list;
+  }
+
+  /* ── 名單生成：已結案專案（6月流失預警關懷，全數已撥打） ── */
+  function buildProj3() {
+    var seed = strSeed('CS-2026-06B');
+    var known = [{ code: '123456', name: '陳大明' }];
+    var N = 18;
+    var list = [];
+    for (var i = 0; i < N; i++) {
+      var s = seed + i * 149;
+      var code, name;
+      if (known[i]) { code = known[i].code; name = known[i].name; }
+      else { code = String(300000 + Math.floor(rnd(s, 1) * 699999)); name = SURNAMES[Math.floor(rnd(s, 2) * 10)] + GIVEN[Math.floor(rnd(s, 3) * 10)]; }
+      var r = {
+        code: code, name: name, agent: AGENTS[i % 3],
+        phone: rnd(s, 4) < 0.1 ? '' : genPhone(s),
+        firstCall: offsetDate(2026, 6, 1, Math.floor(rnd(s, 6) * 18), 9 + Math.floor(rnd(s, 7) * 9), Math.floor(rnd(s, 8) * 6) * 10),
+        connected: '', willing: '', sms: rnd(s, 12) > 0.5, line: rnd(s, 13) > 0.5, refuseReason: null, note: '', missingMaster: false
+      };
+      var connIdx = Math.floor(rnd(s, 9) * 5);
+      r.connected = ['是', '是', '是', '否', '無效'][connIdx];
+      if (r.connected === '是') {
+        r.willing = rnd(s, 10) > 0.4 ? '參加' : '不參加';
+        if (r.willing === '不參加') r.refuseReason = REASONS[Math.floor(rnd(s, 11) * REASONS.length)];
+      }
+      list.push(r);
+    }
+    return list;
+  }
+
+  var PROJ2_LIST = buildProj2();
+  var PROJ3_LIST = buildProj3();
+  var PROJECTS = [
+    { id: 'CS-2026-08A', name: '8月中秋節關懷外撥', status: '草稿' },
+    { id: 'CS-2026-07A', name: '7月晚尖峰意願調查', status: '進行中', start: '2026-06-20', end: '2026-07-31', list: PROJ2_LIST },
+    { id: 'CS-2026-06B', name: '6月流失預警關懷', status: '已結案', start: '2026-06-01', end: '2026-06-20', list: PROJ3_LIST }
+  ];
+
+  function scopeList(list) { return ROLE === 'mgr' ? list : list.filter(function (r) { return r.agent === CURRENT_AGENT; }); }
+  function scopeNote(n, total) { return ROLE === 'mgr' ? ('主管檢視：全部 ' + total + ' 筆') : ('客服檢視：僅本人 ' + n + ' 筆（專案共 ' + total + ' 筆）'); }
+  function statCard(k, v, sub, info) { return '<div class="stat-card"><div class="k">' + k + (info ? CRM.infoIcon(info) : '') + '</div><div class="v">' + v + '</div><div class="sub">' + sub + '</div></div>'; }
+  function badgeClass(status) { return status === '草稿' ? 'badge-draft' : (status === '進行中' ? 'badge-active' : 'badge-closed'); }
+  function fieldChipsHtml() {
+    return '<div class="field-chips-wrap">' +
+      '<div class="field-group"><span class="fg-label">固定欄位</span>' + FIXED_FIELDS.map(function (f) { return '<span class="field-chip fixed">' + f + '</span>'; }).join('') + '</div>' +
+      '<div class="field-group"><span class="fg-label">預設欄位</span>' + DEFAULT_FIELDS.map(function (f) { return '<span class="field-chip hideable">' + f + '</span>'; }).join('') + '</div>' +
+      '<div class="field-group"><span class="fg-label">自訂欄位</span>' + CUSTOM_FIELDS.map(function (f) { return '<span class="field-chip custom">' + f + '</span>'; }).join('') +
+        '<button type="button" class="chip-btn" id="btn-add-field">＋ 自欄位庫挑用或新增</button></div>' +
+      '</div>';
+  }
+  function wireFieldChipsBtn() {
+    var b = document.getElementById('btn-add-field');
+    if (b) b.addEventListener('click', function () { CRM.toast('欄位庫：可挑用既有欄位或新增（新增將自動入庫，供跨專案彙整回覆，REQ-CS-004）'); });
+  }
+
+  /* ── Tab①：專案卡列表與詳情 ── */
+  var expandedIdx = -1;
+  function renderProjGrid() {
+    var html = PROJECTS.map(function (p, i) {
+      return '<button type="button" class="proj-card" data-idx="' + i + '" aria-expanded="' + (expandedIdx === i) + '">' +
+        '<span class="badge ' + badgeClass(p.status) + '">' + p.status + (p.status === '已結案' ? '・唯讀封存' : '') + '</span>' +
+        '<div class="proj-name">' + p.name + '</div>' +
+        '<div class="proj-meta">' + p.id + (p.start ? '・' + p.start + ' ~ ' + p.end : '・尚未設定期間') + '</div></button>';
+    }).join('');
+    document.getElementById('proj-grid').innerHTML = html;
+    document.querySelectorAll('.proj-card').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var idx = Number(b.dataset.idx);
+        expandedIdx = (expandedIdx === idx) ? -1 : idx;
+        renderProjGrid(); renderProjDetail();
+      });
+    });
+  }
+  function renderProjDetail() {
+    var host = document.getElementById('proj-detail-host');
+    if (expandedIdx < 0) { host.innerHTML = ''; return; }
+    var p = PROJECTS[expandedIdx];
+    if (p.status === '草稿') {
+      host.innerHTML = '<div class="panel"><div class="panel-title">' + p.name + '<span class="badge badge-draft">草稿</span></div>' +
+        '<p class="panel-note" style="margin-bottom:14px">草稿階段：可設定欄位與名單，尚未開始撥打作業；正式版於此完成設定後即可切換為「進行中」（狀態變更寫入審計）。</p>' +
+        fieldChipsHtml() +
+        '<div style="margin-top:14px"><button type="button" class="btn" id="btn-upload-draft">上傳名單</button></div></div>';
+      wireFieldChipsBtn();
+      document.getElementById('btn-upload-draft').addEventListener('click', function () { CRM.toast('上傳名單：支援 Excel/CSV（隊編＋行動電話，電話可留空由客服補填）（原型示意，REQ-CS-007）'); });
+      return;
+    }
+    if (p.status === '已結案') {
+      var clist = scopeList(p.list);
+      var ccalled = clist.filter(function (r) { return r.firstCall; });
+      var cyes = ccalled.filter(function (r) { return r.connected === '是'; }).length;
+      var cno = ccalled.filter(function (r) { return r.connected === '否'; }).length;
+      var cinv = ccalled.filter(function (r) { return r.connected === '無效'; }).length;
+      host.innerHTML = '<div class="panel"><div class="panel-title">' + p.name + '<span class="badge badge-closed">已結案・唯讀封存</span></div>' +
+        '<p class="panel-note" style="margin-bottom:14px">' + p.id + '・' + p.start + ' ~ ' + p.end + '・已結案專案唯讀封存，統計保留供查閱、不可再編輯；如需查看個別隊員回覆請至「溝通歷程」查詢。</p>' +
+        '<div class="stat-grid">' +
+          statCard('總名單數', CRM.fmt(clist.length), scopeNote(clist.length, p.list.length)) +
+          statCard('已撥打數', CRM.fmt(ccalled.length), '完成率 ' + CRM.pct(clist.length ? ccalled.length / clist.length * 100 : 0)) +
+          statCard('接聽率', CRM.pct(ccalled.length ? cyes / ccalled.length * 100 : 0), '是 ' + cyes + '・否 ' + cno + '・無效 ' + cinv) +
+        '</div></div>';
+      return;
+    }
+    renderActiveDetail(p);
+  }
+  function renderActiveDetail(p) {
+    var list = scopeList(p.list);
+    var called = list.filter(function (r) { return r.firstCall; });
+    var yes = called.filter(function (r) { return r.connected === '是'; }).length;
+    var no = called.filter(function (r) { return r.connected === '否'; }).length;
+    var invalid = called.filter(function (r) { return r.connected === '無效'; }).length;
+    var willYes = called.filter(function (r) { return r.willing === '參加'; }).length;
+    var willNo = called.filter(function (r) { return r.willing === '不參加'; }).length;
+
+    var html = '<div class="panel"><div class="panel-title">' + p.name + '<span class="badge badge-active">進行中</span></div>' +
+      '<p class="panel-note" style="margin-bottom:14px">' + p.id + '・' + p.start + ' ~ ' + p.end + '・狀態僅能單向前進（草稿→進行中→已結案），任何變更寫入審計日誌</p>' +
+      '<div class="stat-grid">' +
+        statCard('總名單數', CRM.fmt(list.length), scopeNote(list.length, p.list.length), '本專案全部名單筆數；客服角色僅能檢視分配給自己之名單（REQ-CS-010）') +
+        statCard('已撥打數', CRM.fmt(called.length), '完成率 ' + CRM.pct(list.length ? called.length / list.length * 100 : 0)) +
+        statCard('接聽率', CRM.pct(called.length ? yes / called.length * 100 : 0), '是 ' + yes + '・否 ' + no + '・無效 ' + invalid, '接聽率＝第一次電訪「是」÷已撥打數') +
+        statCard('意願分布', CRM.pct((willYes + willNo) ? willYes / (willYes + willNo) * 100 : 0) + ' 參加', '參加 ' + willYes + '・不參加 ' + willNo) +
+      '</div>' +
+      '<div class="panel-title" style="margin-top:20px;font-size:16px">各客服分配進度' + CRM.infoIcon('分配數與完成進度；客服角色僅顯示自己（REQ-CS-012）') + '</div>' +
+      '<div class="agent-progress">' + (ROLE === 'mgr' ? AGENTS : [CURRENT_AGENT]).map(function (a) {
+        var mine = p.list.filter(function (r) { return r.agent === a; });
+        var done = mine.filter(function (r) { return r.firstCall; }).length;
+        var pv = mine.length ? Math.round(done / mine.length * 100) : 0;
+        return '<div class="agent-row"><span>' + a + '</span><span class="bar-track"><span class="bar-fill" style="width:' + pv + '%"></span></span><span class="cnt">' + done + ' / ' + mine.length + '</span></div>';
+      }).join('') + '</div>' +
+      '<div class="panel-title" style="margin-top:20px;font-size:16px">欄位設定</div>' + fieldChipsHtml() +
+      '<div class="panel-title" style="margin-top:20px;font-size:16px">名單' + CRM.infoIcon('姓名／電話僅本頁（外撥作業範圍）顯示全名／可見；其餘頁面依個資口徑遮罩或不顯示') + '<span style="display:flex;gap:8px;font-weight:400">' +
+        (ROLE === 'mgr' ? '<button type="button" class="btn" id="btn-assign">分配名單</button>' : '') +
+        '<button type="button" class="btn" id="btn-add-list">追加名單</button>' +
+        '<button type="button" class="btn" id="btn-upload-list">上傳名單</button></span></div>' +
+      '<div class="chart-wrap"><table id="proj-list-table" aria-label="外撥專案名單"></table></div></div>';
+
+    document.getElementById('proj-detail-host').innerHTML = html;
+    wireFieldChipsBtn();
+    if (ROLE === 'mgr') document.getElementById('btn-assign').addEventListener('click', openAssignModal);
+    document.getElementById('btn-add-list').addEventListener('click', function () { CRM.toast('追加名單：進行中專案可持續上傳補充（隊編＋行動電話，電話可留空）（原型示意，REQ-CS-007）'); });
+    document.getElementById('btn-upload-list').addEventListener('click', function () { CRM.toast('上傳名單：支援 Excel/CSV 匯入（原型示意）'); });
+    renderListTable(document.getElementById('proj-list-table'), list);
+  }
+  function renderListTable(host, list) {
+    var thead = '<thead><tr><th>隊編</th><th>姓名' + CRM.infoIcon('外撥作業範圍顯示全名供稱呼（個資口徑例外）') + '</th><th>行動電話</th><th>第一次電訪</th><th>接聽</th><th>意願</th><th>負責客服</th></tr></thead>';
+    var rows = list.map(function (r) {
+      return '<tr class="mrow" tabindex="0" data-code="' + r.code + '">' +
+        '<td>' + r.code + (r.missingMaster ? '<span class="warn-badge">主檔查無</span>' : '') + '</td>' +
+        '<td>' + r.name + '</td>' +
+        '<td>' + (r.phone || '<span style="color:var(--meta)">待補</span>') + '</td>' +
+        '<td>' + (r.firstCall || '<span style="color:var(--meta)">未撥打</span>') + '</td>' +
+        '<td>' + (r.connected || '—') + '</td><td>' + (r.willing || '—') + '</td><td>' + r.agent + '</td></tr>';
+    }).join('');
+    host.innerHTML = thead + '<tbody>' + rows + '</tbody>';
+    host.querySelectorAll('.mrow').forEach(function (tr) {
+      function go() {
+        switchTab('work');
+        var scoped = currentWorkList(); var idx = -1;
+        scoped.forEach(function (r, i) { if (r.code === tr.dataset.code) idx = i; });
+        if (idx >= 0) { workIdx = idx; renderWork(); } else CRM.toast('此隊員目前不在你的分配範圍內（切換至主管角色可檢視全部）');
+      }
+      tr.addEventListener('click', go);
+      tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    });
+  }
+
+  /* ── 分配名單 Modal（REQ-CS-009） ── */
+  function openAssignModal() {
+    var bodyHtml = '<p style="font-size:13px;color:var(--muted);margin-bottom:10px">勾選參與本次分配之客服，系統將把全部 ' + PROJ2_LIST.length + ' 筆名單平均拆分；分配後可於名單表格個別調整負責客服。</p>' +
+      '<div id="assign-checks">' + AGENTS.map(function (a) { return '<label class="assign-row"><input type="checkbox" value="' + a + '" checked> ' + a + '</label>'; }).join('') + '</div>' +
+      '<div class="assign-preview" id="assign-preview"></div>';
+    var footerHtml = '<button type="button" class="btn" id="assign-cancel">取消</button><button type="button" class="btn btn-primary" id="assign-confirm">確認分配</button>';
+    openModal('分配名單', bodyHtml, footerHtml);
+    function checked() { return Array.prototype.slice.call(document.querySelectorAll('#assign-checks input:checked')).map(function (c) { return c.value; }); }
+    function updatePreview() {
+      var ck = checked(); var el = document.getElementById('assign-preview');
+      if (!ck.length) { el.textContent = '請至少選擇一位客服'; return; }
+      var total = PROJ2_LIST.length, per = Math.floor(total / ck.length), rem = total % ck.length;
+      el.innerHTML = '平均拆分預覽：共 ' + total + ' 筆 → ' + ck.map(function (a, i) { return a + ' ' + (per + (i < rem ? 1 : 0)) + ' 筆'; }).join('・');
+    }
+    document.querySelectorAll('#assign-checks input').forEach(function (c) { c.addEventListener('change', updatePreview); });
+    updatePreview();
+    document.getElementById('assign-cancel').addEventListener('click', closeModal);
+    document.getElementById('assign-confirm').addEventListener('click', function () {
+      var ck = checked();
+      if (!ck.length) { CRM.toast('請至少選擇一位客服'); return; }
+      PROJ2_LIST.forEach(function (r, i) { r.agent = ck[i % ck.length]; });
+      workIdx = 0; closeModal(); renderProjDetail();
+      if (lazy.work) { renderWork(); renderMyList(); }
+      CRM.toast('已完成分配（原型示意）：' + PROJ2_LIST.length + ' 筆平均分配給 ' + ck.length + ' 位客服');
+    });
+  }
+
+  /* ── 通用 Modal（禁 alert/confirm/prompt；aria-modal、關閉鈕、Esc 可關） ── */
+  function escHandler(e) { if (e.key === 'Escape') closeModal(); }
+  function openModal(titleText, bodyHtml, footerHtml) {
+    closeModal();
+    var overlay = document.createElement('div');
+    overlay.className = 'modal-overlay'; overlay.id = 'crm-modal-overlay';
+    overlay.innerHTML = '<div class="modal-box" role="dialog" aria-modal="true" aria-label="' + titleText + '">' +
+      '<div class="modal-head"><div class="modal-title">' + titleText + '</div><button type="button" class="modal-close" id="modal-close-btn" aria-label="關閉">✕</button></div>' +
+      '<div class="modal-body">' + bodyHtml + '</div>' +
+      (footerHtml ? '<div class="modal-actions">' + footerHtml + '</div>' : '') + '</div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
+    document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+    document.addEventListener('keydown', escHandler);
+  }
+  function closeModal() {
+    var o = document.getElementById('crm-modal-overlay');
+    if (o) { o.remove(); document.removeEventListener('keydown', escHandler); }
+  }
+
+  /* ── Tab②：逐筆撥打（REQ-CS-011） ── */
+  var workIdx = 0;
+  var lazy = { work: false, reply: false, history: false };
+  function currentWorkList() { return scopeList(PROJ2_LIST); }
+  function renderWork() {
+    var list = currentWorkList();
+    var host = document.getElementById('work-host');
+    if (!list.length) { host.innerHTML = '<div class="panel-title">逐筆撥打</div><p class="state-desc">目前角色範圍內沒有被分配的名單。</p>'; return; }
+    if (workIdx >= list.length) workIdx = 0;
+    var r = list[workIdx];
+    var html = '<div class="panel-title">逐筆撥打' + CRM.infoIcon('點下方「儲存並帶下一筆」會自動跳到下一筆待撥名單；亦可由下方「我的被分配名單」點選特定筆處理（回撥／補記錄）') + '</div>' +
+      '<div class="work-progress">第 <b>' + (workIdx + 1) + '</b> / ' + list.length + ' 筆' + (r.firstCall ? '' : '　<span style="color:var(--accent)">・待撥打</span>') + '</div>' +
+      '<div class="work-person"><span class="wp-name">' + r.name + '</span><span class="wp-code">隊編 ' + r.code + '</span>' +
+        (r.missingMaster ? '<span class="warn-badge">主檔查無</span>' : '') + '<span style="color:var(--meta);font-size:13px">負責客服：' + r.agent + '</span></div>' +
+      '<div class="form-grid">' +
+        '<div class="f-field"><label for="wf-phone">行動電話（客服填寫）</label><input type="tel" id="wf-phone" value="' + r.phone + '" placeholder="09xx-xxx-xxx"></div>' +
+        '<div class="f-field"><label for="wf-firstcall">第一次電訪時間</label><input type="text" id="wf-firstcall" value="' + r.firstCall + '" placeholder="YYYY-MM-DD HH:MM"></div>' +
+        '<div class="f-field"><label id="wf-connected-label">是否接聽</label><div class="radio-row" role="radiogroup" aria-labelledby="wf-connected-label">' +
+          ['是', '否', '無效'].map(function (v) { return '<label><input type="radio" name="wf-connected" value="' + v + '"' + (r.connected === v ? ' checked' : '') + '> ' + v + '</label>'; }).join('') + '</div></div>' +
+        '<div class="f-field"><label id="wf-willing-label">意願</label><div class="radio-row" role="radiogroup" aria-labelledby="wf-willing-label">' +
+          ['參加', '不參加'].map(function (v) { return '<label><input type="radio" name="wf-willing" value="' + v + '"' + (r.willing === v ? ' checked' : '') + '> ' + v + '</label>'; }).join('') + '</div></div>' +
+        '<div class="f-field"><label id="wf-notify-label">簡訊／LINE 通知</label><div class="check-row">' +
+          '<label><input type="checkbox" id="wf-sms"' + (r.sms ? ' checked' : '') + '> 簡訊通知</label><label><input type="checkbox" id="wf-line"' + (r.line ? ' checked' : '') + '> LINE通知</label></div></div>' +
+        '<div class="f-field"><label for="wf-reason">不願承接原因</label><select id="wf-reason"><option value="">－</option>' +
+          REASONS.map(function (v) { return '<option value="' + v + '"' + (r.refuseReason === v ? ' selected' : '') + '>' + v + '</option>'; }).join('') + '</select></div>' +
+        '<div class="f-field full"><label for="wf-note">備註</label><textarea id="wf-note">' + r.note + '</textarea></div>' +
+      '</div>' +
+      '<div style="margin-top:16px"><button type="button" class="btn btn-primary" id="btn-save-next">儲存並帶下一筆</button></div>';
+    host.innerHTML = html;
+    document.getElementById('btn-save-next').addEventListener('click', saveCurrent);
+  }
+  function saveCurrent() {
+    var list = currentWorkList(); var r = list[workIdx];
+    r.phone = document.getElementById('wf-phone').value.trim();
+    r.firstCall = document.getElementById('wf-firstcall').value.trim();
+    var conn = document.querySelector('input[name="wf-connected"]:checked'); r.connected = conn ? conn.value : '';
+    var will = document.querySelector('input[name="wf-willing"]:checked'); r.willing = will ? will.value : '';
+    r.sms = document.getElementById('wf-sms').checked;
+    r.line = document.getElementById('wf-line').checked;
+    r.refuseReason = document.getElementById('wf-reason').value || null;
+    r.note = document.getElementById('wf-note').value;
+    workIdx = (workIdx + 1) % list.length;
+    CRM.toast('已儲存，帶出下一筆待撥名單');
+    renderWork(); renderMyList(); renderProjDetail();
+  }
+  function renderMyList() {
+    var list = currentWorkList();
+    document.getElementById('mylist-scope-note').textContent = ROLE === 'mgr' ? '（主管檢視：全部 ' + list.length + ' 筆）' : '（客服檢視：僅本人 ' + list.length + ' 筆）';
+    var host = document.getElementById('mylist-table');
+    var thead = '<thead><tr><th>隊編</th><th>姓名</th><th>行動電話</th><th>第一次電訪</th><th>接聽</th><th>意願</th></tr></thead>';
+    var rows = list.map(function (r, i) {
+      return '<tr class="mrow' + (i === workIdx ? ' active-row' : '') + '" tabindex="0" data-idx="' + i + '">' +
+        '<td>' + r.code + (r.missingMaster ? '<span class="warn-badge">主檔查無</span>' : '') + '</td><td>' + r.name + '</td>' +
+        '<td>' + (r.phone || '<span style="color:var(--meta)">待補</span>') + '</td>' +
+        '<td>' + (r.firstCall || '<span style="color:var(--meta)">未撥打</span>') + '</td><td>' + (r.connected || '—') + '</td><td>' + (r.willing || '—') + '</td></tr>';
+    }).join('');
+    host.innerHTML = thead + '<tbody>' + rows + '</tbody>';
+    host.querySelectorAll('.mrow').forEach(function (tr) {
+      function go() {
+        workIdx = Number(tr.dataset.idx);
+        renderWork(); renderMyList();
+        document.getElementById('work-host').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      tr.addEventListener('click', go);
+      tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    });
+  }
+
+  /* ── Tab③：回覆篩選（REQ-CS-017／REQ-SEG-005：限 callrecord.view_all） ── */
+  var FIELD_OPTS = {
+    refuseReason: { label: '不願承接原因', values: REASONS },
+    willing: { label: '意願', values: ['參加', '不參加'] },
+    connected: { label: '是否接聽', values: ['是', '否', '無效'] }
+  };
+  var lastReplyMatches = [];
+  function initReplyTab() {
+    document.getElementById('reply-info-host').innerHTML = CRM.infoIcon('跨專案彙整同一自訂／預設欄位之司機回覆；僅具 callrecord.view_all 權限可查詢；含電話之檢視／匯出逐次寫入審計');
+    var fieldSel = document.getElementById('rf-field');
+    fieldSel.innerHTML = Object.keys(FIELD_OPTS).map(function (k) { return '<option value="' + k + '">' + FIELD_OPTS[k].label + '</option>'; }).join('');
+    fieldSel.addEventListener('change', function () { populateReplyValues(); runReplyFilter(); });
+    document.getElementById('rf-value').addEventListener('change', runReplyFilter);
+    document.getElementById('btn-reply-export').addEventListener('click', function () { CRM.toast('原型示意：正式版將匯出 Excel/CSV'); });
+    document.getElementById('btn-reply-bring').addEventListener('click', openBringInModal);
+    populateReplyValues();
+    updateReplyLock();
+    runReplyFilter();
+  }
+  function populateReplyValues() {
+    var field = document.getElementById('rf-field').value;
+    document.getElementById('rf-value').innerHTML = FIELD_OPTS[field].values.map(function (v) { return '<option value="' + v + '">' + v + '</option>'; }).join('');
+  }
+  function combinedProjRows() {
+    function tag(list, proj) { return list.map(function (r) { var o = {}; for (var k in r) o[k] = r[k]; o._proj = proj.name; return o; }); }
+    return tag(PROJ2_LIST, PROJECTS[1]).concat(tag(PROJ3_LIST, PROJECTS[2]));
+  }
+  function runReplyFilter() {
+    if (ROLE !== 'mgr') { document.getElementById('reply-table').innerHTML = ''; return; }
+    var field = document.getElementById('rf-field').value, value = document.getElementById('rf-value').value;
+    var rows = combinedProjRows().filter(function (r) { return r[field] === value; });
+    lastReplyMatches = rows;
+    var thead = '<thead><tr><th>隊編</th><th>最近回覆時間</th><th>回覆值</th><th>所屬專案</th><th>操作</th></tr></thead>';
+    var body = rows.length ? rows.map(function (r) {
+      return '<tr><td>' + r.code + '</td><td>' + (r.firstCall || '—') + '</td><td>' + value + '</td><td>' + r._proj + '</td>' +
+        '<td><button type="button" class="btn" data-code="' + r.code + '">查看溝通歷程</button></td></tr>';
+    }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--meta);padding:22px">查無符合條件之回覆紀錄</td></tr>';
+    var host = document.getElementById('reply-table');
+    host.innerHTML = thead + '<tbody>' + body + '</tbody>';
+    host.querySelectorAll('button[data-code]').forEach(function (b) {
+      b.addEventListener('click', function () { switchTab('history'); document.getElementById('tl-code').value = b.dataset.code; runHistorySearch(b.dataset.code); });
+    });
+  }
+  function updateReplyLock() {
+    var mgr = ROLE === 'mgr';
+    document.getElementById('reply-veil').style.display = mgr ? 'none' : 'flex';
+    ['rf-field', 'rf-value', 'btn-reply-export', 'btn-reply-bring'].forEach(function (id) { document.getElementById(id).disabled = !mgr; });
+  }
+  function openBringInModal() {
+    if (ROLE !== 'mgr') return;
+    if (!lastReplyMatches.length) { CRM.toast('目前篩選結果為 0 筆，無法帶入'); return; }
+    var bodyHtml = '<p style="font-size:13px;color:var(--muted);margin-bottom:10px">將以下 ' + lastReplyMatches.length + ' 筆隊編建立新外撥專案名單（僅含隊編＋姓名，電話欄留空由客服補填）。</p>' +
+      '<div class="chart-wrap" style="max-height:260px;overflow-y:auto"><table><thead><tr><th>隊編</th><th>姓名</th><th>行動電話</th></tr></thead><tbody>' +
+      lastReplyMatches.map(function (r) { return '<tr><td>' + r.code + '</td><td>' + r.name + '</td><td style="color:var(--meta)">待補</td></tr>'; }).join('') +
+      '</tbody></table></div>';
+    var footerHtml = '<button type="button" class="btn" id="bring-cancel">取消</button><button type="button" class="btn btn-primary" id="bring-confirm">確認建立</button>';
+    openModal('一鍵帶入新外撥專案名單', bodyHtml, footerHtml);
+    document.getElementById('bring-cancel').addEventListener('click', closeModal);
+    document.getElementById('bring-confirm').addEventListener('click', function () {
+      var n = lastReplyMatches.length; closeModal();
+      CRM.toast('已建立新外撥專案草稿，帶入 ' + n + ' 筆隊編＋姓名（電話待客服補填）（原型示意）');
+    });
+  }
+
+  /* ── Tab④：溝通歷程（REQ-CS-018） ── */
+  function buildContactContent(r) {
+    var parts = ['第一次電訪時間：' + (r.firstCall || '—'), '是否接聽：' + (r.connected || '—')];
+    if (r.willing) parts.push('意願：' + r.willing);
+    parts.push('簡訊通知：' + (r.sms ? '是' : '否'), 'LINE通知：' + (r.line ? '是' : '否'));
+    if (r.refuseReason) parts.push('不願承接原因：' + r.refuseReason);
+    return parts.join('；');
+  }
+  function combinedContacts(code) {
+    var arr = [];
+    var m = DB.members[code];
+    if (m && m.contacts) m.contacts.forEach(function (c) { arr.push({ date: c.date, project: c.project, content: c.content, result: c.result }); });
+    var r2 = PROJ2_LIST.filter(function (r) { return r.code === code; })[0];
+    if (r2 && r2.firstCall) arr.push({ date: r2.firstCall, project: PROJECTS[1].name, content: buildContactContent(r2), result: r2.willing || '未表態' });
+    var r3 = PROJ3_LIST.filter(function (r) { return r.code === code; })[0];
+    if (r3 && r3.firstCall) arr.push({ date: r3.firstCall, project: PROJECTS[2].name, content: buildContactContent(r3), result: r3.willing || '未表態' });
+    arr.sort(function (a, b) { return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0); });
+    return arr;
+  }
+  function runHistorySearch(q) {
+    q = (q || '').trim();
+    var host = document.getElementById('history-host');
+    if (!q) { host.innerHTML = '<p class="tl-guide">請輸入隊編查詢跨專案溝通歷程；可試 <b>123456</b>／<b>0103</b>／<b>0217</b>。</p>'; return; }
+    var list = combinedContacts(q);
+    if (!list.length) { host.innerHTML = '<p class="tl-guide">查無「' + q + '」之跨專案聯繫紀錄。</p>'; return; }
+    host.innerHTML = '<div class="timeline">' + list.map(function (c) {
+      return '<div class="tl-item"><div class="tl-dot"></div><div>' +
+        '<div class="tl-head"><span class="tl-date">' + c.date + '</span><span class="tl-project">' + c.project + '</span>' +
+        '<span class="tl-result ' + (c.result === '參加' ? 'yes' : (c.result === '不參加' ? 'no' : 'na')) + '">' + c.result + '</span></div>' +
+        '<div class="tl-content">' + c.content + '</div></div></div>';
+    }).join('') + '</div>';
+  }
+  function initHistoryTab() {
+    document.getElementById('history-info-host').innerHTML = CRM.infoIcon('溝通歷程混用隊員 Profile 之聯繫紀錄與各外撥專案通話紀錄；跨專案全量查詢口徑依 REQ-CS-013 限 callrecord.view_all（本原型不阻擋操作）');
+    document.getElementById('btn-history-search').addEventListener('click', function () { runHistorySearch(document.getElementById('tl-code').value); });
+    document.getElementById('tl-code').addEventListener('keydown', function (e) { if (e.key === 'Enter') runHistorySearch(e.target.value); });
+    runHistorySearch('');
+  }
+
+  /* ── 頁內 tab 切換（重的 tab 首次啟用才 render） ── */
+  var PANES = { dial: 'pane-dial', work: 'pane-work', reply: 'pane-reply', history: 'pane-history' };
+  function switchTab(key) {
+    document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.tab === key)); });
+    Object.keys(PANES).forEach(function (k) { document.getElementById(PANES[k]).style.display = (k === key) ? '' : 'none'; });
+    if (key === 'work' && !lazy.work) { lazy.work = true; renderWork(); renderMyList(); }
+    if (key === 'reply' && !lazy.reply) { lazy.reply = true; initReplyTab(); }
+    if (key === 'history' && !lazy.history) { lazy.history = true; initHistoryTab(); }
+  }
+  document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { switchTab(t.dataset.tab); }); });
+
+  /* ── 檢視角色切換（REQ-CS-010）：即時影響名單/進度/回覆篩選 ── */
+  document.getElementById('scope-info-host').innerHTML = CRM.infoIcon('本頁為全站唯一顯示全名與行動電話之頁面；含電話之檢視與匯出逐次寫入審計；跨專案全量查詢限 callrecord.view_all（REQ-CS-013／017）');
+  document.getElementById('role-select').addEventListener('change', function () {
+    ROLE = this.value; workIdx = 0;
+    renderProjGrid(); renderProjDetail();
+    if (lazy.work) { renderWork(); renderMyList(); }
+    updateReplyLock();
+    if (lazy.reply) runReplyFilter();
+    CRM.toast(ROLE === 'mgr' ? '已切換為主管檢視（callrecord.view_all）：可見全部名單與跨專案回覆篩選' : '已切換為客服檢視・王雅婷（callrecord.edit_assigned）：僅見自己被分配之名單');
+  });
+
+  CRM.mountStateSwitcher(function (state) {
+    document.getElementById('content-normal').style.display = (state === 'normal') ? '' : 'none';
+    ['empty', 'loading', 'error', 'forbidden'].forEach(function (k) { document.getElementById('st-' + k).classList.toggle('show', state === k); });
+  });
+
+  renderProjGrid();
+  renderProjDetail();
+  updateReplyLock();
+})();
+</script>
+
+</body>
+</html>

@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  var STORE_KEY = 'crm55688_proto_v12';
+  var STORE_KEY = 'crm55688_proto_v17';
 
   /* 活動參加名單生成（deterministic；每活動 40 筆示意，前 3 筆為完整 Profile 假資料隊員） */
   function buildParticipants() {
@@ -40,12 +40,88 @@
    * Seed 假資料（貼近真實量級：參考 Tableau 截圖數字）
    * ──────────────────────────────────────────────── */
   function buildSeed() {
-    // 車隊（branch）→車隊地區對照（REQ-SET-007；「台北」＝雙北。初始清單依主管提供之分公司對照表，正式清單隨匯入更新）
-    var branchRegions = {
-      '台北': ['台北分公司', '台北志英', '志英車隊', '小黃耐斯都會', '耐斯都會車隊', '幸福車隊', '泛亞北區', '城市衛星北區', '城市衛星保留', '賓樂車隊', '祥賀車隊', '慶安車隊', '龍星北區', '聯合車隊', '警光北區', '台北多元試跑', '多元台北', '多元台北生通', '多元台北宏力', '多元台北保底', '多元慶安'],
-      '桃園': ['大文山車隊', '桃園分公司', '泛亞桃園', '多元桃園'],
-      '宜蘭': ['宜蘭分公司', '多元宜蘭']
-    };
+    // 車隊對照表全量（2026-07-13 定版：使用者更新 CSV，Tolife合作車隊錯誤列已移除、保留小黃台北生通，共 72 筆；
+    // 正式版由 fleet_dictionary 匯入全量替換維護（REQ-IMP-017），原型以 fleetDict 為唯一來源）
+    var fleetDict = [
+      { name: "小黃台北生通", category: "小黃", region: "台北" },
+      { name: "大文山車隊", category: "小黃", region: "桃園" },
+      { name: "小黃干城衛星", category: "小黃", region: "台中" },
+      { name: "小黃建宏", category: "小黃", region: "花蓮" },
+      { name: "小黃耐斯都會", category: "小黃", region: "台北" },
+      { name: "干城衛星車隊", category: "小黃", region: "台中" },
+      { name: "台中中華大小黃", category: "小黃", region: "台中" },
+      { name: "台中分公司", category: "小黃", region: "台中" },
+      { name: "台中無線車隊", category: "小黃", region: "台中" },
+      { name: "台北分公司", category: "小黃", region: "台北" },
+      { name: "台北志英", category: "小黃", region: "台北" },
+      { name: "台南分公司", category: "小黃", region: "台南" },
+      { name: "台南有慶", category: "小黃", region: "台南" },
+      { name: "台灣大有慶", category: "小黃", region: "台南" },
+      { name: "行一台南", category: "小黃", region: "台南" },
+      { name: "志英車隊", category: "小黃", region: "台北" },
+      { name: "宜蘭分公司", category: "小黃", region: "宜蘭" },
+      { name: "怡美車隊", category: "小黃", region: "台中" },
+      { name: "泛亞北區", category: "小黃", region: "台北" },
+      { name: "泛亞台中", category: "小黃", region: "台中" },
+      { name: "泛亞桃園", category: "小黃", region: "桃園" },
+      { name: "花蓮分公司", category: "小黃", region: "花蓮" },
+      { name: "金門分公司", category: "小黃", region: "離島" },
+      { name: "青溪車行", category: "小黃", region: "台中" },
+      { name: "南投快捷車隊", category: "小黃", region: "台中" },
+      { name: "城市衛星北區", category: "小黃", region: "台北" },
+      { name: "城市衛星保留", category: "小黃", region: "台北" },
+      { name: "城市衛星南區", category: "小黃", region: "高雄" },
+      { name: "城市衛星聯合花蓮", category: "小黃", region: "花蓮" },
+      { name: "紅帥車隊", category: "小黃", region: "新竹" },
+      { name: "桃園分公司", category: "小黃", region: "桃園" },
+      { name: "高雄分公司", category: "小黃", region: "高雄" },
+      { name: "高雄嘉鑫", category: "小黃", region: "高雄" },
+      { name: "高雄潼澤", category: "小黃", region: "高雄" },
+      { name: "祥賀車隊", category: "小黃", region: "台北" },
+      { name: "菁英高雄", category: "小黃", region: "高雄" },
+      { name: "新竹分公司", category: "小黃", region: "新竹" },
+      { name: "新利達車隊", category: "小黃", region: "桃園" },
+      { name: "新進車隊", category: "小黃", region: "新竹" },
+      { name: "嘉義分公司", category: "小黃", region: "嘉義" },
+      { name: "彰化雅客車隊", category: "小黃", region: "台中" },
+      { name: "熊讚高雄", category: "小黃", region: "高雄" },
+      { name: "賓樂車隊", category: "小黃", region: "台北" },
+      { name: "慶安車隊", category: "小黃", region: "台北" },
+      { name: "澎湖分公司", category: "小黃", region: "離島" },
+      { name: "龍星北區", category: "小黃", region: "台北" },
+      { name: "聯合有慶", category: "小黃", region: "台南" },
+      { name: "聯合車隊", category: "小黃", region: "台北" },
+      { name: "聯合彰化", category: "小黃", region: "台中" },
+      { name: "雙美車隊", category: "小黃", region: "台中" },
+      { name: "警光北區", category: "小黃", region: "台北" },
+      { name: "中航車隊", category: "多元", region: "台中" },
+      { name: "多元千里眼", category: "多元", region: "台中" },
+      { name: "多元台中", category: "多元", region: "台中" },
+      { name: "多元台中立忠", category: "多元", region: "台中" },
+      { name: "多元台北", category: "多元", region: "台北" },
+      { name: "多元台北生通", category: "多元", region: "台北" },
+      { name: "多元台北宏力", category: "多元", region: "台北" },
+      { name: "多元台北保底", category: "多元", region: "台北" },
+      { name: "多元台南", category: "多元", region: "台南" },
+      { name: "多元台南有慶", category: "多元", region: "台南" },
+      { name: "多元宜蘭", category: "多元", region: "宜蘭" },
+      { name: "多元花蓮", category: "多元", region: "花蓮" },
+      { name: "多元桃園", category: "多元", region: "桃園" },
+      { name: "多元高雄", category: "多元", region: "高雄" },
+      { name: "多元新竹", category: "多元", region: "新竹" },
+      { name: "多元嘉義", category: "多元", region: "嘉義" },
+      { name: "多元慶安", category: "多元", region: "台北" },
+      { name: "多元鴻順", category: "多元", region: "台中" },
+      { name: "幸福車隊", category: "多元", region: "台北" },
+      { name: "耐斯都會車隊", category: "多元", region: "台北" },
+      { name: "台北多元試跑", category: "多元試跑", region: "台北" }
+    ];
+    // 車隊（branch）→車隊地區對照（REQ-SET-007；「台北」＝雙北）：由 fleetDict（＝車隊對照表）衍生，不另維護清單；
+    // 示範假資料僅建台北／桃園／宜蘭三地區之隊員，故只取此三區
+    var branchRegions = {};
+    ['台北', '桃園', '宜蘭'].forEach(function (rg) {
+      branchRegions[rg] = fleetDict.filter(function (f) { return f.region === rg; }).map(function (f) { return f.name; });
+    });
     return {
       meta: {
         dataAsOf: '2026-07-06',        // 資料截至（昨日）
@@ -53,6 +129,7 @@
         staleDays: 0                   // 超過 2 天顯示過期警示（demo 可切）
       },
       branchRegions: branchRegions,
+      fleetDict: fleetDict,
       // 承接任務分布（本月 by 行政區；city → districts）
       distribution: {
         '台北市': [
@@ -175,7 +252,7 @@
       // 指標池（REQ-OV-005：從池中挑選組卡）
       metricPool: [
         { key: 'acceptedMembers', name: '有承接隊員數', dims: ['地區', '尖峰時段', '承接天數級距'] },
-        { key: 'acceptRate', name: '總覽承接率', dims: ['地區', '尖峰時段'] },
+        { key: 'acceptRate', name: '承接率', dims: ['地區', '尖峰時段'] },  // 2026-07-13 統一口徑：Σ承接÷Σ詢問（driver_inquiry_stats），原「總覽承接率」任務狀態口徑歸檔
         { key: 'completedTasks', name: '完成任務數', dims: ['地區', '尖峰時段'] },
         { key: 'onlineMembers', name: '上線隊員數', dims: ['地區', '尖峰時段', '上線天數級距'] },
         { key: 'dailyAvgCompleted', name: '日均完成數', dims: ['地區', '級距'] },
@@ -273,12 +350,12 @@
   var NAV_ITEMS = [
     { key: 'overview', label: '總覽', href: 'overview.html', ready: true },
     { key: 'peak', label: '尖峰完成數', href: 'peak.html', ready: true },
-    { key: 'capacity', label: '運力查詢', href: '#', ready: false },  // 含子分頁：承接任務的分布／上線時段分布／車組／車款
+    { key: 'capacity', label: '運力分析', href: 'capacity.html', ready: true },  // 2026-07-13 重規劃：三分頁＝尖峰運力 YoY／承接率分析／缺口快速觀察（原運力查詢四子分頁歸檔）
     { key: 'profile', label: '隊員 Profile', href: 'profile.html', ready: true },
-    { key: 'activity', label: '隊員活動', href: '#', ready: false },
-    { key: 'callcenter', label: '客服紀錄', href: '#', ready: false },
-    { key: 'import', label: '資料匯入', href: '#', ready: false },
-    { key: 'settings', label: '系統設定', href: '#', ready: false }
+    { key: 'activity', label: '隊員活動', href: 'activity.html', ready: true },
+    { key: 'callcenter', label: '客服紀錄', href: 'callcenter.html', ready: true },
+    { key: 'import', label: '資料匯入', href: 'import.html', ready: true },
+    { key: 'settings', label: '系統設定', href: 'settings.html', ready: true }
   ];
   function mountNav(activeKey, dataAsOf) {
     var nav = document.getElementById('crm-nav');

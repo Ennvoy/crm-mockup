@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>系統設定｜55688 隊員 CRM</title>
+<link rel="stylesheet" href="../tokens.css?v=25">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: var(--leading-body); min-height: 100dvh; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; }
+  input, select { font-family: inherit; }
+  :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 8px; }
+
+  #crm-nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border-soft); }
+  .nav-inner { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--container-gutter-desktop); display: flex; align-items: center; gap: 20px; height: 60px; }
+  .nav-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .brand-badge { background: var(--brand-55688); color: var(--brand-55688-on); font-weight: 700; font-style: italic; padding: 3px 9px; border-radius: 8px; font-size: 15px; letter-spacing: .5px; }
+  .brand-title { font-family: var(--font-display); font-weight: 500; font-size: 17px; }
+  .nav-links { display: flex; gap: 2px; overflow-x: auto; flex: 1; }
+  .nav-link { padding: 8px 11px; border-radius: 8px; font-size: 15px; color: var(--muted); white-space: nowrap; transition: color var(--motion-fast), background var(--motion-fast); min-height: 36px; display: inline-flex; align-items: center; }
+  .nav-link:hover { color: var(--fg); background: var(--surface-warm); }
+  .nav-link.active { color: var(--fg); font-weight: 500; box-shadow: inset 0 -2px 0 var(--brand-55688); border-radius: 8px 8px 0 0; }
+  .nav-link.pending { opacity: .55; }
+  .nav-meta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .data-chip { font-size: 12.5px; color: var(--muted); background: var(--surface-warm); padding: 4px 10px; border-radius: 9999px; }
+  .nav-user { font-size: 14px; color: var(--fg-2); }
+
+  .page { max-width: var(--container-max); margin: 0 auto; padding: 28px var(--container-gutter-desktop) 96px; }
+  h1 { font-family: var(--font-display); font-weight: 500; font-size: 32px; line-height: 1.2; }
+  .page-sub { color: var(--muted); font-size: 13.5px; margin-top: 6px; line-height: 1.6; max-width: 920px; }
+  .page-sub code { font-family: var(--font-mono); font-size: 12px; background: var(--surface-warm); padding: 1px 6px; border-radius: 5px; }
+
+  select {
+    appearance: none; background: var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%235e5d59" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+    border: 1px solid var(--border-soft); border-radius: 12px; padding: 8px 32px 8px 14px;
+    font-size: 14.5px; color: var(--fg); cursor: pointer; min-height: 40px;
+  }
+  select:hover { border-color: #d1cfc5; }
+  input[type="time"], input[type="number"], input[type="text"], input[type="password"], input[type="date"], input[type="search"] {
+    border: 1px solid var(--border-soft); border-radius: 10px; padding: 8px 12px; font-size: 14.5px;
+    color: var(--fg); background: var(--surface); min-height: 40px; outline: none;
+  }
+  input:focus-visible, select:focus-visible { box-shadow: var(--focus-ring); }
+
+  /* tabs（五分頁） */
+  .tabs { display: flex; gap: 4px; background: var(--surface-warm); border-radius: 12px; padding: 4px; width: fit-content; max-width: 100%; overflow-x: auto; margin: 18px 0 20px; }
+  .tab { border: none; background: transparent; padding: 9px 16px; border-radius: 9px; font-size: 14.5px; color: var(--muted); cursor: pointer; white-space: nowrap; min-height: 40px; transition: background var(--motion-fast), color var(--motion-fast); }
+  .tab[aria-selected="true"] { background: var(--surface); color: var(--fg); font-weight: 500; box-shadow: 0 0 0 1px var(--border-soft); }
+
+  .tabpane { display: grid; gap: 16px; }
+  .tabpane > * { min-width: 0; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .panel-title { font-family: var(--font-display); font-weight: 500; font-size: 19px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .panel-note { color: var(--meta); font-size: 12.5px; margin-bottom: 14px; line-height: 1.6; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer; border-radius: 8px; font-size: 14px; padding: 8px 14px; min-height: 40px; background: var(--surface-warm); color: var(--fg-2); box-shadow: 0 0 0 1px #d1cfc5; transition: background var(--motion-fast); }
+  .btn:hover { background: #e0ddd1; }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: var(--accent); color: var(--accent-on); box-shadow: 0 0 0 1px var(--accent); }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-sm { min-height: 32px; padding: 5px 12px; font-size: 13px; }
+  .btn-danger-o { background: transparent; color: var(--danger); box-shadow: 0 0 0 1px rgba(181,51,51,.35); }
+  .btn-danger-o:hover { background: rgba(181,51,51,.08); }
+
+  .chart-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 560px; }
+  th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  th { color: var(--muted); font-weight: 500; font-size: 12.5px; background: var(--bg); white-space: nowrap; }
+  tbody tr:hover { background: var(--bg); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .mrow { cursor: pointer; }
+  .mrow:focus-visible { box-shadow: inset var(--focus-ring); }
+  .mrow .chev { display: inline-block; transition: transform var(--motion-fast); color: var(--meta); }
+  .mrow[aria-expanded="true"] .chev { transform: rotate(90deg); }
+  tr.detail-row td { background: var(--bg); padding: 16px; }
+
+  .badge { display: inline-block; border-radius: 9999px; padding: 3px 11px; font-size: 12px; white-space: nowrap; }
+  .badge-on { background: rgba(23,163,74,.1); color: var(--success); }
+  .badge-off { background: var(--surface-warm); color: var(--muted); }
+  .badge-warn { background: rgba(234,179,8,.14); color: #8a6100; }
+
+  .chip { background: var(--surface-warm); color: var(--fg-2); border-radius: 9999px; padding: 2px 10px; font-size: 11.5px; white-space: nowrap; display: inline-block; }
+  .chips-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  .status-toggle { border: none; cursor: pointer; border-radius: 9999px; padding: 5px 13px; font-size: 12.5px; min-height: 30px; font-weight: 500; }
+  .status-toggle[aria-pressed="true"] { background: rgba(23,163,74,.12); color: var(--success); }
+  .status-toggle[aria-pressed="false"] { background: rgba(181,51,51,.08); color: var(--danger); }
+  .status-toggle[disabled] { opacity: .5; cursor: not-allowed; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--surface-warm); border-radius: 0 12px 12px 0; padding: 14px 18px; font-size: 13px; color: var(--fg-2); line-height: 1.75; }
+  .callout b { color: var(--fg); }
+  .banner-warn { border-left: 3px solid var(--warn); background: rgba(234,179,8,.08); border-radius: 0 12px 12px 0; padding: 14px 18px; font-size: 13.5px; color: var(--fg-2); line-height: 1.7; display: grid; gap: 4px; }
+  .fixed-note { background: var(--surface-warm); border-radius: 12px; padding: 12px 16px; font-size: 12.5px; color: var(--fg-2); margin-bottom: 4px; line-height: 1.6; }
+
+  /* 口徑 info icon */
+  .crm-info { position: relative; display: inline-flex; color: var(--meta); cursor: help; vertical-align: middle; }
+  .crm-info:hover, .crm-info:focus-visible { color: var(--fg-2); }
+  .crm-info-tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--surface); font-size: 12px; line-height: 1.5; padding: 8px 12px; border-radius: 8px; width: max-content; max-width: 280px; opacity: 0; pointer-events: none; transition: opacity var(--motion-fast); z-index: 500; text-align: left; }
+  .crm-info:hover .crm-info-tip, .crm-info:focus-visible .crm-info-tip { opacity: 1; }
+
+  /* 參數設定 */
+  .peak-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .peak-grid > * { min-width: 0; }
+  @media (max-width: 700px) { .peak-grid { grid-template-columns: 1fr; } }
+  .peak-card { background: var(--bg); border-radius: 12px; padding: 14px 16px; }
+  .peak-card .pk-label { font-size: 13.5px; font-weight: 500; margin-bottom: 8px; }
+  .time-pair { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+  .cut-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .cut-grid > * { min-width: 0; }
+  @media (max-width: 900px) { .cut-grid { grid-template-columns: 1fr; } }
+  .cut-card { background: var(--bg); border-radius: 12px; padding: 14px 16px; }
+  .cut-card .ck-label { font-size: 13.5px; font-weight: 500; margin-bottom: 4px; }
+  .cut-card .ck-note { color: var(--meta); font-size: 11.5px; margin-bottom: 10px; }
+  .cut-inputs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin-bottom: 10px; }
+  .cut-inputs input { width: 64px; min-height: 34px; padding: 5px 8px; font-size: 13px; }
+  .cut-preview { display: flex; flex-wrap: wrap; gap: 5px; }
+  .cut-preview span { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 9999px; padding: 3px 10px; font-size: 12px; color: var(--fg-2); }
+  .stale-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .stale-row input { width: 90px; }
+  .save-bar { display: flex; justify-content: flex-end; }
+
+  /* 字典維護 */
+  .search-input { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: 12px; padding: 0 14px; min-height: 42px; max-width: 320px; margin-bottom: 12px; }
+  .search-input svg { color: var(--meta); flex-shrink: 0; }
+  .search-input input { border: none; outline: none; background: transparent; font-size: 14px; width: 100%; color: var(--fg); min-height: unset; }
+  .dict-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .dict-toolbar .search-input { margin-bottom: 0; }
+  tr.row-caution { background: rgba(234,179,8,.08); }
+  tbody tr.row-caution:hover { background: rgba(234,179,8,.16); }
+
+  /* RBAC matrix */
+  .matrix-table { min-width: 640px; }
+  .matrix-table td, .matrix-table th { font-size: 12.5px; }
+  .perm-cell { display: flex; align-items: center; gap: 6px; }
+  .perm-cell label { cursor: pointer; }
+  .perm-cell input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+  .module-row td:first-child { color: var(--fg-2); font-weight: 500; white-space: nowrap; }
+
+  /* Modal */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(20, 20, 19, .45); z-index: 8000; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal-backdrop.show { display: flex; }
+  .modal { background: var(--surface); border-radius: 16px; width: 460px; max-width: 100%; padding: 24px; box-shadow: rgba(0,0,0,.18) 0 12px 48px; }
+  .modal h3 { font-family: var(--font-display); font-weight: 500; font-size: 20px; margin-bottom: 6px; }
+  .modal p.desc { color: var(--muted); font-size: 13px; margin-bottom: 16px; line-height: 1.6; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13.5px; color: var(--fg-2); margin-bottom: 5px; font-weight: 500; }
+  .field select, .field input { width: 100%; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+  .state-layer { display: none; padding: 72px 24px; text-align: center; }
+  .state-layer.show { display: block; }
+  .state-icon { font-size: 40px; margin-bottom: 12px; }
+  .state-title { font-family: var(--font-display); font-weight: 500; font-size: 20px; }
+  .state-desc { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .skeleton { border-radius: 12px; background: linear-gradient(90deg, var(--surface-warm) 25%, #f0eee4 50%, var(--surface-warm) 75%); background-size: 200% 100%; animation: shim 1.4s infinite; }
+  @keyframes shim { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } * { transition-duration: 0ms !important; } }
+
+  .audit-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .audit-filters .drange { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+  .audit-filters .drange input { min-height: 40px; }
+
+  footer.proto-note { max-width: var(--container-max); margin: 0 auto; padding: 0 24px 120px; color: var(--meta); font-size: 12.5px; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<nav id="crm-nav" aria-label="全站導覽"></nav>
+
+<main class="page">
+  <h1>系統設定</h1>
+  <div class="page-sub">
+    後台維運與治理入口，五個分頁分別對應獨立權限閘門：
+    參數設定／字典維護 → <code>admin.settings</code>；帳號與角色 → <code>admin.users</code>；
+    憑證與 Token → <code>admin.credentials</code> / <code>admin.tokens</code>；審計日誌 → <code>audit.view</code>。
+    使用者需至少持有其中一項權限方可進入本頁，實際可見分頁依所持權限顯示（REQ-RBAC-009）。
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="系統設定分頁">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" data-tab="params" type="button">參數設定</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" data-tab="dict" type="button">字典維護</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" data-tab="rbac" type="button">帳號與角色</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" data-tab="creds" type="button">憑證與 Token</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" data-tab="audit" type="button">審計日誌</button>
+  </div>
+
+  <div id="content-normal">
+
+    <!-- ① 參數設定（REQ-SET-001） -->
+    <section class="tabpane" id="pane-params" role="tabpanel" aria-labelledby="tab-1">
+      <div class="panel">
+        <div class="panel-title">尖峰時段</div>
+        <div class="panel-note">影響全站早／晚尖峰相關統計（可用運力、上線天數等）之時段口徑；變更即時反映後續統計。</div>
+        <div class="peak-grid">
+          <div class="peak-card">
+            <div class="pk-label">早尖峰</div>
+            <div class="time-pair">
+              <input type="time" id="p-morn-s" value="07:00" aria-label="早尖峰開始時間">
+              <span>至</span>
+              <input type="time" id="p-morn-e" value="08:59" aria-label="早尖峰結束時間">
+            </div>
+          </div>
+          <div class="peak-card">
+            <div class="pk-label">晚尖峰</div>
+            <div class="time-pair">
+              <input type="time" id="p-eve-s" value="17:00" aria-label="晚尖峰開始時間">
+              <span>至</span>
+              <input type="time" id="p-eve-e" value="18:59" aria-label="晚尖峰結束時間">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">級距切點</div>
+        <div class="panel-note">各報表／指標卡之分桶級距切點，皆可由後台調整；儲存後套用於後續統計計算，不回溯重算歷史快照。</div>
+        <div class="cut-grid" id="cut-grid"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">資料新鮮度</div>
+        <div class="panel-note">超過設定天數未有新匯入批次時，全站頂部顯示資料過期警示。</div>
+        <div class="stale-row">
+          <label for="p-stale" style="font-size:13.5px;color:var(--fg-2)">資料過期警示天數</label>
+          <input type="number" id="p-stale" value="2" min="1" max="30" aria-label="資料過期警示天數">
+          <span style="color:var(--meta);font-size:12.5px">天（預設 2 天；超過此天數未見新匯入批次即顯示警示）</span>
+        </div>
+      </div>
+
+      <div class="save-bar">
+        <button class="btn btn-primary" id="btn-save-params" type="button">儲存設定</button>
+      </div>
+    </section>
+
+    <!-- ② 字典維護 -->
+    <section class="tabpane" id="pane-dict" role="tabpanel" aria-labelledby="tab-2" style="display:none">
+
+      <!-- (c) 車隊→車隊地區：重點 panel 放最上（REQ-SET-007，2026-07-09 改唯讀） -->
+      <div class="panel">
+        <div class="panel-title">車隊 → 車隊地區對照 <span id="branch-info"></span> <span class="chip" id="branch-count"></span></div>
+        <div class="panel-note" id="branch-source-note"></div>
+        <div class="callout" style="margin-bottom:16px">
+          本字典唯一來源＝車隊對照表匯入（<code>fleet_dictionary</code>），後台不提供人工維護（2026-07-09 拍板）；
+          <b>車隊地區「台北」＝雙北。</b>對照變更僅影響變更後之統計——已寫入之每日快照不回溯重算；身份別由所屬車隊類別推導。
+        </div>
+        <div class="dict-toolbar">
+          <div class="search-input">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="branch-q" type="search" placeholder="搜尋車隊名稱" aria-label="搜尋車隊名稱">
+          </div>
+          <select id="branch-region-f" aria-label="篩選車隊地區"></select>
+        </div>
+        <div class="chart-wrap"><table id="branch-table" aria-label="車隊與車隊地區對照表"></table></div>
+        <div class="banner-warn" style="margin-top:14px">
+          <div>⚠️ members 匯入 branch 查無對照：<b>大都會苗栗車隊</b>（1 筆）</div>
+          <div>待下一次對照表更新，期間該隊員地區歸「未對照」分組。</div>
+        </div>
+      </div>
+
+      <!-- (a) 活動類型字典（REQ-SET-002） -->
+      <div class="panel">
+        <div class="panel-title">活動類型字典</div>
+        <div class="panel-note">維護「隊員活動」建立時可選用之活動類型；停用不刪除既有引用資料。</div>
+        <div class="chart-wrap"><table id="type-table" aria-label="活動類型字典表"></table></div>
+      </div>
+
+      <!-- (b) 行政區→縣市（REQ-SET-006） -->
+      <div class="panel">
+        <div class="panel-title">行政區 → 縣市對照 <span id="district-info"></span></div>
+        <div class="panel-note">用於任務／上線類歷史依行政區歸屬縣市（不排除退隊者歷史）；匯入時查無對照者列入警告清單。</div>
+        <div class="search-input">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="district-q" type="search" placeholder="搜尋行政區" aria-label="搜尋行政區">
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn btn-sm" id="btn-district-add" type="button">新增對照</button>
+        </div>
+        <div class="chart-wrap"><table id="district-table" aria-label="行政區與縣市對照表"></table></div>
+      </div>
+    </section>
+
+    <!-- ③ 帳號與角色（RBAC） -->
+    <section class="tabpane" id="pane-rbac" role="tabpanel" aria-labelledby="tab-3" style="display:none">
+      <div class="banner-warn">
+        <div>⚠️ 目前僅剩 <b>1 位 super admin</b>，建議指派第二位以避免單點風險。</div>
+        <div>唯一 super admin 不可停用／降級（REQ-RBAC-003）。</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">使用者</div>
+        <div class="panel-note">狀態切換為「停用即除役」，不提供硬刪除；停用後之登入請求一律回 403（REQ-AUTH-005）。</div>
+        <div class="chart-wrap"><table id="user-table" aria-label="使用者帳號表"></table></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">角色 <span id="role-info"></span></div>
+        <div class="panel-note">點列展開「模組 × 權限」matrix；權限變更於使用者下次請求生效，並寫入審計（REQ-RBAC-007/009）。</div>
+        <div class="chart-wrap"><table id="role-table" aria-label="角色與權限表"></table></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Break-glass 自助重設</div>
+        <div class="callout">
+          super admin 綁定 email 可自助觸發密碼重設，不需其他管理員介入；完成後系統自動寫入審計（動作／時間／來源 IP），
+          並即時通知其他 super admin。
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 憑證與 Token（REQ-SET-003 / REQ-IMP-013） -->
+    <section class="tabpane" id="pane-creds" role="tabpanel" aria-labelledby="tab-4" style="display:none">
+      <div class="panel">
+        <div class="panel-title">外部憑證</div>
+        <div class="panel-note">憑證以 AES-256 加密儲存；密碼欄位永不回顯明文，僅顯示遮罩，更新一律寫入審計。</div>
+        <div class="chart-wrap"><table id="cred-table" aria-label="外部憑證表"></table></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">API Token</div>
+        <div class="chart-wrap"><table id="token-table" aria-label="API Token 表"></table></div>
+        <div class="fixed-note" style="margin-top:14px">
+          token 綁最小 scope、可設效期、可即時撤銷；憑證讀取 scope 另綁 IP 白名單（限排程主機）＋限流＋每次讀取寫審計，白名單外拒絕並告警（REQ-IMP-013）。
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤ 審計日誌（REQ-SET-004） -->
+    <section class="tabpane" id="pane-audit" role="tabpanel" aria-labelledby="tab-5" style="display:none">
+      <div class="fixed-note">append-only：任何角色（含 super admin）皆不可刪除或修改審計日誌，僅可查詢與匯出。</div>
+      <div class="panel">
+        <div class="panel-title">審計日誌</div>
+        <div class="audit-filters" role="group" aria-label="審計日誌篩選">
+          <select id="a-action" aria-label="篩選動作類型"></select>
+          <select id="a-who" aria-label="篩選操作者"></select>
+          <span class="drange">
+            <label for="a-from">起</label><input type="date" id="a-from" aria-label="起始日期">
+            <label for="a-to">迄</label><input type="date" id="a-to" aria-label="結束日期">
+          </span>
+          <button class="btn btn-sm" id="btn-audit-reset" type="button">清除篩選</button>
+          <button class="btn btn-sm" id="btn-audit-export" type="button" style="margin-left:auto">匯出</button>
+        </div>
+        <div class="chart-wrap"><table id="audit-table" aria-label="審計日誌表"></table></div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="state-layer" id="st-empty">
+    <div class="state-icon" aria-hidden="true">🗂️</div>
+    <div class="state-title">尚無資料</div>
+    <div class="state-desc">尚未建立任何設定項目，請聯絡系統管理員初始化。</div>
+  </div>
+  <div class="state-layer" id="st-loading" aria-label="載入中">
+    <div style="display:grid;gap:12px;max-width:960px;margin:0 auto">
+      <div class="skeleton" style="height:140px"></div>
+      <div class="skeleton" style="height:280px"></div>
+    </div>
+  </div>
+  <div class="state-layer" id="st-error">
+    <div class="state-icon" aria-hidden="true">⚠️</div>
+    <div class="state-title">資料載入失敗</div>
+    <div class="state-desc">連線發生問題（HTTP 500），請稍後再試。</div>
+  </div>
+  <div class="state-layer" id="st-forbidden">
+    <div class="state-icon" aria-hidden="true">🔒</div>
+    <div class="state-title">無權限檢視此頁</div>
+    <div class="state-desc">你的帳號沒有系統設定任一子權限（admin.settings／admin.credentials／admin.tokens／admin.users／audit.view）。</div>
+  </div>
+</main>
+
+<footer class="proto-note">
+  原型說明：本頁為互動原型（零依賴、假資料，不落地至 localStorage 之 CRM 主資料層）。帳號／角色／憑證／Token／審計等清單為頁面內示意資料，重新整理將還原初始狀態；
+  「儲存設定」「更新憑證」等動作以 toast 示意寫入審計，正式版將串接真實後端與 append-only 審計儲存。姓名全站一律遮罩（陳○明）。
+  車隊 → 車隊地區對照為匯入唯讀字典，本頁不提供人工新增／修正。
+  行動電話僅存在於客服模組，本頁不顯示電話欄位。
+</footer>
+
+<!-- modal：更新外部憑證 -->
+<div class="modal-backdrop" id="modal-cred" role="dialog" aria-modal="true" aria-labelledby="mc-title">
+  <div class="modal">
+    <h3 id="mc-title">更新憑證</h3>
+    <p class="desc">憑證將以 AES-256 加密儲存；儲存後密碼欄位永不回顯明文。</p>
+    <div class="field"><label for="mc-account">帳號</label><input type="text" id="mc-account" disabled></div>
+    <div class="field"><label for="mc-pass">新密碼</label><input type="password" id="mc-pass" placeholder="輸入新密碼" autocomplete="new-password"></div>
+    <div class="field"><label for="mc-pass2">確認密碼</label><input type="password" id="mc-pass2" placeholder="再次輸入新密碼" autocomplete="new-password"></div>
+    <div class="modal-foot">
+      <button class="btn" type="button" id="mc-cancel">取消</button>
+      <button class="btn btn-primary" type="button" id="mc-ok">更新並寫入審計</button>
+    </div>
+  </div>
+</div>
+
+<script src="../app.js?v=25"></script>
+<script>
+(function () {
+  'use strict';
+  var DB = CRM.load();
+  CRM.mountNav('settings', DB.meta.dataAsOf);
+
+  /* ══════════════════════════ ① 參數設定（REQ-SET-001） ══════════════════════════ */
+  var CUT_DEFS = [
+    { key: 'online', label: '上線天數級距', note: '影響可用運力／上線隊員數等指標分桶', c1: 10, c2: 20, unit: '天', hasZero: true },
+    { key: 'daily', label: '日均完成數級距', note: '影響活動成效前後比較之日均完成桶（AI 建議值，營管可自行調整）', c1: 3, c2: 6, unit: '次', hasZero: true },
+    { key: 'accept', label: '承接天數級距', note: 'AI 建議值，營管可自行調整；影響有承接隊員數之週視角分桶', c1: 2, c2: 4, unit: '天', hasZero: false }
+  ];
+  function cutPreview(def) {
+    var u = def.unit;
+    if (def.hasZero) {
+      return ['0 ' + u, '1~' + def.c1 + ' ' + u, (def.c1 + 1) + '~' + def.c2 + ' ' + u, (def.c2 + 1) + '+ ' + u];
+    }
+    return ['1~' + def.c1 + ' ' + u, (def.c1 + 1) + '~' + def.c2 + ' ' + u, (def.c2 + 1) + ' ' + u + '以上'];
+  }
+  function renderCutGrid() {
+    var wrap = document.getElementById('cut-grid');
+    wrap.innerHTML = CUT_DEFS.map(function (d) {
+      return '<div class="cut-card" data-cut="' + d.key + '">' +
+        '<div class="ck-label">' + d.label + '</div>' +
+        '<div class="ck-note">' + d.note + '</div>' +
+        '<div class="cut-inputs">切點 1 <input type="number" min="1" class="c1" value="' + d.c1 + '" aria-label="' + d.label + ' 切點一"> ／ 切點 2 <input type="number" min="2" class="c2" value="' + d.c2 + '" aria-label="' + d.label + ' 切點二"></div>' +
+        '<div class="cut-preview">' + cutPreview(d).map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>' +
+        '</div>';
+    }).join('');
+    wrap.querySelectorAll('.cut-card').forEach(function (card) {
+      var def = CUT_DEFS.filter(function (d) { return d.key === card.dataset.cut; })[0];
+      var i1 = card.querySelector('.c1'), i2 = card.querySelector('.c2');
+      function sync() {
+        var v1 = Math.max(1, Math.round(Number(i1.value) || def.c1));
+        var v2 = Math.max(v1 + 1, Math.round(Number(i2.value) || def.c2));
+        def.c1 = v1; def.c2 = v2; i1.value = v1; i2.value = v2;
+        card.querySelector('.cut-preview').innerHTML = cutPreview(def).map(function (t) { return '<span>' + t + '</span>'; }).join('');
+      }
+      i1.addEventListener('input', sync);
+      i2.addEventListener('input', sync);
+    });
+  }
+  renderCutGrid();
+  document.getElementById('btn-save-params').addEventListener('click', function () {
+    CRM.toast('已儲存：變更即時反映後續統計');
+  });
+
+  /* ══════════════════════════ ② 字典維護 ══════════════════════════ */
+  var dictRendered = false;
+  document.getElementById('branch-info').innerHTML = CRM.infoIcon('所屬車隊之車隊地區＝台北者計入雙北口徑；本字典唯一來源為車隊對照表匯入，後台不提供人工維護');
+  document.getElementById('district-info').innerHTML = CRM.infoIcon('district（行政區）→縣市對照；任務/上線類歷史依此字典歸屬縣市、不排除退隊者歷史資料');
+
+  var ACT_TYPES = [
+    { name: '早尖峰', status: 'on' },
+    { name: '晚尖峰', status: 'on' },
+    { name: '車組招募', status: 'on' },
+    { name: '獎勵活動', status: 'on' },
+    { name: '培訓課程', status: 'on' },
+    { name: '通用意願調查', status: 'off' }
+  ];
+  function renderTypeTable() {
+    var html = '<thead><tr><th>類型名稱</th><th>狀態</th><th>操作</th></tr></thead><tbody>';
+    ACT_TYPES.forEach(function (t, i) {
+      html += '<tr><td>' + t.name + '</td>' +
+        '<td><span class="badge ' + (t.status === 'on' ? 'badge-on">啟用' : 'badge-off">已停用') + '</span></td>' +
+        '<td style="display:flex;gap:6px"><button class="btn btn-sm" type="button" data-rename="' + i + '">改名</button>' +
+        '<button class="btn btn-sm" type="button" data-toggle-type="' + i + '">' + (t.status === 'on' ? '停用' : '啟用') + '</button></td></tr>';
+      if (t.status === 'off') {
+        html += '<tr><td colspan="3" style="color:var(--meta);font-size:12px;padding-top:0">不出現於新建活動選單；既有引用活動保留原類型顯示（選單標「已停用」）</td></tr>';
+      }
+    });
+    html += '</tbody>';
+    document.getElementById('type-table').innerHTML = html;
+    document.querySelectorAll('[data-rename]').forEach(function (b) {
+      b.addEventListener('click', function () { CRM.toast('原型示意：類型「' + ACT_TYPES[b.dataset.rename].name + '」改名（已寫入審計）'); });
+    });
+    document.querySelectorAll('[data-toggle-type]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var t = ACT_TYPES[b.dataset.toggleType];
+        t.status = (t.status === 'on') ? 'off' : 'on';
+        renderTypeTable();
+        CRM.toast('類型「' + t.name + '」已' + (t.status === 'on' ? '啟用' : '停用') + '（已寫入審計）');
+      });
+    });
+  }
+
+  function districtRows() {
+    var rows = [];
+    Object.keys(DB.distribution).forEach(function (city) {
+      DB.distribution[city].forEach(function (item) { rows.push({ district: item.d, city: city }); });
+    });
+    return rows.slice(0, 10);
+  }
+  var DISTRICT_ROWS = districtRows();
+  function renderDistrictTable() {
+    var q = (document.getElementById('district-q').value || '').trim();
+    var rows = q ? DISTRICT_ROWS.filter(function (r) { return r.district.indexOf(q) !== -1; }) : DISTRICT_ROWS;
+    var html = '<thead><tr><th>district（行政區）</th><th>縣市</th></tr></thead><tbody>';
+    if (!rows.length) html += '<tr><td colspan="2" style="color:var(--meta)">查無符合「' + q + '」的行政區</td></tr>';
+    rows.forEach(function (r) { html += '<tr><td>' + r.district + '</td><td>' + r.city + '</td></tr>'; });
+    html += '</tbody>';
+    document.getElementById('district-table').innerHTML = html;
+  }
+  document.getElementById('district-q').addEventListener('input', renderDistrictTable);
+  document.getElementById('btn-district-add').addEventListener('click', function () {
+    CRM.toast('原型示意：新增行政區→縣市對照（已寫入審計）');
+  });
+
+  /* 車隊 → 車隊地區對照：唯一來源＝fleet_dictionary 匯入快照，後台純唯讀檢視（REQ-SET-007，2026-07-09 拍板） */
+  var FLEET_REGIONS = ['台北', '台中', '台南', '高雄', '桃園', '新竹', '花蓮', '嘉義', '宜蘭', '離島'];
+  var FLEET_IMPORT_BATCH = 'IMP-20260707-06';
+  var FLEET_IMPORT_AT = '2026-07-07 06:30';
+  function fleetCategoryBadgeClass(category) {
+    if (category === '小黃') return 'badge-on';
+    if (category === '多元試跑') return 'badge-warn';
+    return 'badge-off'; // 多元
+  }
+  function renderBranchFilterOptions() {
+    var sel = document.getElementById('branch-region-f');
+    sel.innerHTML = '<option value="">全部地區</option>' + FLEET_REGIONS.map(function (r) {
+      return '<option value="' + r + '">' + r + '</option>';
+    }).join('');
+  }
+  function renderBranchTable() {
+    var q = (document.getElementById('branch-q').value || '').trim();
+    var regionF = document.getElementById('branch-region-f').value;
+    var rows = DB.fleetDict.filter(function (r) {
+      if (regionF && r.region !== regionF) return false;
+      if (q && r.name.indexOf(q) === -1) return false;
+      return true;
+    });
+    var html = '<thead><tr><th>車隊名稱</th><th>類別</th><th>車隊地區</th></tr></thead><tbody>';
+    if (!rows.length) html += '<tr><td colspan="3" style="color:var(--meta)">查無符合條件之車隊</td></tr>';
+    rows.forEach(function (r) {
+      var caution = r.name.indexOf('保留') !== -1;
+      html += '<tr' + (caution ? ' class="row-caution"' : '') + '><td>' + r.name +
+        (caution ? ' <span class="chip" title="保留類車隊，照對照表原樣收錄" style="cursor:help">保留類</span>' : '') + '</td>' +
+        '<td><span class="badge ' + fleetCategoryBadgeClass(r.category) + '">' + r.category + '</span></td>' +
+        '<td>' + r.region + '</td></tr>';
+    });
+    html += '</tbody>';
+    document.getElementById('branch-table').innerHTML = html;
+  }
+  document.getElementById('branch-count').textContent = '共 ' + CRM.fmt(DB.fleetDict.length) + ' 筆';
+  document.getElementById('branch-source-note').textContent = '來源：車隊對照表匯入（每日自動／手動上傳）・最後更新批次 ' + FLEET_IMPORT_BATCH + '（' + FLEET_IMPORT_AT + '）';
+  renderBranchFilterOptions();
+  document.getElementById('branch-q').addEventListener('input', renderBranchTable);
+  document.getElementById('branch-region-f').addEventListener('change', renderBranchTable);
+
+  function renderDict() {
+    if (dictRendered) return;
+    dictRendered = true;
+    renderTypeTable();
+    renderDistrictTable();
+    renderBranchTable();
+  }
+
+  /* ══════════════════════════ ③ 帳號與角色（RBAC） ══════════════════════════ */
+  var rbacRendered = false;
+  var USERS = [
+    { acct: 'admin01', name: '王大明', roles: ['super admin'], on: true },
+    { acct: 'ops01', name: '陳雅婷', roles: ['營管'], on: true },
+    { acct: 'ops02', name: '林建宏', roles: ['營管', '稽核'], on: true },
+    { acct: 'cs01', name: '張淑芬', roles: ['客服主管'], on: true },
+    { acct: 'cs02', name: '李美玲', roles: ['客服人員'], on: true },
+    { acct: 'cs03', name: '黃文雄', roles: ['客服人員'], on: false },
+    { acct: 'audit01', name: '吳麗華', roles: ['稽核'], on: true },
+    { acct: 'view01', name: '蔡家豪', roles: ['唯讀報表'], on: true }
+  ];
+  function superAdminOnCount() {
+    return USERS.filter(function (u) { return u.roles.indexOf('super admin') !== -1 && u.on; }).length;
+  }
+  function renderUserTable() {
+    var html = '<thead><tr><th>帳號</th><th>姓名</th><th>角色</th><th>狀態</th></tr></thead><tbody>';
+    USERS.forEach(function (u, i) {
+      var isOnlySuper = u.roles.indexOf('super admin') !== -1 && superAdminOnCount() <= 1 && u.on;
+      html += '<tr><td>' + u.acct + '</td><td>' + CRM.maskName(u.name) + '</td>' +
+        '<td><span class="chips-wrap">' + u.roles.map(function (r) { return '<span class="chip">' + r + '</span>'; }).join('') + '</span></td>' +
+        '<td><button class="status-toggle" type="button" data-user="' + i + '" aria-pressed="' + u.on + '"' + (isOnlySuper ? ' title="唯一 super admin 不可停用/降級"' : '') + '>' + (u.on ? '啟用中' : '已停用') + '</button></td></tr>';
+    });
+    html += '</tbody>';
+    document.getElementById('user-table').innerHTML = html;
+    document.querySelectorAll('[data-user]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var u = USERS[b.dataset.user];
+        var isOnlySuper = u.roles.indexOf('super admin') !== -1 && superAdminOnCount() <= 1 && u.on;
+        if (isOnlySuper) { CRM.toast('唯一 super admin 不可停用/降級（REQ-RBAC-003）'); return; }
+        u.on = !u.on;
+        renderUserTable();
+        CRM.toast('帳號「' + u.acct + '」已' + (u.on ? '啟用' : '停用（停用即除役，不提供硬刪除；停用登入回 403）'));
+      });
+    });
+  }
+
+  var MODULES = [
+    { label: '總覽', perms: ['overview.view'] },
+    { label: '運力分析', perms: ['capacity.view'] },
+    { label: '隊員 Profile', perms: ['profile.view', 'profile.view_sensitive'] },
+    { label: '隊員活動', perms: ['activity.manage'] },
+    { label: '客服紀錄', perms: ['callproject.manage', 'callrecord.view_all', 'callrecord.edit_assigned'] },
+    { label: '資料匯入', perms: ['import.run'] },
+    { label: '系統設定', perms: ['admin.settings', 'admin.users', 'admin.tokens', 'admin.credentials', 'admin.delete'] },
+    { label: '審計', perms: ['audit.view'] }
+  ];
+  var PERM_LABELS = {
+    'overview.view': '檢視', 'capacity.view': '檢視運力', 'fleet.view': '檢視車組車款',
+    'profile.view': '檢視', 'profile.view_sensitive': '檢視敏感欄位（收入）',
+    'activity.manage': '管理活動', 'callproject.manage': '管理外撥專案',
+    'callrecord.view_all': '檢視全量紀錄', 'callrecord.edit_assigned': '編輯本人作業範圍',
+    'import.run': '執行匯入', 'admin.settings': '參數與字典', 'admin.users': '帳號管理',
+    'admin.tokens': 'Token 管理', 'admin.credentials': '憑證管理', 'admin.delete': '刪除操作',
+    'audit.view': '查詢審計'
+  };
+  var ALL_PERMS = [].concat.apply([], MODULES.map(function (m) { return m.perms; }));
+  var ROLES = [
+    { name: 'super admin', perms: ALL_PERMS.slice() },
+    { name: '系統管理員', perms: ['overview.view', 'admin.settings', 'admin.users', 'admin.tokens', 'admin.credentials', 'audit.view'] },
+    { name: '營管', perms: ['overview.view', 'capacity.view', 'fleet.view', 'profile.view', 'activity.manage', 'import.run'] },
+    { name: '客服主管', perms: ['overview.view', 'profile.view', 'profile.view_sensitive', 'callproject.manage', 'callrecord.view_all', 'callrecord.edit_assigned'] },
+    { name: '客服人員', perms: ['profile.view', 'callrecord.edit_assigned'] },
+    { name: '稽核', perms: ['overview.view', 'audit.view'] },
+    { name: '唯讀報表', perms: ['overview.view', 'capacity.view', 'fleet.view'] }
+  ];
+  document.getElementById('role-info').innerHTML = CRM.infoIcon('模組 × 權限 matrix；每角色權限獨立，使用者可持多角色（權限聯集）');
+
+  function matrixHtml(role) {
+    var html = '<table class="matrix-table"><thead><tr><th>模組</th><th>權限</th></tr></thead><tbody>';
+    MODULES.forEach(function (m) {
+      html += '<tr class="module-row"><td>' + m.label + '</td><td><div class="perm-cell" style="flex-wrap:wrap">' +
+        m.perms.map(function (p) {
+          var cid = 'perm-' + role.name.replace(/\s+/g, '') + '-' + p.replace(/\./g, '-');
+          var checked = role.perms.indexOf(p) !== -1;
+          return '<span class="perm-cell"><input type="checkbox" id="' + cid + '" data-role="' + role.name + '" data-perm="' + p + '"' + (checked ? ' checked' : '') + '>' +
+            '<label for="' + cid + '">' + p + '（' + PERM_LABELS[p] + '）</label></span>';
+        }).join('') + '</div></td></tr>';
+    });
+    html += '</tbody></table><div style="color:var(--meta);font-size:12px;margin-top:8px">權限變更下次請求生效並寫入審計。</div>';
+    return html;
+  }
+  function renderRoleTable() {
+    var html = '<thead><tr><th></th><th>角色</th><th>持有權限數</th></tr></thead><tbody>';
+    ROLES.forEach(function (r, i) {
+      html += '<tr class="mrow" tabindex="0" data-role-idx="' + i + '" aria-expanded="false"><td class="chev">▸</td><td>' + r.name + '</td><td class="num">' + r.perms.length + ' / ' + ALL_PERMS.length + '</td></tr>' +
+        '<tr class="detail-row" id="role-detail-' + i + '" style="display:none"><td colspan="3">' + matrixHtml(r) + '</td></tr>';
+    });
+    html += '</tbody>';
+    document.getElementById('role-table').innerHTML = html;
+    document.querySelectorAll('[data-role-idx]').forEach(function (tr) {
+      function toggle() {
+        var idx = tr.dataset.roleIdx;
+        var detail = document.getElementById('role-detail-' + idx);
+        var show = detail.style.display === 'none';
+        detail.style.display = show ? '' : 'none';
+        tr.setAttribute('aria-expanded', String(show));
+      }
+      tr.addEventListener('click', toggle);
+      tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') toggle(); });
+    });
+    document.querySelectorAll('.matrix-table input[type="checkbox"]').forEach(function (cb) {
+      cb.addEventListener('click', function (e) { e.stopPropagation(); });
+      cb.addEventListener('change', function () {
+        var role = ROLES.filter(function (r) { return r.name === cb.dataset.role; })[0];
+        var perm = cb.dataset.perm;
+        if (cb.checked) { if (role.perms.indexOf(perm) === -1) role.perms.push(perm); }
+        else { role.perms = role.perms.filter(function (p) { return p !== perm; }); }
+        CRM.toast('角色「' + role.name + '」權限「' + PERM_LABELS[perm] + '」已' + (cb.checked ? '開啟' : '關閉') + '（下次請求生效，已寫入審計）');
+      });
+    });
+  }
+  function renderRbac() {
+    if (rbacRendered) return;
+    rbacRendered = true;
+    renderUserTable();
+    renderRoleTable();
+  }
+
+  /* ══════════════════════════ ④ 憑證與 Token ══════════════════════════ */
+  var credsRendered = false;
+  var CREDS = [
+    { key: 'tableau', name: 'Tableau', account: 'tableau_svc@55688.com.tw' },
+    { key: 'fleet', name: '隊管系統', account: 'fleet_sync@55688.com.tw' }
+  ];
+  function renderCredTable() {
+    var html = '<thead><tr><th>服務</th><th>帳號</th><th>密碼</th><th>操作</th></tr></thead><tbody>';
+    CREDS.forEach(function (c) {
+      html += '<tr><td>' + c.name + '</td><td>' + c.account + '</td><td style="letter-spacing:2px">●●●●●●●●</td>' +
+        '<td><button class="btn btn-sm" type="button" data-cred="' + c.key + '">更新憑證</button></td></tr>';
+    });
+    html += '</tbody>';
+    document.getElementById('cred-table').innerHTML = html;
+    document.querySelectorAll('[data-cred]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var c = CREDS.filter(function (x) { return x.key === b.dataset.cred; })[0];
+        openCredModal(c);
+      });
+    });
+  }
+  var mCred = document.getElementById('modal-cred');
+  var credTarget = null;
+  function openCredModal(c) {
+    credTarget = c;
+    document.getElementById('mc-title').textContent = '更新' + c.name + '憑證';
+    document.getElementById('mc-account').value = c.account;
+    document.getElementById('mc-pass').value = '';
+    document.getElementById('mc-pass2').value = '';
+    mCred.classList.add('show');
+    document.getElementById('mc-pass').focus();
+  }
+  function closeCredModal() { mCred.classList.remove('show'); }
+  document.getElementById('mc-cancel').addEventListener('click', closeCredModal);
+  mCred.addEventListener('click', function (e) { if (e.target === mCred) closeCredModal(); });
+  document.getElementById('mc-ok').addEventListener('click', function () {
+    var p1 = document.getElementById('mc-pass').value, p2 = document.getElementById('mc-pass2').value;
+    if (!p1 || p1 !== p2) { CRM.toast('兩次輸入的密碼不一致'); return; }
+    closeCredModal();
+    CRM.toast('已更新「' + credTarget.name + '」憑證（AES-256 加密儲存，已寫入審計：操作者 王營管・' + DB.meta.importedAt + '）');
+  });
+
+  var TOKENS = [
+    { name: '夜間批次匯入排程', scope: 'import.run', expire: '2026-12-31', status: '使用中' },
+    { name: 'Tableau 唯讀同步', scope: 'capacity.view', expire: '2026-09-30', status: '使用中' },
+    { name: '隊管系統回寫憑證讀取', scope: 'admin.credentials', expire: '2026-08-15', status: '使用中' },
+    { name: '舊版報表匯出', scope: 'audit.view', expire: '2026-03-01', status: '已撤銷' }
+  ];
+  function renderTokenTable() {
+    var html = '<thead><tr><th>名稱</th><th>Scope</th><th>效期</th><th>狀態</th><th>操作</th></tr></thead><tbody>';
+    TOKENS.forEach(function (t, i) {
+      var revoked = t.status === '已撤銷';
+      html += '<tr><td>' + t.name + '</td><td>' + t.scope + '</td><td class="num">' + t.expire + '</td>' +
+        '<td><span class="badge ' + (revoked ? 'badge-off' : 'badge-on') + '">' + t.status + '</span></td>' +
+        '<td>' + (revoked ? '<span style="color:var(--meta);font-size:12.5px">—</span>' : '<button class="btn btn-sm btn-danger-o" type="button" data-token="' + i + '">撤銷</button>') + '</td></tr>';
+    });
+    html += '</tbody>';
+    document.getElementById('token-table').innerHTML = html;
+    document.querySelectorAll('[data-token]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var t = TOKENS[b.dataset.token];
+        t.status = '已撤銷';
+        renderTokenTable();
+        CRM.toast('Token「' + t.name + '」已撤銷（原型示意；正式版即時失效並寫入審計）');
+      });
+    });
+  }
+  function renderCreds() {
+    if (credsRendered) return;
+    credsRendered = true;
+    renderCredTable();
+    renderTokenTable();
+  }
+
+  /* ══════════════════════════ ⑤ 審計日誌（REQ-SET-004） ══════════════════════════ */
+  var auditRendered = false;
+  var AUDIT_LOG = [
+    { t: '2026-07-07 08:20', who: '王大明', action: '後台設定變更', obj: '尖峰時段切點（早尖峰 07:00–08:59）' },
+    { t: '2026-07-07 08:14', who: '王大明', action: '登入', obj: '系統設定頁' },
+    { t: '2026-07-07 06:32', who: '系統排程', action: '資料匯入', obj: '隊員主檔（2026-07-06 批次）' },
+    { t: '2026-07-06 21:05', who: '陳雅婷', action: '個資敏感欄位查看', obj: '隊員 123456 平均每月收入' },
+    { t: '2026-07-06 18:47', who: '張淑芬', action: '含電話匯出', obj: '客服外撥名單（127 筆）' },
+    { t: '2026-07-06 15:12', who: '林建宏', action: '憑證變更', obj: 'Tableau 服務帳號密碼' },
+    { t: '2026-07-06 11:30', who: '李美玲', action: 'Token 產生', obj: 'Tableau 唯讀同步' },
+    { t: '2026-07-05 17:52', who: '黃文雄', action: 'Token 撤銷', obj: '舊版報表匯出' },
+    { t: '2026-07-05 14:03', who: '吳麗華', action: '刪除動作', obj: '重複匯入批次（2026-06-30 誤植）' },
+    { t: '2026-07-05 09:18', who: '王大明', action: '密碼重設', obj: '蔡家豪 帳號（break-glass 自助重設）' },
+    { t: '2026-07-04 22:40', who: '系統排程', action: '資料匯入', obj: '任務明細（2026-07-03 批次）' },
+    { t: '2026-07-04 16:25', who: '陳雅婷', action: '登入', obj: '系統設定頁' },
+    { t: '2026-07-04 10:11', who: '林建宏', action: '後台設定變更', obj: '承接天數級距（3~4 天 → 4 天以上，AI 建議調整）' },
+    { t: '2026-07-03 19:33', who: '張淑芬', action: '個資敏感欄位查看', obj: '隊員 0103 平均每月收入' },
+    { t: '2026-07-03 13:57', who: '李美玲', action: '憑證變更', obj: '隊管系統服務帳號密碼' },
+    { t: '2026-07-02 20:14', who: '黃文雄', action: 'Token 產生', obj: '夜間批次匯入排程' },
+    { t: '2026-07-02 09:42', who: '吳麗華', action: '登入', obj: '審計日誌頁' },
+    { t: '2026-07-01 23:08', who: '系統排程', action: '資料匯入', obj: '隊員主檔（2026-06-30 批次）' },
+    { t: '2026-07-01 15:19', who: '王大明', action: '刪除動作', obj: '測試用活動類型「通用意願調查（草稿）」' },
+    { t: '2026-07-01 08:05', who: '蔡家豪', action: '含電話匯出', obj: '客服外撥名單（84 筆）' }
+  ];
+  function auditWhoLabel(who) { return who === '系統排程' ? who : CRM.maskName(who); }
+  function renderAuditFilters() {
+    var actions = ['全部'].concat(AUDIT_LOG.map(function (r) { return r.action; }).filter(function (v, i, a) { return a.indexOf(v) === i; }));
+    document.getElementById('a-action').innerHTML = actions.map(function (a) { return '<option value="' + a + '">' + a + '</option>'; }).join('');
+    var whos = ['全部'].concat(AUDIT_LOG.map(function (r) { return r.who; }).filter(function (v, i, a) { return a.indexOf(v) === i; }));
+    document.getElementById('a-who').innerHTML = whos.map(function (w) { return '<option value="' + w + '">' + auditWhoLabel(w) + '</option>'; }).join('');
+  }
+  function renderAuditTable() {
+    var actionF = document.getElementById('a-action').value;
+    var whoF = document.getElementById('a-who').value;
+    var from = document.getElementById('a-from').value;
+    var to = document.getElementById('a-to').value;
+    var rows = AUDIT_LOG.filter(function (r) {
+      if (actionF && actionF !== '全部' && r.action !== actionF) return false;
+      if (whoF && whoF !== '全部' && r.who !== whoF) return false;
+      var d = r.t.slice(0, 10);
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+      return true;
+    });
+    var html = '<thead><tr><th>時間</th><th>操作者</th><th>動作</th><th>對象</th></tr></thead><tbody>';
+    if (!rows.length) html += '<tr><td colspan="4" style="color:var(--meta)">查無符合篩選條件之紀錄</td></tr>';
+    rows.forEach(function (r) {
+      html += '<tr><td class="num">' + r.t + '</td><td>' + auditWhoLabel(r.who) + '</td><td>' + r.action + '</td><td>' + r.obj + '</td></tr>';
+    });
+    html += '</tbody>';
+    document.getElementById('audit-table').innerHTML = html;
+  }
+  function renderAudit() {
+    if (auditRendered) return;
+    auditRendered = true;
+    renderAuditFilters();
+    renderAuditTable();
+    ['a-action', 'a-who', 'a-from', 'a-to'].forEach(function (id) {
+      document.getElementById(id).addEventListener('change', renderAuditTable);
+    });
+    document.getElementById('btn-audit-reset').addEventListener('click', function () {
+      document.getElementById('a-action').value = '全部';
+      document.getElementById('a-who').value = '全部';
+      document.getElementById('a-from').value = '';
+      document.getElementById('a-to').value = '';
+      renderAuditTable();
+    });
+    document.getElementById('btn-audit-export').addEventListener('click', function () {
+      CRM.toast('原型示意：正式版將匯出 Excel/CSV');
+    });
+  }
+
+  /* Esc 關閉任一開啟中的 modal（REQ 通用互動慣例） */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (mCred.classList.contains('show')) closeCredModal();
+  });
+
+  /* ══════════════════════════ tabs ══════════════════════════ */
+  var PANES = { params: 'pane-params', dict: 'pane-dict', rbac: 'pane-rbac', creds: 'pane-creds', audit: 'pane-audit' };
+  var LAZY = { dict: renderDict, rbac: renderRbac, creds: renderCreds, audit: renderAudit };
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
+      t.setAttribute('aria-selected', 'true');
+      Object.keys(PANES).forEach(function (k) {
+        document.getElementById(PANES[k]).style.display = (k === t.dataset.tab) ? '' : 'none';
+      });
+      if (LAZY[t.dataset.tab]) LAZY[t.dataset.tab]();
+    });
+  });
+
+  /* ══════════════════════════ 異常狀態切換器 ══════════════════════════ */
+  CRM.mountStateSwitcher(function (state) {
+    document.getElementById('content-normal').style.display = (state === 'normal') ? '' : 'none';
+    ['empty', 'loading', 'error', 'forbidden'].forEach(function (k) {
+      document.getElementById('st-' + k).classList.toggle('show', state === k);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

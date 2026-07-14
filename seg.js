@@ -20,6 +20,17 @@
   var pool = null;
   function rnd(s, k) { var x = Math.sin((s + k) * 12.9898) * 43758.5453; return x - Math.floor(x); }
 
+  /* 活動成效假資料（REQ-SEG-006，依隊編 seed 決定性生成）：
+     actCount＝實際參加活動次數；actGoalRate＝跨活動達標率（未參加任何活動者無資料，null）；
+     actGrowth＝指定活動任務增長比例（前期 0 任務者除零無意義，以 actIsNewOrRestart 標記、growth 為 null） */
+  function actStats(s) {
+    var isNew = rnd(s, 40) < 0.12;
+    var cnt = Math.floor(rnd(s, 41) * 6);                                   // 0~5 次
+    var goal = cnt > 0 ? Math.round(rnd(s, 42) * 1000) / 10 : null;         // 0~100.0%
+    var growth = isNew ? null : Math.round((rnd(s, 43) * 1800 - 400)) / 10; // −40.0%~140.0%
+    return { actCount: cnt, actGoalRate: goal, actGrowth: growth, actIsNewOrRestart: isNew };
+  }
+
   function buildPool(DB) {
     var branches = [];
     Object.keys(DB.branchRegions).forEach(function (rg) {
@@ -29,13 +40,16 @@
     // 3 名完整假資料隊員（與 Profile 頁一致）
     Object.keys(DB.members).forEach(function (code) {
       var m = DB.members[code];
+      var cs = 0; for (var ci = 0; ci < m.code.length; ci++) cs = cs * 31 + m.code.charCodeAt(ci);
+      var st = actStats(cs % 100000);
       list.push({
         code: m.code, name: m.name, identity: m.identity, region: m.region,
         branch: m.branch, branchRegion: '台北',
         carModel: m.carModel, fleetGroups: m.fleetGroups,
         monthOnline: m.onlineDays.month, mornPeak: m.mornPeakDays, evePeak: m.evePeakDays,
         acceptRate: m.acceptRate, joined: m.joinedActivity, actTypes: m.activityTypes,
-        monthlyTasks: m.monthlyTasks, refuseReasons: m.refuseReasons
+        monthlyTasks: m.monthlyTasks, refuseReasons: m.refuseReasons,
+        actCount: st.actCount, actGoalRate: st.actGoalRate, actGrowth: st.actGrowth, actIsNewOrRestart: st.actIsNewOrRestart
       });
     });
     for (var i = 0; i < 2000; i++) {
@@ -48,6 +62,7 @@
       for (var t = 0; t < tN; t++) tags.push(TAGS[(t0 + t * 3) % TAGS.length]);
       var joined = rnd(s, 5) > 0.55;
       var nRs = Math.floor(rnd(s, 6) * 3.4);
+      var st = actStats(s);
       list.push({
         code: String(10000 + i), name: SURNAMES[Math.floor(rnd(s, 7) * 10)] + GIVEN[Math.floor(rnd(s, 8) * 10)],
         identity: IDS[Math.floor(rnd(s, 9) * IDS.length)],
@@ -62,7 +77,8 @@
         joined: joined,
         actTypes: joined ? [ACT_TYPES[Math.floor(rnd(s, 16) * 3)]] : [],
         monthlyTasks: Math.floor(20 + rnd(s, 17) * 180),
-        refuseReasons: REASONS.slice(0, nRs)
+        refuseReasons: REASONS.slice(0, nRs),
+        actCount: st.actCount, actGoalRate: st.actGoalRate, actGrowth: st.actGrowth, actIsNewOrRestart: st.actIsNewOrRestart
       });
     }
     return list;
@@ -72,7 +88,15 @@
   function emptyCond() {
     // 名單池僅含正式隊員（退隊者不進池，REQ-SEG-001；正式／退隊由名冊全量比對推導，REQ-IMP-015）
     return { identity: [], region: [], branchRegion: [], branch: [], tags: [], car: [],
-      bucket: [], mornMin: '', eveMin: '', arMin: '', arMax: '', joined: '', actTypes: [], mtMin: '', mtMax: '', reasons: [] };
+      bucket: [], mornMin: '', eveMin: '', arMin: '', arMax: '', joined: '', actTypes: [], mtMin: '', mtMax: '', reasons: [],
+      // 活動成效維度（REQ-SEG-006）：①參加活動次數 ②跨活動達標率 ③指定活動任務增長比例
+      actCountMin: '', actGoalMin: '', actActivity: '', actGrowthMin: '', actGrowthMax: '', actIncludeNew: false };
+  }
+  function withDefaults(saved) {
+    // 相容舊版已儲存名單條件（缺新欄位時補預設值，避免 input.value 顯示 "undefined"）
+    var merged = emptyCond();
+    Object.keys(saved || {}).forEach(function (k) { merged[k] = saved[k]; });
+    return merged;
   }
   function bucketOf(d) { return d === 0 ? '0' : (d <= 10 ? '1-10' : (d <= 20 ? '11-20' : '21+')); }
   function match(m, c) {
@@ -93,9 +117,19 @@
     if (c.mtMin !== '' && !(m.monthlyTasks >= Number(c.mtMin))) return false;
     if (c.mtMax !== '' && !(m.monthlyTasks <= Number(c.mtMax))) return false;
     if (c.reasons.length && !c.reasons.some(function (t) { return m.refuseReasons.indexOf(t) >= 0; })) return false;
+    if (c.actCountMin !== '' && !(m.actCount >= Number(c.actCountMin))) return false;
+    if (c.actGoalMin !== '' && (m.actGoalRate === null || !(m.actGoalRate >= Number(c.actGoalMin)))) return false;
+    if (c.actActivity) {
+      // 指定活動任務增長比例：前期 0 任務者（actIsNewOrRestart）不落入任何比例區間，僅在勾選「含新增/重啟」時另計入（REQ-SEG-006③）
+      var passRange = !m.actIsNewOrRestart &&
+        (c.actGrowthMin === '' || m.actGrowth >= Number(c.actGrowthMin)) &&
+        (c.actGrowthMax === '' || m.actGrowth <= Number(c.actGrowthMax));
+      var passNew = c.actIncludeNew && m.actIsNewOrRestart;
+      if (!passRange && !passNew) return false;
+    }
     return true;
   }
-  function condSummary(c) {
+  function condSummary(c, db) {
     var p = [];
     if (c.identity.length) p.push(c.identity.join('/'));
     if (c.branchRegion.length) p.push('車隊地區 ' + c.branchRegion.map(function (r) { return r === '台北' ? '台北（雙北）' : r; }).join('/'));
@@ -112,6 +146,14 @@
     if (c.actTypes.length) p.push('活動類型 ' + c.actTypes.join('/'));
     if (c.mtMin !== '' || c.mtMax !== '') p.push('月承接 ' + (c.mtMin || 0) + '~' + (c.mtMax || '∞') + ' 趟');
     if (c.reasons.length) p.push('不願承接原因 ' + c.reasons.join('/'));
+    if (c.actCountMin !== '') p.push('參加活動次數 ≥' + c.actCountMin + ' 次');
+    if (c.actGoalMin !== '') p.push('跨活動達標率 ≥' + c.actGoalMin + '%');
+    if (c.actActivity) {
+      var acts = (db && db.activities) || [];
+      var actObj = acts.filter(function (a) { return a.id === c.actActivity; })[0];
+      var rangeTxt = (c.actGrowthMin !== '' || c.actGrowthMax !== '') ? '（' + (c.actGrowthMin || '−∞') + '~' + (c.actGrowthMax || '+∞') + '%）' : '';
+      p.push('任務增長［' + (actObj ? actObj.name : c.actActivity) + '］' + rangeTxt + (c.actIncludeNew ? '含新增/重啟' : ''));
+    }
     return p.length ? p.join('＋') : '（無條件＝全體）';
   }
 
@@ -160,7 +202,12 @@
       '.seg-modal h3{font-family:var(--font-display);font-weight:500;font-size:20px;margin-bottom:10px}' +
       '.seg-modal label{font-size:13px;color:var(--muted);display:block;margin:12px 0 4px}' +
       '.seg-modal input[type=text]{width:100%;border:1px solid var(--border-soft);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--fg)}' +
-      '.seg-hint{color:var(--meta);font-size:12.5px}';
+      '.seg-modal select{width:100%;border:1px solid var(--border-soft);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--fg);min-height:38px}' +
+      '.seg-modal .box{position:relative}' +
+      '.seg-modal-close{position:absolute;top:16px;right:16px;border:none;background:transparent;cursor:pointer;font-size:15px;color:var(--muted);min-width:32px;min-height:32px;border-radius:8px;font-family:inherit}' +
+      '.seg-modal-close:hover{background:var(--surface-warm);color:var(--fg)}' +
+      '.seg-hint{color:var(--meta);font-size:12.5px}' +
+      '.seg-handoff-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(201,100,66,.12);color:var(--accent);border-radius:9999px;padding:5px 12px;font-size:12.5px;font-weight:500}';
     document.head.appendChild(st);
   }
 
@@ -170,6 +217,22 @@
     var DB = CRM.load();
     if (!pool) pool = buildPool(DB);
     var cond = emptyCond();
+
+    /* 活動頁移交接收（REQ-SEG-006／REQ-ACT-022）：讀取 activity.html 寫入之預帶條件，套用後立即清除該 key，避免重整頁面重複套用 */
+    var handoff = null;
+    try {
+      var hRaw = localStorage.getItem('crm-seg-handoff');
+      if (hRaw) {
+        var hParsed = JSON.parse(hRaw);
+        if (hParsed && hParsed.source === 'activity') handoff = hParsed;
+      }
+    } catch (e) { /* 壞資料忽略 */ }
+    if (handoff) {
+      if (handoff.activityId) cond.actActivity = handoff.activityId;
+      if (handoff.identity) cond.identity = [handoff.identity];
+      localStorage.removeItem('crm-seg-handoff');
+    }
+
     var branches = [];
     Object.keys(DB.branchRegions).forEach(function (rg) {
       DB.branchRegions[rg].forEach(function (b) { branches.push({ name: b, region: rg }); });
@@ -179,6 +242,23 @@
       return '<div class="seg-chips">' + values.map(function (v, i) {
         return '<button type="button" class="seg-chip" data-k="' + key + '" data-v="' + v + '" aria-pressed="' + (cond[key].indexOf(v) >= 0) + '">' + (labels ? labels[i] : v) + '</button>';
       }).join('') + '</div>';
+    }
+
+    /* 活動 select 選項（REQ-ACT-015／REQ-SEG-004：進行中活動優先排前＋末項為新建活動） */
+    function activityOptions() {
+      var today = DB.meta.dataAsOf;
+      var acts = (DB.activities || []).map(function (a) { return { a: a, ongoing: a.end > today }; });
+      acts.sort(function (x, y) { if (x.ongoing !== y.ongoing) return x.ongoing ? -1 : 1; return 0; });
+      return acts.map(function (o) {
+        return '<option value="' + o.a.id + '">' + o.a.name + (o.ongoing ? '（進行中）' : '') + '</option>';
+      }).join('') + '<option value="__new__">＋新建活動（帶入後至隊員活動頁完成主檔設定）</option>';
+    }
+
+    /* 指定活動任務增長比例之活動下拉（REQ-SEG-006③：限單一指定活動，不含「新建活動」選項） */
+    function growthActivityOptions() {
+      return (DB.activities || []).map(function (a) {
+        return '<option value="' + a.id + '"' + (cond.actActivity === a.id ? ' selected' : '') + '>' + a.name + '</option>';
+      }).join('');
     }
 
     host.innerHTML =
@@ -211,6 +291,15 @@
             '<div class="seg-g"><div class="gl">參與活動類型</div>' + chips('actTypes', ACT_TYPES) + '</div>' +
             '<div class="seg-g"><div class="gl">歷史每月承接任務數（趟）</div><div class="seg-row"><input type="number" min="0" class="seg-num" id="seg-mtmin"> ~ <input type="number" min="0" class="seg-num" id="seg-mtmax"></div></div>' +
             '<div class="seg-g"><div class="gl">不願承接任務的原因 <span class="seg-lock">需 callrecord.view_all</span> ' + CRM.infoIcon('客服回覆值條件需 callrecord.view_all 權限（REQ-SEG-005，防繞過客服紀錄 scope）；原型以已授權視角展示') + '</div>' + chips('reasons', REASONS) + '</div>' +
+            '<div class="seg-g"><div class="gl">活動成效 ' + CRM.infoIcon('與「是否曾參與活動」為 AND 各自獨立生效，口徑差異：曾參與＝TA 名單命中（含分群圈選僅入名單、未必實際參加）；參加＝實際參加該活動（REQ-SEG-006）') + '</div>' +
+              '<div class="seg-chips" id="seg-handoff-chip" style="margin-bottom:8px"></div>' +
+              '<div class="seg-row" style="margin-bottom:8px">參加活動次數 ≥ <input type="number" min="0" class="seg-num" id="seg-actcount" value="' + cond.actCountMin + '"> 次 ' + CRM.infoIcon('參加＝實際參加該活動（合併後 TA：報名匯入＋結算補入，SR-RT-140）；僅被分群圈選、未實際參加者不計') + '</div>' +
+              '<div class="seg-row" style="margin-bottom:8px">跨活動達標率 ≥ <input type="number" min="0" max="100" class="seg-num" id="seg-actgoal" value="' + cond.actGoalMin + '"> % ' + CRM.infoIcon('＝整檔達標活動數÷實際參加活動數；分母僅計「有獎勵結算設計且已有任一結算批次」之活動，純觀察型與尚未開始結算之活動排除於分子與分母（REQ-SEG-006②／REQ-ACT-017）') + '</div>' +
+              '<div class="seg-row" style="margin-bottom:6px">指定活動任務增長比例 ' + CRM.infoIcon('限單一指定活動——不同活動之成效計算時段互異，跨活動增長不可加總或平均；前期任務數為 0 者除零無意義、不落入任何比例區間，請改用「含新增/重啟」獨立勾選（REQ-SEG-006③，口徑對齊 REQ-ACT-014 重新啟動）') + '</div>' +
+              '<div class="seg-row" style="margin-bottom:6px"><select id="seg-act-growth-select" class="seg-num" style="width:auto;min-width:180px"><option value="">不限（先選活動）</option>' + growthActivityOptions() + '</select></div>' +
+              '<div class="seg-row"><input type="number" class="seg-num" id="seg-actgrowmin" value="' + cond.actGrowthMin + '"> % ~ <input type="number" class="seg-num" id="seg-actgrowmax" value="' + cond.actGrowthMax + '"> %　' +
+                '<label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--fg-2)"><input type="checkbox" id="seg-actgrownew"' + (cond.actIncludeNew ? ' checked' : '') + '> 含新增/重啟（前期 0 任務）</label></div>' +
+            '</div>' +
           '</div>' +
           '<div class="seg-saved"><div class="seg-title">已儲存名單條件（segment）' + CRM.infoIcon('REQ-SEG-003：條件組合可命名儲存重複使用；執行時以最新匯入資料重新計算') + '</div><div id="seg-seglist"></div></div>' +
         '</div>' +
@@ -219,6 +308,7 @@
           '<div class="seg-count"><span id="seg-count">0</span><small>人符合（以最新匯入資料計算・資料截至 ' + DB.meta.dataAsOf + '）</small></div>' +
           '<div class="seg-actions">' +
             '<button type="button" class="seg-btn primary" id="seg-to-call">帶入外撥專案</button>' +
+            '<button type="button" class="seg-btn primary" id="seg-to-act">帶入活動 TA</button>' +
             '<button type="button" class="seg-btn" id="seg-save">儲存為名單條件</button>' +
             '<button type="button" class="seg-btn" id="seg-export">匯出名單（活動報名用）</button>' +
           '</div>' +
@@ -235,17 +325,36 @@
         '<label>名單筆數</label><div style="font-size:22px;font-weight:600" id="seg-pcount"></div>' +
         '<label>名單預覽（前 5 筆）</label><div class="chart-wrap" style="overflow-x:auto"><table class="seg-table"><thead><tr><th>隊編</th><th>姓名</th><th>行動電話（保留欄位）</th></tr></thead><tbody id="seg-preview"></tbody></table></div>' +
         '<div class="seg-actions" style="margin-top:16px"><button type="button" class="seg-btn primary" id="seg-pok">建立專案（示意）</button><button type="button" class="seg-btn" id="seg-pcancel">取消</button></div>' +
+        '</div></div>' +
+      '<div class="seg-modal" id="seg-act-modal" role="dialog" aria-modal="true" aria-label="帶入活動 TA 名單">' +
+        '<div class="box">' +
+        '<button type="button" class="seg-modal-close" id="seg-act-x" aria-label="關閉">✕</button>' +
+        '<h3>帶入活動 TA 名單</h3>' +
+        '<p class="seg-hint">將帶入 <strong id="seg-act-count">0</strong> 人（僅隊編＋姓名，來源標記：分群圈選）</p>' +
+        '<label for="seg-act-select">選擇活動</label><select id="seg-act-select">' + activityOptions() + '</select>' +
+        '<p class="seg-hint" style="margin-top:12px">正式報名名冊匯入後將以隊編自動合併（來源標記：報名匯入）</p>' +
+        '<div class="seg-actions" style="margin-top:16px"><button type="button" class="seg-btn primary" id="seg-act-confirm">確認帶入</button><button type="button" class="seg-btn" id="seg-act-cancel">取消</button></div>' +
         '</div></div>';
+
+    /* 移交提示 chips（活動頁下鑽帶入，REQ-ACT-022）：讀取時已套用預設值，此處僅顯示來源說明 */
+    if (handoff) {
+      var hoParts = ['來自活動：' + (handoff.activityName || handoff.activityId || '—')];
+      if (handoff.week) hoParts.push('第' + handoff.week + '週');
+      if (handoff.tier) hoParts.push('級距' + handoff.tier);
+      document.getElementById('seg-handoff-chip').innerHTML =
+        '<span class="seg-handoff-chip">' + hoParts.join('・') + '</span>' +
+        '<span class="seg-hint">已套用對應預設值（活動／身份別，如適用）</span>';
+    }
 
     var result = [];
     function recompute() {
       result = pool.filter(function (m) { return match(m, cond); });
       document.getElementById('seg-count').textContent = CRM.fmt(result.length);
-      document.getElementById('seg-cond-sum').textContent = condSummary(cond);
+      document.getElementById('seg-cond-sum').textContent = condSummary(cond, DB);
       var rows = result.slice(0, 50).map(function (m) {
         return '<tr class="mrow" data-code="' + m.code + '" tabindex="0" aria-label="檢視隊編 ' + m.code + ' 的 Profile"><td>' + m.code + '</td><td>' + CRM.maskName(m.name) + '</td><td>' + m.identity + '</td><td>' + m.branch + '</td><td>' + m.region + '</td><td>' + m.monthOnline + ' 天</td><td>' + m.evePeak + ' 天</td><td>' + m.acceptRate + '%</td><td>' + (m.joined ? '是' : '否') + '</td></tr>';
       }).join('');
-      document.getElementById('seg-rows').innerHTML = rows || '<tr><td colspan="10" style="color:var(--meta)">無符合條件之隊員（調整條件試試）</td></tr>';
+      document.getElementById('seg-rows').innerHTML = rows || '<tr><td colspan="9" style="color:var(--meta)">無符合條件之隊員（調整條件試試）</td></tr>';
       document.getElementById('seg-more').textContent = result.length > 50 ? '共 ' + CRM.fmt(result.length) + ' 人，清單示意前 50 筆；正式版為分頁完整清單。點任一列可進入該隊員 Profile。' : (result.length ? '點任一列可進入該隊員 Profile。' : '');
       host.querySelectorAll('.mrow').forEach(function (tr) {
         tr.addEventListener('click', function () { location.href = 'profile.html?m=' + encodeURIComponent(tr.dataset.code); });
@@ -287,12 +396,17 @@
       this.value = '';
       paintChips(); recompute();
     });
-    [['seg-morn', 'mornMin'], ['seg-eve', 'eveMin'], ['seg-armin', 'arMin'], ['seg-armax', 'arMax'], ['seg-mtmin', 'mtMin'], ['seg-mtmax', 'mtMax']].forEach(function (p) {
+    [['seg-morn', 'mornMin'], ['seg-eve', 'eveMin'], ['seg-armin', 'arMin'], ['seg-armax', 'arMax'], ['seg-mtmin', 'mtMin'], ['seg-mtmax', 'mtMax'],
+     ['seg-actcount', 'actCountMin'], ['seg-actgoal', 'actGoalMin'], ['seg-actgrowmin', 'actGrowthMin'], ['seg-actgrowmax', 'actGrowthMax']].forEach(function (p) {
       document.getElementById(p[0]).addEventListener('input', function () { cond[p[1]] = this.value; recompute(); });
     });
+    document.getElementById('seg-act-growth-select').addEventListener('change', function () { cond.actActivity = this.value; recompute(); });
+    document.getElementById('seg-actgrownew').addEventListener('change', function () { cond.actIncludeNew = this.checked; recompute(); });
     document.getElementById('seg-clear').addEventListener('click', function () {
       cond = emptyCond();
-      ['seg-morn', 'seg-eve', 'seg-armin', 'seg-armax', 'seg-mtmin', 'seg-mtmax'].forEach(function (id) { document.getElementById(id).value = ''; });
+      ['seg-morn', 'seg-eve', 'seg-armin', 'seg-armax', 'seg-mtmin', 'seg-mtmax', 'seg-actcount', 'seg-actgoal', 'seg-actgrowmin', 'seg-actgrowmax'].forEach(function (id) { document.getElementById(id).value = ''; });
+      document.getElementById('seg-act-growth-select').value = '';
+      document.getElementById('seg-actgrownew').checked = false;
       paintChips(); recompute();
     });
     document.getElementById('seg-demo').addEventListener('click', function () {
@@ -302,7 +416,9 @@
       cond.joined = 'yes';
       document.getElementById('seg-eve').value = '11';
       cond.eveMin = '11';
-      ['seg-morn', 'seg-armin', 'seg-armax', 'seg-mtmin', 'seg-mtmax'].forEach(function (id) { document.getElementById(id).value = ''; });
+      ['seg-morn', 'seg-armin', 'seg-armax', 'seg-mtmin', 'seg-mtmax', 'seg-actcount', 'seg-actgoal', 'seg-actgrowmin', 'seg-actgrowmax'].forEach(function (id) { document.getElementById(id).value = ''; });
+      document.getElementById('seg-act-growth-select').value = '';
+      document.getElementById('seg-actgrownew').checked = false;
       paintChips(); recompute();
       CRM.toast('已帶入 REQ-E2E-012 示例條件');
     });
@@ -317,10 +433,13 @@
       host.querySelectorAll('[data-run]').forEach(function (b) {
         b.addEventListener('click', function () {
           var sg = loadSegs()[Number(b.dataset.run)];
-          cond = sg.cond;
-          ['seg-morn|mornMin', 'seg-eve|eveMin', 'seg-armin|arMin', 'seg-armax|arMax', 'seg-mtmin|mtMin', 'seg-mtmax|mtMax'].forEach(function (p) {
+          cond = withDefaults(sg.cond); // 相容舊版名單條件（無活動成效欄位時補預設值）
+          ['seg-morn|mornMin', 'seg-eve|eveMin', 'seg-armin|arMin', 'seg-armax|arMax', 'seg-mtmin|mtMin', 'seg-mtmax|mtMax',
+           'seg-actcount|actCountMin', 'seg-actgoal|actGoalMin', 'seg-actgrowmin|actGrowthMin', 'seg-actgrowmax|actGrowthMax'].forEach(function (p) {
             var q = p.split('|'); document.getElementById(q[0]).value = cond[q[1]];
           });
+          document.getElementById('seg-act-growth-select').value = cond.actActivity || '';
+          document.getElementById('seg-actgrownew').checked = !!cond.actIncludeNew;
           paintChips(); recompute();
           CRM.toast('已以最新匯入資料重新計算「' + sg.name + '」');
         });
@@ -335,7 +454,7 @@
       // 原型不用 window.prompt 取名（阻塞式對話框擋走查自動化）；給預設名、正式版做命名欄
       var segs = loadSegs();
       var auto = '名單條件 ' + (segs.length + 1) + '（' + CRM.fmt(result.length) + ' 人）';
-      segs.push({ name: auto, summary: condSummary(cond), cond: JSON.parse(JSON.stringify(cond)) });
+      segs.push({ name: auto, summary: condSummary(cond, DB), cond: JSON.parse(JSON.stringify(cond)) });
       saveSegs(segs); renderSegs();
       CRM.toast('已儲存「' + auto + '」（正式版可自訂名稱）');
     });
@@ -344,7 +463,7 @@
     var modal = document.getElementById('seg-modal');
     document.getElementById('seg-to-call').addEventListener('click', function () {
       if (!result.length) { CRM.toast('目前 0 人符合，請先設定條件'); return; }
-      document.getElementById('seg-pname').value = '外撥專案：' + condSummary(cond).slice(0, 24);
+      document.getElementById('seg-pname').value = '外撥專案：' + condSummary(cond, DB).slice(0, 24);
       document.getElementById('seg-pcount').textContent = CRM.fmt(result.length) + ' 筆（＝篩選結果數）';
       document.getElementById('seg-preview').innerHTML = result.slice(0, 5).map(function (m) {
         return '<tr><td>' + m.code + '</td><td>' + CRM.maskName(m.name) + '</td><td style="color:var(--meta)">—（由客服填寫）</td></tr>';
@@ -355,14 +474,52 @@
     modal.addEventListener('click', function (e) { if (e.target === modal) modal.classList.remove('show'); });
     document.getElementById('seg-pok').addEventListener('click', function () {
       modal.classList.remove('show');
-      CRM.toast('已建立外撥專案（示意）：名單 ' + CRM.fmt(result.length) + ' 筆已帶入（隊編＋電話）');
+      CRM.toast('已建立外撥專案（示意）：名單 ' + CRM.fmt(result.length) + ' 筆已帶入（隊編＋姓名；電話由客服撥打時填寫）');
     });
     document.getElementById('seg-export').addEventListener('click', function () {
       CRM.toast('已匯出名單（示意）：' + CRM.fmt(result.length) + ' 筆，可作活動報名名單（匯出依 REQ-GEN-006 寫入審計）');
     });
 
+    /* 帶入活動 TA（REQ-ACT-015／REQ-SEG-004：分群篩選帶入活動 TA 名單，來源標記「分群圈選」） */
+    var actModal = document.getElementById('seg-act-modal');
+    function closeActModal() { actModal.classList.remove('show'); }
+    document.getElementById('seg-to-act').addEventListener('click', function () {
+      if (!result.length) { CRM.toast('目前 0 人符合，請先設定條件'); return; }
+      document.getElementById('seg-act-count').textContent = CRM.fmt(result.length);
+      actModal.classList.add('show');
+    });
+    document.getElementById('seg-act-x').addEventListener('click', closeActModal);
+    document.getElementById('seg-act-cancel').addEventListener('click', closeActModal);
+    actModal.addEventListener('click', function (e) { if (e.target === actModal) closeActModal(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (actModal.classList.contains('show')) closeActModal();
+      if (modal.classList.contains('show')) modal.classList.remove('show');
+    });
+    document.getElementById('seg-act-confirm').addEventListener('click', function () {
+      var sel = document.getElementById('seg-act-select');
+      var actId = sel.value, actName;
+      if (actId === '__new__') {
+        actName = '新建活動';
+      } else {
+        var found = (DB.activities || []).filter(function (a) { return a.id === actId; });
+        actName = found.length ? found[0].name : sel.options[sel.selectedIndex].text;
+      }
+      closeActModal();
+      CRM.toast('已帶入「' + actName + '」TA 名單 ' + CRM.fmt(result.length) + ' 人（來源：分群圈選）——原型示意');
+    });
+
     paintChips(); recompute(); renderSegs();
   }
+
+  /* 活動頁移交接收：以 hash #seg 進入 profile.html 時，先切到「分群篩選」tab（REQ-ACT-022／REQ-SEG-006）；
+     實際套用預帶條件與清除 localStorage 於 mount() 內處理。等 DOMContentLoaded 才觸發，
+     確保 profile.html 內嵌腳本已完成 .pf-tab click 監聽器綁定（該腳本晚於本檔載入執行）。 */
+  document.addEventListener('DOMContentLoaded', function () {
+    if (location.hash !== '#seg') return;
+    var tab2 = document.getElementById('pf-tab-2');
+    if (tab2) tab2.click();
+  });
 
   window.CRMSEG = { mount: mount };
 })();

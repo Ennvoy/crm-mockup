@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>走查台 — 55688 隊員 CRM 互動原型</title>
-<link rel="stylesheet" href="tokens.css?v=20">
+<link rel="stylesheet" href="tokens.css?v=25">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.6; padding: 48px 24px 96px; }
@@ -37,7 +37,7 @@
   <p class="sub">照卡片把每條 journey 實際點一遍，「感受開發完的樣子」再定版。原型使用假資料（localStorage），亂點壞了可一鍵重置。</p>
   <div class="meta-row">
     <span class="chip">視覺基底：Claude 設計系統＋55688 品牌黃</span>
-    <span class="chip">本批交付：總覽（協理優先指示）</span>
+    <span class="chip">本批交付：剩餘 6 頁到齊——全站 journey 皆可走查</span>
     <button class="reset" type="button" id="reset-proto">重置假資料</button>
   </div>
 
@@ -51,7 +51,7 @@
         </div>
       </div>
       <ol>
-        <li>進入總覽頁（本批原型直接進入；登入頁於下一批補上）</li>
+        <li>進入總覽頁（可從「登入」卡走登入頁進入，或直接開總覽）</li>
         <li>頂部 KPI 卡列：確認 6 張卡、每張卡「較 7 天前／較 30 天前」增減數（主管回饋）、運力卡四級距 0／1~10／11~20／21+ 同時攤開（0 天灰色列示、不計入主數字）</li>
         <li>滑過任一指標旁的 ⓘ 小圖示 → 顯示計算口徑說明；「雙北地區隊員數」的 ⓘ 列出雙北包含的車隊清單（主管回饋）</li>
         <li>「承接任務的分布」：切換縣市／月份 → 圖表即時變化；滑過柱條看數字</li>
@@ -108,20 +108,122 @@
         <li>「不願承接任務的原因」條件留意 🔒 需 callrecord.view_all 標示（防繞過客服 scope）</li>
         <li>點「儲存為名單條件」→ 左下 segment 清單出現 → 點「執行」以最新資料重算</li>
         <li>點「帶入外撥專案」→ 確認名單筆數＝篩選人數、名單僅隊編＋姓名、電話為空白保留欄位（主管確認：電話非批次資訊、由客服填寫）→ 建立（示意）</li>
+        <li>點「帶入活動 TA」（2026-07-09 新增，REQ-ACT-015）→ 選活動（進行中排前，或＋新建活動）→ 確認帶入 N 人（僅隊編＋姓名，來源標記「分群圈選」；報名匯入後自動合併）</li>
         <li>名單點任一列 → 進入該隊員個人 Profile</li>
       </ol>
       <a class="go" href="pages/profile.html?tab=seg">開始走查 → 分群篩選（Profile 頁內 tab）</a>
     </div>
-  </div>
-
-  <h2>下一批（規劃已凍結、頁面製作中）</h2>
-  <div class="cards">
-    <div class="jcard pending"><span class="jid">REQ-E2E-002／003</span><div class="jtitle">資料匯入（欄位映射／全有全無錯誤報告）</div><span class="pending-tag">製作中</span></div>
-    <div class="jcard pending"><span class="jid">REQ-E2E-004</span><div class="jtitle">運力查詢（H/D/W/M/Q/Y 維度＋匯出）</div><span class="pending-tag">製作中</span></div>
-    <div class="jcard pending"><span class="jid">REQ-E2E-005</span><div class="jtitle">車組／車種報表與隊編下鑽</div><span class="pending-tag">製作中</span></div>
-    <div class="jcard pending"><span class="jid">REQ-E2E-007</span><div class="jtitle">隊員活動（建活動→匯入→前後成效）</div><span class="pending-tag">製作中</span></div>
-    <div class="jcard pending"><span class="jid">REQ-E2E-008／013</span><div class="jtitle">客服外撥（建專案→分配→逐筆撥打→統計／回覆篩選＋溝通歷程）</div><span class="pending-tag">製作中</span></div>
-    <div class="jcard pending"><span class="jid">REQ-E2E-009／010／011</span><div class="jtitle">權限管理／憑證與抓取器／匯入批次刪除</div><span class="pending-tag">製作中</span></div>
+    <div class="jcard">
+      <div class="jhead">
+        <div>
+          <span class="jid">REQ-AUTH-001～006＋REQ-RBAC-003</span>
+          <div class="jtitle">登入與帳號安全（鎖定／停用／break-glass）</div>
+        </div>
+      </div>
+      <ol>
+        <li>帳號密碼輸入任意文字點「登入」→ 原型直接放行進入總覽（REQ-E2E-001 起點）；留意密碼規則提示（至少 8 碼含英數）</li>
+        <li>點密碼欄右側眼睛圖示切換顯示／隱藏</li>
+        <li>切換卡片下方「原型狀態」：帳密錯誤／連續 5 次鎖定（登入鈕停用＋倒數＋通知其他 super admin 提示）／帳號已停用（403）／閒置逾時（8 小時）四種異常畫面</li>
+        <li>點「忘記密碼？」展開說明：切換「一般使用者／super admin」比較後台重設與 break-glass email 自助重設兩種口徑</li>
+      </ol>
+      <a class="go" href="pages/login.html">開始走查 → 登入</a>
+    </div>
+    <div class="jcard">
+      <div class="jhead">
+        <div>
+          <span class="jid">REQ-E2E-004＋REQ-CPA-001～006（2026-07-13 重規劃）</span>
+          <div class="jtitle">運力分析（三分頁：尖峰運力 YoY／承接率分析／缺口快速觀察）</div>
+        </div>
+      </div>
+      <ol>
+        <li>「尖峰運力分析」：切 晚尖峰×小黃×雙北 → 看五指標 KPI 卡（同期平均＋較對照年±%）與逐月雙折線、頁尾自動重點摘要</li>
+        <li>切時段「離峰」、地區「全台」、對照年「vs 2024」→ 全視圖即時重算；在隊 2024 缺快照月顯示「資料未涵蓋」</li>
+        <li>「承接率分析」：統一口徑 Σ承接÷Σ詢問（2026-07-13 拍板）——三身份別大卡含分子/分母＋早/晚尖峰橫條圖比較</li>
+        <li>「缺口快速觀察」：星期日～六平均之上線／承接／有效任務雙折線＋自動判讀（需求高峰／供給偏緊／優先關注）</li>
+        <li>任一分頁按「匯出」看原型提示（原運力查詢四子分頁已歸檔 specs/archive/）</li>
+      </ol>
+      <a class="go" href="pages/capacity.html">開始走查 → 運力分析</a>
+    </div>
+    <div class="jcard">
+      <div class="jhead">
+        <div>
+          <span class="jid">REQ-E2E-007＋REQ-ACT-011～018（2026-07-14 改版）</span>
+          <div class="jtitle">隊員活動（建立活動→報名三情境→每日結算→前後變化）</div>
+        </div>
+      </div>
+      <ol>
+        <li>點「所有活動」的「＋建立活動」：填名稱／類型／起迄日 → 自動帶成效計算時段預設（含「僅離峰」選項）＋等長鏡像前期＋**分析級距**（維度下拉＋邊界編輯，預設承接率六級；改亂序即時標紅擋存）→ 儲存後新活動即時出現</li>
+        <li>「所有活動」上區＝進行中活動摘要卡（雙北承接率六級距 vs 桃園任務數四級距——級距軸各卡不同、不跨活動加總）；下區年度列表含狀態欄（進行中／已結束・結算收件中／已結束（統計凍結））、「僅進行中」與離峰類型篩選</li>
+        <li>點某活動進「單一活動」→「編輯主檔」：排除日期 chips、活動對象條件（地區／身份別／級距）、達標與獎勵說明（描述性欄位標示「不參與計算」）</li>
+        <li>參加隊員清單（收合區）：報名方式（預先報名／外撥次週／外撥即刻）、起算日、來源（含「結算補入」「同意過晚」示範筆）、當週級距、整檔達標、累計獲獎欄</li>
+        <li>「成效對照（四軸）」與「參加者級距遷移」收合保留；「單一司機」輸入 138604 → 頂部小結「參加 3 次／達標 2 次／66.7%／累計獲獎」＋歷程表整檔達標與獲獎欄（對齊需求 Word 3.g 案例）</li>
+      </ol>
+      <a class="go" href="pages/activity.html">開始走查 → 隊員活動</a>
+    </div>
+    <div class="jcard">
+      <div class="jhead">
+        <div>
+          <span class="jid">REQ-E2E-014＋REQ-ACT-013／016～024（2026-07-14 新增）</span>
+          <div class="jtitle">活動儀表板下鑽與撈名單（主管 PPT 版式＋撈名單閉環）</div>
+        </div>
+      </div>
+      <ol>
+        <li>「所有活動」上區點「雙北地區進步獎」摘要卡 → 進「單一活動」儀表板（預設小黃 sub-tab）</li>
+        <li>檢視 KPI 帶 5 卡（參加者數／累計達標／週達標平均／週達標率平均／整體判斷——規則式四檔）、級距×週達標矩陣（達標數照主管 PPT：80%+ 列 28/31/22/33/27）、週貢獻度長條（83/120/70/126/105）＋對照表（當週 TA 逐週成長）、各級距達標佔比、規則式三點結論、獎勵發放三切分＋「起算前結算」獨立列</li>
+        <li>切「多元」sub-tab 確認全區連動；桃園活動之「多元試跑」顯示無參加者空狀態；端午關懷觀察顯示「—（無獎勵結算）」</li>
+        <li>點矩陣任一格（如 80%+ × 首週）→ 參加隊員清單自動帶「週×級距」下鑽篩選 chip</li>
+        <li>點「帶入分群篩選 →」→ 跳轉 Profile 分群篩選（#seg）：來源 chip「小黃＋任務增長」已預帶、活動成效維度（參加次數／達標率／指定活動增長＋新增重啟）可調 → 匯出名單</li>
+      </ol>
+      <a class="go" href="pages/activity.html">開始走查 → 隊員活動（儀表板）</a>
+    </div>
+    <div class="jcard">
+      <div class="jhead">
+        <div>
+          <span class="jid">REQ-E2E-008／REQ-E2E-013</span>
+          <div class="jtitle">客服外撥（建專案→分配→逐筆撥打→統計／回覆篩選＋溝通歷程）</div>
+        </div>
+      </div>
+      <ol>
+        <li>點「進行中」專案卡展開：統計面板、各客服分配進度、名單表——本頁為全站唯一顯示全名與電話處（作業範圍例外），表頭 ⓘ 看個資口徑</li>
+        <li>右上「檢視角色」切成「客服・王雅婷」：名單與統計即時縮成她被分配的筆數；「回覆篩選」分頁同步鎖定（需 view_all）</li>
+        <li>「逐筆撥打」填表單按「儲存並帶下一筆」→ 自動跳下一筆；也可從名單點特定筆回撥</li>
+        <li>切回主管進「回覆篩選」（協理重點）：以「不願承接原因＝低價」跨專案篩選 → 匯出／一鍵帶入新專案 → 點「查看溝通歷程」自動帶隊編跳轉</li>
+        <li>「溝通歷程」查 123456：跨專案聯繫時間軸（時間＋專案＋內容＋意願）</li>
+      </ol>
+      <a class="go" href="pages/callcenter.html">開始走查 → 客服紀錄</a>
+    </div>
+    <div class="jcard">
+      <div class="jhead">
+        <div>
+          <span class="jid">REQ-E2E-002／REQ-E2E-003＋REQ-IMP-015／016</span>
+          <div class="jtitle">資料匯入（全量名冊快照／隊編消歧／全有全無）</div>
+        </div>
+      </div>
+      <ol>
+        <li>「上傳與佇列」切換 8 種資料類型看自然鍵提示（2026-07-09 新增「車隊對照表 fleet_dictionary」，hint 含來源欄名錯位說明；members hint 改逐組織合併全量＋個資最小化）；選活動報名／成效時出現「目標活動」指定欄位</li>
+        <li>「匯入結果」展開「本次新增 12 人／標記退隊 5 人」清單（REQ-IMP-015 全量快照口徑 ⓘ）→ 點隊編連到 Profile；往下看新的「fleet_dictionary 匯入結果」卡：新增／移除／地區或類別變更清單（全量替換快照 ⓘ，REQ-IMP-017）</li>
+        <li>「隊編消歧警告」按「改名（同一人）」或「換人（新人接手）」→ badge 與審計提示同步更新（REQ-IMP-016 隊編任期）</li>
+        <li>「字典查無對照」：行政區（三峽區）仍可前往系統設定補齊；車隊（阿波羅車隊）已改唯讀「待下一次對照表更新」（2026-07-09 拍板：車隊字典不後台維護）；失敗批次卡看「整檔不入庫（全有全無）＋錯誤報告（列號／原因）」</li>
+        <li>「匯入歷史」開「模擬超過 2 天未更新」看醒目警示；「批次管理」刪最新批次走影響範圍＋二次確認</li>
+      </ol>
+      <a class="go" href="pages/import.html">開始走查 → 資料匯入</a>
+    </div>
+    <div class="jcard">
+      <div class="jhead">
+        <div>
+          <span class="jid">REQ-E2E-009／REQ-E2E-010／REQ-E2E-011＋REQ-SET-007</span>
+          <div class="jtitle">系統設定（參數／字典／RBAC／憑證 Token／審計）</div>
+        </div>
+      </div>
+      <ol>
+        <li>五個分頁依序點過：參數設定／字典維護／帳號與角色／憑證與 Token／審計日誌</li>
+        <li>「參數設定」調級距切點看即時預覽 → 「儲存設定」toast（變更即時反映後續統計）</li>
+        <li>「字典維護」車隊→車隊地區已改**純唯讀**（2026-07-09 拍板）：72 筆真實對照（類別 badge／搜尋／地區過濾／「保留類」chip）＋來源批次與最後更新時間；口徑卡：唯一來源＝車隊對照表匯入、不回溯重算、身份別由車隊類別推導</li>
+        <li>「帳號與角色」嘗試停用唯一 super admin（會被擋下）；展開角色列勾「模組×權限」matrix</li>
+        <li>「憑證與 Token」更新憑證（密碼永不回顯）、撤銷 token；「審計日誌」篩選 20 筆並確認 append-only 說明</li>
+      </ol>
+      <a class="go" href="pages/settings.html">開始走查 → 系統設定</a>
+    </div>
   </div>
 
   <div class="note">

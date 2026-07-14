@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>登入｜55688 隊員 CRM</title>
+<link rel="stylesheet" href="../tokens.css?v=25">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  html, body { overflow-x: hidden; }
+  body {
+    background: linear-gradient(160deg, var(--bg) 0%, var(--surface-warm) 100%);
+    color: var(--fg); font-family: var(--font-body); line-height: var(--leading-body);
+    min-height: 100dvh; position: relative;
+  }
+  button { font-family: inherit; }
+  :focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 8px; }
+
+  /* 背景幾何點綴（CSS only，零依賴） */
+  .bg-decor { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .bg-decor::before {
+    content: ''; position: absolute; top: -140px; right: -120px; width: 380px; height: 380px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,198,0,.28), rgba(255,198,0,0) 70%);
+  }
+  .bg-decor::after {
+    content: ''; position: absolute; bottom: -160px; left: -110px; width: 420px; height: 420px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,100,66,.16), rgba(201,100,66,0) 70%);
+  }
+  .bg-dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, var(--border-soft) 1.4px, transparent 1.4px);
+    background-size: 26px 26px; opacity: .5;
+    mask-image: radial-gradient(ellipse at 50% 0%, black 0%, transparent 70%);
+  }
+
+  .login-wrap {
+    position: relative; z-index: 1; min-height: 100dvh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 32px 20px;
+  }
+
+  .login-card {
+    width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); box-shadow: var(--elev-raised);
+    padding: 36px 30px 30px; position: relative; overflow: hidden;
+  }
+  .login-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, var(--brand-55688), var(--accent));
+  }
+
+  .brand-block { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 26px; }
+  .brand-mark {
+    width: 54px; height: 54px; border-radius: 15px; background: var(--brand-55688); color: var(--brand-55688-on);
+    display: flex; align-items: center; justify-content: center; font-family: var(--font-display);
+    font-weight: 700; font-style: italic; font-size: 18px; letter-spacing: .3px;
+    box-shadow: 0 6px 20px rgba(255,198,0,.35);
+  }
+  .brand-title { font-family: var(--font-display); font-weight: 500; font-size: 22px; margin-top: 4px; }
+  .brand-sub { color: var(--muted); font-size: 13.5px; }
+
+  /* hidden 屬性優先權修正：狀態區塊自帶 display:flex，會蓋過 UA 的 [hidden]，此規則確保 hidden 一律生效 */
+  [hidden] { display: none !important; }
+
+  /* 閒置逾時 banner（REQ-AUTH-003） */
+  .idle-banner {
+    display: flex; gap: 8px; align-items: flex-start; background: rgba(181,51,51,.08); color: var(--danger);
+    border: 1px solid rgba(181,51,51,.2); border-radius: 10px; padding: 11px 13px; font-size: 13px;
+    line-height: 1.55; margin-bottom: 18px;
+  }
+  .idle-banner svg { flex-shrink: 0; margin-top: 2px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .field label { font-size: 13.5px; color: var(--fg-2); font-weight: 500; }
+  .field input[type="text"], .field input[type="password"] {
+    border: 1px solid var(--border-soft); border-radius: 10px; padding: 12px 14px; font-size: 15px;
+    font-family: inherit; background: var(--surface); color: var(--fg); min-height: 46px; width: 100%;
+  }
+  .field input:hover { border-color: #d1cfc5; }
+  .pwd-wrap { position: relative; }
+  .pwd-wrap input { padding-right: 44px; }
+  .pwd-toggle {
+    position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: transparent; border: none;
+    color: var(--muted); cursor: pointer; min-width: 36px; min-height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; transition: background var(--motion-fast), color var(--motion-fast);
+  }
+  .pwd-toggle:hover { background: var(--surface-warm); color: var(--fg-2); }
+  .hint { font-size: 12px; color: var(--meta); }
+
+  /* 帳密錯誤／停用等錯誤區塊 */
+  .error-box {
+    display: flex; gap: 8px; align-items: flex-start; background: rgba(181,51,51,.08); color: var(--danger);
+    border: 1px solid rgba(181,51,51,.2); border-radius: 10px; padding: 11px 13px; font-size: 13px;
+    line-height: 1.55; margin-bottom: 16px;
+  }
+  .error-box svg { flex-shrink: 0; margin-top: 2px; }
+
+  /* 鎖定倒數與 super admin 提示（REQ-AUTH-006） */
+  .lock-extra { background: var(--surface-warm); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
+  .lock-timer { font-size: 13px; color: var(--fg-2); }
+  .lock-timer strong { font-variant-numeric: tabular-nums; font-size: 17px; color: var(--danger); margin-left: 4px; }
+  .lock-note { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  .btn-login {
+    width: 100%; background: var(--brand-55688); color: var(--brand-55688-on); border: none; border-radius: 10px;
+    padding: 13px; font-size: 15.5px; font-weight: 600; cursor: pointer; min-height: 48px; margin-top: 2px;
+    transition: background var(--motion-fast), opacity var(--motion-fast);
+  }
+  .btn-login:hover:not(:disabled) { background: var(--brand-55688-deep); }
+  .btn-login:disabled { opacity: .5; cursor: not-allowed; }
+
+  .link-forgot {
+    display: block; width: 100%; text-align: center; background: transparent; border: none; color: var(--accent);
+    font-size: 13.5px; cursor: pointer; margin-top: 18px; padding: 6px; border-radius: 8px;
+  }
+  .link-forgot:hover { text-decoration: underline; }
+
+  .forgot-panel { margin-top: 10px; background: var(--surface-warm); border-radius: 12px; padding: 16px; }
+  .role-toggle { display: inline-flex; background: var(--surface); border-radius: 9999px; padding: 2px; box-shadow: 0 0 0 1px var(--border-soft); margin-bottom: 10px; }
+  .role-toggle button {
+    border: none; background: transparent; padding: 6px 14px; border-radius: 9999px; font-size: 12.5px;
+    color: var(--muted); cursor: pointer; min-height: 30px; font-family: inherit;
+  }
+  .role-toggle button[aria-pressed="true"] { background: var(--brand-55688); color: var(--brand-55688-on); font-weight: 500; }
+  .forgot-text { font-size: 13px; color: var(--fg-2); line-height: 1.7; }
+
+  /* 原型狀態切換 */
+  .proto-switcher {
+    width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--border-soft);
+    border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: 13px; color: var(--muted); box-shadow: var(--elev-ring);
+  }
+  .proto-switcher label { color: var(--fg-2); font-weight: 500; flex-shrink: 0; }
+  .proto-switcher select {
+    appearance: none; background: var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%235e5d59" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+    border: 1px solid var(--border-soft); border-radius: 10px; padding: 7px 30px 7px 12px;
+    font-size: 13.5px; color: var(--fg); cursor: pointer; min-height: 38px; font-family: inherit; flex: 1; min-width: 180px;
+  }
+
+  @media (max-width: 480px) {
+    .login-card { padding: 28px 20px 24px; }
+    .brand-title { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-decor" aria-hidden="true"><div class="bg-dots"></div></div>
+
+<main class="login-wrap">
+  <div class="login-card">
+    <div class="idle-banner" id="idle-banner" role="alert" hidden>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3.2 2"/></svg>
+      <span>閒置超過 8 小時，連線已失效，請重新登入（REQ-AUTH-003）</span>
+    </div>
+
+    <div class="brand-block">
+      <div class="brand-mark" aria-hidden="true">55688</div>
+      <div class="brand-title">55688 隊員 CRM</div>
+      <div class="brand-sub">營運管理平台</div>
+    </div>
+
+    <form id="login-form" novalidate>
+      <div class="field">
+        <label for="f-acc">帳號</label>
+        <input id="f-acc" name="acc" type="text" autocomplete="username" placeholder="請輸入帳號">
+      </div>
+      <div class="field">
+        <label for="f-pwd">密碼</label>
+        <div class="pwd-wrap">
+          <input id="f-pwd" name="pwd" type="password" autocomplete="current-password" placeholder="請輸入密碼">
+          <button class="pwd-toggle" id="pwd-toggle" type="button" aria-label="顯示密碼">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="hint">至少 8 碼，需包含英文與數字</div>
+      </div>
+
+      <div class="error-box" id="error-box" role="alert" hidden>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+        <span id="error-text"></span>
+      </div>
+
+      <div class="lock-extra" id="lock-extra" hidden>
+        <div class="lock-timer">剩餘鎖定時間<strong id="lock-time">14:32</strong></div>
+        <div class="lock-note">super admin 遭鎖定將通知其他 super admin，可後台立即解鎖（REQ-AUTH-006）</div>
+      </div>
+
+      <button class="btn-login" id="btn-login" type="submit">登入</button>
+    </form>
+
+    <button class="link-forgot" id="btn-forgot" type="button" aria-expanded="false" aria-controls="forgot-panel">忘記密碼？</button>
+
+    <div class="forgot-panel" id="forgot-panel" hidden>
+      <div class="role-toggle" role="group" aria-label="切換示意身份，檢視不同重設流程">
+        <button type="button" data-role="user" aria-pressed="true">一般使用者</button>
+        <button type="button" data-role="admin" aria-pressed="false">super admin</button>
+      </div>
+      <div class="forgot-text" id="forgot-text"></div>
+    </div>
+  </div>
+
+  <div class="proto-switcher">
+    <label for="proto-state">原型狀態</label>
+    <select id="proto-state" aria-label="切換登入頁原型演示狀態">
+      <option value="default">a）預設</option>
+      <option value="wrong">b）帳密錯誤</option>
+      <option value="locked">c）連續 5 次鎖定</option>
+      <option value="disabled">d）帳號已停用</option>
+      <option value="idle">e）閒置逾時</option>
+    </select>
+  </div>
+</main>
+
+<script src="../app.js?v=25"></script>
+<script>
+(function () {
+  'use strict';
+  // 登入頁例外：不放 nav、不呼叫 CRM.mountNav；僅使用 CRM.toast
+
+  var ICON_EYE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var ICON_EYE_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 5.1A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-3.1 3.8M6.1 6.1C3.6 7.7 2 10 1 12c0 0 4 7 11 7 1.4 0 2.7-.2 3.9-.6"/></svg>';
+
+  var STATE_MSG = {
+    wrong: '帳號或密碼錯誤（第 3 次，累計 5 次將鎖定）',
+    locked: '登入失敗次數過多，帳號已鎖定 15 分鐘（429）',
+    disabled: '此帳號已停用（403），請聯繫管理員'
+  };
+  var STATE_LABEL = { wrong: '帳密錯誤', locked: '連續 5 次鎖定', disabled: '帳號已停用', idle: '閒置逾時', 'default': '預設' };
+
+  var errorBox = document.getElementById('error-box');
+  var errorText = document.getElementById('error-text');
+  var idleBanner = document.getElementById('idle-banner');
+  var lockExtra = document.getElementById('lock-extra');
+  var loginBtn = document.getElementById('btn-login');
+  var form = document.getElementById('login-form');
+  var currentState = 'default';
+
+  function setState(state) {
+    currentState = state;
+    idleBanner.hidden = (state !== 'idle');
+    if (STATE_MSG[state]) {
+      errorText.textContent = STATE_MSG[state];
+      errorBox.hidden = false;
+    } else {
+      errorBox.hidden = true;
+      errorText.textContent = '';
+    }
+    lockExtra.hidden = (state !== 'locked');
+    loginBtn.disabled = (state === 'locked');
+  }
+  document.getElementById('proto-state').addEventListener('change', function (e) { setState(e.target.value); });
+
+  /* 密碼顯示／隱藏 */
+  var pwdInput = document.getElementById('f-pwd');
+  var pwdToggle = document.getElementById('pwd-toggle');
+  pwdToggle.addEventListener('click', function () {
+    var showing = pwdInput.type === 'text';
+    pwdInput.type = showing ? 'password' : 'text';
+    pwdToggle.setAttribute('aria-label', showing ? '顯示密碼' : '隱藏密碼');
+    pwdToggle.innerHTML = showing ? ICON_EYE : ICON_EYE_OFF;
+  });
+
+  /* 送出（Enter 或按鈕皆觸發 submit；原型直接放行，REQ-E2E-001） */
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (loginBtn.disabled) return;
+    if (currentState === 'default' || currentState === 'idle') {
+      location.href = 'overview.html';
+    } else {
+      CRM.toast('原型示意：目前為「' + STATE_LABEL[currentState] + '」狀態演示，不會真的登入');
+    }
+  });
+
+  /* 忘記密碼（頁內展開，不跳頁；REQ-AUTH-004／REQ-RBAC-003） */
+  var forgotBtn = document.getElementById('btn-forgot');
+  var forgotPanel = document.getElementById('forgot-panel');
+  var forgotText = document.getElementById('forgot-text');
+  var ROLE_TEXT = {
+    user: '請聯繫管理員於後台重設（admin.users）；登入後可於個人選單自行變更密碼。',
+    admin: 'break-glass 自助重設：以綁定 email 收取重設連結；完成後寫入審計（動作／時間／來源 IP）並即時通知其他啟用中 super admin（REQ-RBAC-003）。'
+  };
+  function paintRole(role) {
+    forgotPanel.querySelectorAll('.role-toggle button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.role === role));
+    });
+    forgotText.textContent = ROLE_TEXT[role];
+  }
+  forgotBtn.addEventListener('click', function () {
+    var show = forgotPanel.hidden;
+    forgotPanel.hidden = !show;
+    forgotBtn.setAttribute('aria-expanded', String(show));
+    if (show) paintRole('user');
+  });
+  forgotPanel.querySelectorAll('.role-toggle button').forEach(function (b) {
+    b.addEventListener('click', function () { paintRole(b.dataset.role); });
+  });
+
+  setState('default');
+})();
+</script>
+
+</body>
+</html>
