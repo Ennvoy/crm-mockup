@@ -1555,6 +1555,16 @@
     document.getElementById('content-normal').style.display = (state === 'normal') ? '' : 'none';
     ['empty', 'loading', 'error', 'forbidden'].forEach(function (k) { document.getElementById('st-' + k).classList.toggle('show', state === k); });
   });
+
+  /* ══ hash 深連結：#act=<URI encoded 活動名稱> → 切「單一活動」並選中該活動（觸發既有 change 流程）；找不到則忽略 ══ */
+  (function handleActHash() {
+    var m = /^#act=(.+)$/.exec(location.hash || '');
+    if (!m) return;
+    var name; try { name = decodeURIComponent(m[1]); } catch (e) { return; }
+    var target = ALL_ACTS.filter(function (a) { return a.name === name; })[0];
+    if (!target) return;
+    switchTab('one'); openActivity(target.id);
+  })();
 })();
 </script>
 </body>

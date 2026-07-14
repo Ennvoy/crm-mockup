@@ -119,35 +119,42 @@
   .btn-primary { background: var(--accent); color: var(--accent-on); box-shadow: 0 0 0 1px var(--accent); }
   .btn-primary:hover { background: var(--accent-hover); }
 
-  /* ── 活動卡 ── */
+  /* ── 活動卡（對齊 M6 活動頁改版：KPI 帶＋達標摘要＋主檔分析級距分布，REQ-OV-006） ── */
   .act-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   @media (max-width: 1000px) { .act-grid { grid-template-columns: 1fr; } }
-  .act-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
-  .act-card:hover { box-shadow: var(--elev-raised); }
+  .act-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 13px; cursor: pointer; transition: box-shadow var(--motion-fast), transform var(--motion-fast), border-color var(--motion-fast); }
+  .act-card:hover { box-shadow: var(--elev-raised); transform: translateY(-2px); border-color: #d1cfc5; }
+  .act-card:hover .act-name { color: var(--accent); }
   .act-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .act-name { font-family: var(--font-display); font-weight: 500; font-size: 18px; line-height: 1.3; }
+  .act-name { font-family: var(--font-display); font-weight: 500; font-size: 18px; line-height: 1.3; transition: color var(--motion-fast); }
   .act-dates { color: var(--meta); font-size: 12.5px; margin-top: 3px; }
+  .act-head-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
   .act-type { background: var(--surface-warm); color: var(--fg-2); font-size: 12px; padding: 3px 10px; border-radius: 9999px; white-space: nowrap; }
+  .act-badge-ongoing { font-size: 11.5px; color: var(--success); background: var(--surface-warm); padding: 2px 8px; border-radius: 9999px; white-space: nowrap; }
+  /* KPI 帶（協理視覺重點：累計產生任務數＋累計發放獎勵） */
   .act-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .act-stat { background: var(--bg); border-radius: 10px; padding: 10px 12px; }
   .act-stat .k { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
   .act-stat .v { font-size: 21px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
   .act-stat.cost .v { color: var(--accent); }
   .act-stat.gain .v { color: var(--success); }
-  .act-sub { display: flex; gap: 16px; font-size: 12.5px; color: var(--muted); }
+  .act-sub { display: flex; gap: 16px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
   .act-sub b { color: var(--fg-2); font-variant-numeric: tabular-nums; }
-  .act-buckets { display: grid; gap: 6px; }
-  .ab-row { display: grid; grid-template-columns: 52px 1fr; gap: 8px; align-items: center; font-size: 12px; color: var(--meta); }
-  .ab-bars { display: grid; gap: 2px; }
-  .ab-bar { height: 7px; border-radius: 9999px; background: var(--surface-warm); overflow: hidden; }
-  .ab-bar > i { display: block; height: 100%; border-radius: 9999px; }
-  .ab-legend { display: flex; gap: 14px; font-size: 11.5px; color: var(--meta); margin-top: 2px; }
-  .act-detail { border-top: 1px solid var(--border); padding-top: 10px; }
-  .act-detail .dt-title { font-size: 12.5px; color: var(--meta); margin-bottom: 4px; }
-  .act-detail table { border-collapse: collapse; width: 100%; font-size: 12.5px; table-layout: fixed; }
+  /* 達標摘要列（累計達標人次＋週達標平均） */
+  .act-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .as-cell { background: var(--surface-warm); border-radius: 10px; padding: 8px 12px; }
+  .as-cell .k { font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  .as-cell .v { font-size: 17px; font-weight: 600; margin-top: 1px; font-variant-numeric: tabular-nums; }
+  .as-cell .u { font-size: 11.5px; color: var(--meta); font-weight: 400; }
+  /* 級距分布（依主檔分析級距，維度各卡不同） */
+  /* 展開前後比較數據表（級距×活動前/迄今/變化） */
+  .act-detail { border-top: 1px solid var(--border); padding-top: 4px; }
+  .act-detail-head { font-size: 12.5px; color: var(--fg-2); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 6px 2px 2px; }
+  .act-detail-head span:last-child { font-size: 12px; color: var(--muted); }
+  .act-detail table { border-collapse: collapse; width: 100%; font-size: 12.5px; table-layout: fixed; margin-top: 4px; }
   .act-detail th, .act-detail td { padding: 6px 4px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .act-detail th { color: var(--muted); font-weight: 500; font-size: 12px; }
-  .act-detail th:first-child, .act-detail td:first-child { text-align: left; color: var(--muted); width: 30%; }
+  .act-detail th:first-child, .act-detail td:first-child { text-align: left; color: var(--muted); width: 34%; }
 
   /* ── 圖表 ── */
   .chart-wrap { overflow-x: auto; }
@@ -265,32 +272,7 @@
   </div>
 </div>
 
-<!-- 參加隊員表格 modal（搜尋＋排序＋分頁＋前後差異） -->
-<div class="modal-backdrop" id="modal-members" role="dialog" aria-modal="true" aria-labelledby="ml-title">
-  <div class="modal" style="width:720px">
-    <h3 id="ml-title">參加隊員</h3>
-    <p class="desc" id="mt-total"></p>
-    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
-      <input id="mt-search" type="search" placeholder="搜尋隊編或姓名" aria-label="搜尋參加隊員"
-        style="flex:1;border:1px solid var(--border-soft);border-radius:10px;padding:9px 14px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--fg);outline:none">
-    </div>
-    <div id="member-list" style="max-height:380px;overflow-y:auto"></div>
-    <div class="modal-foot" style="justify-content:space-between;align-items:center">
-      <span style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)">
-        <button class="btn" type="button" id="mt-prev" style="min-height:32px;padding:4px 12px">上一頁</button>
-        <span id="mt-page"></span>
-        <button class="btn" type="button" id="mt-next" style="min-height:32px;padding:4px 12px">下一頁</button>
-      </span>
-      <button class="btn" type="button" onclick="document.getElementById('modal-members').classList.remove('show')">關閉</button>
-    </div>
-  </div>
-</div>
-<style>
-  .mt-table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
-  .mt-table th, .mt-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .mt-table th { color: var(--muted); font-weight: 500; font-size: 12.5px; position: sticky; top: 0; background: var(--surface); }
-  .mt-table tbody tr:hover { background: var(--bg); }
-</style>
+<!-- 參加隊員名單彈窗已移除（2026-07-14 使用者走查回饋）：參加者細節改由活動卡下鑽單一活動之參加隊員清單（含 Profile 連結） -->
 
 <script src="../app.js?v=25"></script>
 <script>
@@ -463,89 +445,78 @@
     CRM.toast('已新增指標卡（原型假資料）');
   });
 
-  /* ═══ ② 進行中活動 ═══ */
-  document.getElementById('act-asof').innerHTML = '成效追蹤至 ' + DB.meta.dataAsOf + '（每日更新） ' + CRM.infoIcon('活動 TA（報名名單）之任務數變化：活動前期 vs 活動起始迄今，依每日匯入資料 T+1 更新');
+  /* ═══ ② 進行中活動（對齊 M6 活動頁改版；REQ-OV-006／REQ-ACT-021 同源一致） ═══ */
+  // 資料截至＝最後完整自然週週日（活動結算資料截至），與活動頁 ACT_DATA_CUTOFF 同值
+  var ACT_DATA_CUTOFF = '2026-07-05';
+  document.getElementById('act-asof').innerHTML = '成效追蹤至 ' + ACT_DATA_CUTOFF + '（每日結算 T+1） ' + CRM.infoIcon('進行中活動之達標／獎勵／任務數變化隨每日結算 T+1 更新；資料截至＝最後完整自然週 ' + ACT_DATA_CUTOFF + '，與 M6 活動頁同源（REQ-ACT-009／REQ-IMP-011）');
+
+  // ── 進行中活動假資料：與 activity.html 假資料層同源（2026-07-14 手動同步；數值以 node 實跑 activity.html 內嵌 buildDash/taskChange 取得，兩頁共同欄位不得矛盾，REQ-OV-006） ──
+  // 級距軸依各活動主檔分析級距（維度各卡不同，REQ-ACT-018）；before/after 分布為決定性生成、前後變化合理，Σ＝參加者數
+  var ACTS = [
+    {
+      id: 'ACT-2026-06A', name: '雙北地區進步獎', type: '晚尖峰', start: '2026-06-01', end: '2026-07-31',
+      cumTasks: 14987,   // 累計產生任務數（同源推導：參加者數×迄今日均×taskChange factor，REQ-ACT-010）
+      reward: 342000,    // 累計發放獎勵＝ΣtotalReward（總發放，Σreward_amount；口徑同活動頁 REQ-ACT-020）
+      ta: 1264,          // 參加者數＝合併後 TA（aggTA，REQ-ACT-015）
+      extraTasks: 3868,  // 較活動前增加（＝年度列表「因活動增加任務總數」，REQ-ACT-002）
+      cumHit: 802, weekAvg: 160,   // 累計達標人次 aggCumHit／週達標平均 aggWeekAvg（nW=5，REQ-ACT-017/019）
+      tierDimName: '承接率', ticks: ['0%', '1–20', '20–40', '40–60', '60–80', '80%↑'],
+      before: [140, 320, 360, 240, 140, 64],   // 活動前分布（決定性生成，Σ=1264）
+      after:  [76, 202, 329, 303, 228, 126]    // 迄今分布＝aggTierTAfinal（Σ=1264）
+    },
+    {
+      id: 'ACT-2026-06B', name: '桃園早尖峰衝刺獎', type: '早尖峰', start: '2026-06-15', end: '2026-07-31',
+      cumTasks: 4577, reward: 48900, ta: 386, extraTasks: 1181,
+      cumHit: 147, weekAvg: 49,   // nW=3
+      tierDimName: '完成任務數', ticks: ['0 趟', '1–3', '4–6', '7+ 趟'],
+      before: [70, 150, 110, 56],   // Σ=386
+      after:  [39, 116, 146, 85]    // 迄今分布＝aggTierTAfinal（Σ=386）
+    }
+  ];
+
   function renderActivities() {
-    var labels = ['0 次', '1~3 次', '4~6 次', '7 次以上'];
-    var keys = ['b0', 'b1', 'b2', 'b3'];
-    var html = '';
-    DB.activities.forEach(function (a) {
-      var maxB = Math.max.apply(null, keys.map(function (k) { return Math.max(a.baseline[k], a.current[k]); }));
-      var buckets = keys.map(function (k, i) {
-        return '<div class="ab-row"><span>' + labels[i] + '</span><div class="ab-bars">' +
-          '<div class="ab-bar"><i style="width:' + Math.round(a.baseline[k] / maxB * 100) + '%;background:var(--chart-4)"></i></div>' +
-          '<div class="ab-bar"><i style="width:' + Math.round(a.current[k] / maxB * 100) + '%;background:var(--chart-2)"></i></div>' +
-          '</div></div>';
-      }).join('');
-      var detailRows = keys.map(function (k, i) {
-        var diff = a.current[k] - a.baseline[k];
-        return '<tr><td>' + labels[i] + '</td><td>' + CRM.fmt(a.baseline[k]) + '</td><td>' + CRM.fmt(a.current[k]) + '</td>' +
+    var html = ACTS.map(function (a) {
+      var detailRows = a.ticks.map(function (t, i) {
+        var diff = a.after[i] - a.before[i];
+        return '<tr><td>' + t + '</td><td>' + CRM.fmt(a.before[i]) + '</td><td>' + CRM.fmt(a.after[i]) + '</td>' +
           '<td class="' + (diff >= 0 ? 'trend-up' : 'trend-down') + '">' + (diff >= 0 ? '+' : '') + CRM.fmt(diff) + '</td></tr>';
       }).join('');
-      html += '<article class="act-card">' +
+      return '<article class="act-card" data-go="' + encodeURIComponent(a.name) + '" role="link" tabindex="0" aria-label="開啟 ' + a.name + ' 單一活動檢視">' +
         '<div class="act-head"><div><div class="act-name">' + a.name + '</div>' +
         '<div class="act-dates">' + a.start + ' ～ ' + a.end + '</div></div>' +
-        '<span class="act-type">' + a.type + '</span></div>' +
+        '<div class="act-head-side"><span class="act-type">' + a.type + '</span><span class="act-badge-ongoing">● 進行中</span></div></div>' +
+        // KPI 帶（協理視覺重點）
         '<div class="act-hero">' +
-          '<div class="act-stat gain"><span class="k">累計產生任務數 ' + CRM.infoIcon('參加隊員於活動期間累計完成之任務總數') + '</span><span class="v">' + CRM.fmt(a.cumTasks) + '</span></div>' +
-          '<div class="act-stat cost"><span class="k">成本花費（獎勵） ' + CRM.infoIcon('Σ 活動成效匯入之獲得獎金') + '</span><span class="v">$' + CRM.fmt(a.cost) + '</span></div>' +
+          '<div class="act-stat gain"><span class="k">累計產生任務數 ' + CRM.infoIcon('參加隊員於活動期間累計完成之任務總數（依活動主檔成效計算時段，REQ-ACT-010；與活動頁同源）') + '</span><span class="v">' + CRM.fmt(a.cumTasks) + '</span></div>' +
+          '<div class="act-stat cost"><span class="k">累計發放獎勵 ' + CRM.infoIcon('Σreward_amount；口徑同活動頁「總發放」＝各結算金額加總，每日結算 T+1（REQ-ACT-020）') + '</span><span class="v">$' + CRM.fmt(a.reward) + '</span></div>' +
         '</div>' +
-        '<div class="act-sub"><span>參加隊員 <b>' + CRM.fmt(a.signup) + '</b> 人</span>' +
+        // 參加者數＋較活動前增加
+        '<div class="act-sub"><span>參加者數 ' + CRM.infoIcon('合併後 TA＝分群圈選＋報名匯入＋結算補入（去重），截至最新週（REQ-ACT-015）') + ' <b>' + CRM.fmt(a.ta) + '</b> 人</span>' +
         '<span>較活動前增加 <b class="trend-up">+' + CRM.fmt(a.extraTasks) + '</b> 趟</span></div>' +
-        '<div class="act-buckets">' + buckets +
-        '<div class="ab-legend"><span><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--chart-4);margin-right:5px"></i>活動前（日均完成級距）</span>' +
-        '<span><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--chart-2);margin-right:5px"></i>活動迄今</span></div></div>' +
-        '<div class="act-detail"><div class="dt-title">前後比較數據（人）</div>' +
-        '<table aria-label="' + a.name + ' 日均完成級距前後比較"><thead><tr><th>級距</th><th>活動前</th><th>活動迄今</th><th>變化</th></tr></thead><tbody>' +
-        detailRows + '</tbody></table></div>' +
-        '<div><button class="btn" type="button" data-members="' + a.id + '">查看參加隊員</button></div>' +
+        // 達標摘要列
+        '<div class="act-summary">' +
+          '<div class="as-cell"><span class="k">累計達標人次 ' + CRM.infoIcon('各週達標人數加總；達標＝該週結算獎勵 > 0（Σreward_amount>0，REQ-ACT-017）') + '</span><span class="v">' + CRM.fmt(a.cumHit) + '<span class="u"> 人次</span></span></div>' +
+          '<div class="as-cell"><span class="k">週達標平均 ' + CRM.infoIcon('累計達標人次 ÷ 已開始週數（REQ-ACT-019）') + '</span><span class="v">' + CRM.fmt(a.weekAvg) + '<span class="u"> 人/週</span></span></div>' +
+        '</div>' +
+        // 前後比較數據表（常駐展開；級距軸依主檔分析級距。分布橫條與「查看參加隊員」按鈕依使用者走查回饋移除 2026-07-14——參加者細節改由卡片下鑽單一活動檢視）
+        '<div class="act-detail"><div class="act-detail-head"><span>前後比較數據（人）</span><span>級距軸：' + a.tierDimName + '（主檔設定）・' + a.ticks.length + ' 級</span></div>' +
+          '<table aria-label="' + a.name + ' ' + a.tierDimName + '級距前後比較"><thead><tr><th>級距</th><th>活動前</th><th>迄今</th><th>變化</th></tr></thead><tbody>' +
+          detailRows + '</tbody></table></div>' +
         '</article>';
-    });
+    }).join('');
     document.getElementById('act-grid').innerHTML = html;
 
-    // 查看參加隊員 → 可搜尋/排序/分頁之表格（含活動前後差異；正式版全量查詢）
-    document.querySelectorAll('[data-members]').forEach(function (b) {
-      b.addEventListener('click', function () { openMemberTable(b.dataset.members); });
+    // 卡片整卡／標題下鑽 → activity.html#act=<活動名稱>（內部按鈕/連結/展開/ⓘ 不觸發）
+    document.querySelectorAll('#act-grid .act-card').forEach(function (card) {
+      function go() { location.href = 'activity.html#act=' + card.dataset.go; }
+      card.addEventListener('click', function (e) {
+        if (e.target.closest('button, a, summary, details, .crm-info')) return;
+        go();
+      });
+      card.addEventListener('keydown', function (e) {
+        if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('button, a, summary, .crm-info')) { e.preventDefault(); go(); }
+      });
     });
-  }
-
-  /* 參加隊員表格（搜尋＋依變化排序＋分頁；REQ-ACT-003：每位參加者前後變化） */
-  var mt = { actId: null, page: 1, per: 10, q: '', sortDesc: true };
-  function openMemberTable(actId) {
-    mt.actId = actId; mt.page = 1; mt.q = ''; mt.sortDesc = true;
-    document.getElementById('mt-search').value = '';
-    var act = DB.activities.find(function (x) { return x.id === actId; });
-    document.getElementById('ml-title').textContent = act.name + '・參加隊員';
-    document.getElementById('mt-total').textContent = '共 ' + CRM.fmt(act.signup) + ' 人（原型含 40 筆示意資料；正式版全量搜尋與分頁）';
-    renderMemberTable();
-    document.getElementById('modal-members').classList.add('show');
-  }
-  function renderMemberTable() {
-    var list = (DB.activityParticipants[mt.actId] || []).slice();
-    if (mt.q) list = list.filter(function (p) { return p.code.indexOf(mt.q) !== -1 || p.name.indexOf(mt.q) !== -1; });
-    list.sort(function (a, b) {
-      var da = a.after - a.before, db2 = b.after - b.before;
-      return mt.sortDesc ? db2 - da : da - db2;
-    });
-    var pages = Math.max(1, Math.ceil(list.length / mt.per));
-    if (mt.page > pages) mt.page = pages;
-    var rows = list.slice((mt.page - 1) * mt.per, mt.page * mt.per);
-    var html = '<table class="mt-table"><thead><tr>' +
-      '<th style="text-align:left">隊編</th><th style="text-align:left">姓名／身份</th>' +
-      '<th>活動前日均</th><th>迄今日均</th>' +
-      '<th><button type="button" id="mt-sort" style="border:none;background:none;cursor:pointer;color:var(--accent);font-size:12.5px;font-family:inherit">變化 ' + (mt.sortDesc ? '▼' : '▲') + '</button></th><th></th></tr></thead><tbody>';
-    rows.forEach(function (p) {
-      var diff = Math.round((p.after - p.before) * 10) / 10;
-      html += '<tr><td style="text-align:left;font-variant-numeric:tabular-nums"><b>' + p.code + '</b></td>' +
-        '<td style="text-align:left;color:var(--muted)">' + CRM.maskName(p.name) + '・' + p.identity + '</td>' +
-        '<td>' + p.before.toFixed(1) + '</td><td>' + p.after.toFixed(1) + '</td>' +
-        '<td class="' + (diff >= 0 ? 'trend-up' : 'trend-down') + '">' + (diff >= 0 ? '+' : '') + diff.toFixed(1) + '</td>' +
-        '<td><a href="profile.html?m=' + p.code + '" style="color:var(--accent);font-size:13px">Profile →</a></td></tr>';
-    });
-    html += '</tbody></table>';
-    document.getElementById('member-list').innerHTML = html;
-    document.getElementById('mt-page').textContent = mt.page + ' / ' + pages + ' 頁';
-    document.getElementById('mt-sort').addEventListener('click', function () { mt.sortDesc = !mt.sortDesc; renderMemberTable(); });
   }
 
   /* ═══ 事件與初始化 ═══ */
@@ -554,16 +525,6 @@
     ['empty', 'loading', 'error', 'forbidden'].forEach(function (k) {
       document.getElementById('st-' + k).classList.toggle('show', state === k);
     });
-  });
-
-  /* 參加隊員表格：搜尋與分頁 */
-  document.getElementById('mt-search').addEventListener('input', function (e) {
-    mt.q = e.target.value.trim(); mt.page = 1; renderMemberTable();
-  });
-  document.getElementById('mt-prev').addEventListener('click', function () { if (mt.page > 1) { mt.page--; renderMemberTable(); } });
-  document.getElementById('mt-next').addEventListener('click', function () { mt.page++; renderMemberTable(); });
-  document.getElementById('modal-members').addEventListener('click', function (e) {
-    if (e.target === this) this.classList.remove('show');
   });
 
   renderKeyCards();
