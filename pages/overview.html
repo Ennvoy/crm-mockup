@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>營運總覽 — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=28">
+<link rel="stylesheet" href="../tokens.css?v=29">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -122,8 +122,9 @@
   /* ── 活動卡（對齊 M6 活動頁改版：KPI 帶＋達標摘要＋主檔分析級距分布，REQ-OV-006） ── */
   .act-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   @media (max-width: 1000px) { .act-grid { grid-template-columns: 1fr; } }
-  .act-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 13px; cursor: pointer; transition: box-shadow var(--motion-fast), transform var(--motion-fast), border-color var(--motion-fast); }
-  .act-card:hover { box-shadow: var(--elev-raised); transform: translateY(-2px); border-color: #d1cfc5; }
+  /* hover 不用 transform：transform 會讓卡內 ⓘ tooltip 的 position:fixed 錨點跑掉（2026-07-15 活動頁同款問題，同構預防） */
+  .act-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 13px; cursor: pointer; transition: box-shadow var(--motion-fast), border-color var(--motion-fast); }
+  .act-card:hover { box-shadow: var(--elev-raised); border-color: #d1cfc5; }
   .act-card:hover .act-name { color: var(--accent); }
   .act-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .act-name { font-family: var(--font-display); font-weight: 500; font-size: 18px; line-height: 1.3; transition: color var(--motion-fast); }
@@ -274,7 +275,7 @@
 
 <!-- 參加隊員名單彈窗已移除（2026-07-14 使用者走查回饋）：參加者細節改由活動卡下鑽單一活動之參加隊員清單（含 Profile 連結） -->
 
-<script src="../app.js?v=28"></script>
+<script src="../app.js?v=29"></script>
 <script>
 (function () {
   'use strict';
