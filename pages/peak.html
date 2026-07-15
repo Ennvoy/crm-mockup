@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>尖峰完成數 — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=26">
+<link rel="stylesheet" href="../tokens.css?v=28">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -70,7 +70,9 @@
   td.wd-merge { text-align: center; vertical-align: middle; color: var(--fg-2); font-weight: 500; background: var(--bg); border-right: 1px solid var(--border-soft); }
   td.day-cell { text-align: center; color: var(--muted); }
   th.day-head { text-align: center; }
-  /* Tab2 左側「星期／日」欄凍結（2026-07-15 使用者走查：橫向捲動時不隨捲動）——sticky 需不透明底 */
+  /* Tab2 左側「星期／日」欄凍結（2026-07-15 使用者走查：橫向捲動時不隨捲動）——sticky 需不透明底；
+     border-collapse:collapse＋sticky 於 Chrome 滾動會開出接縫讓底下數字透出（2026-07-15 使用者回報），改 separate 繪製模型根治 */
+  #wd-table { border-collapse: separate; border-spacing: 0; }
   #wd-table th.wd, #wd-table td.wd-merge { position: sticky; left: 0; z-index: 3; min-width: 64px; background: var(--bg); }
   #wd-table th.day-head, #wd-table td.day-cell { position: sticky; left: 64px; z-index: 2; background: var(--surface); box-shadow: 2px 0 0 var(--border-soft); min-width: 44px; }
   #wd-table thead th.wd, #wd-table thead th.day-head { z-index: 4; }
@@ -78,6 +80,13 @@
   .pct-good { color: var(--success); }
   .pct-mid { color: var(--warn); }
   .pct-bad { color: var(--danger); }
+  /* 狀態欄「筆數 / %」合併格式（2026-07-15 使用者走查）：欄中欄固定對齊——數字右齊一格、斜線定位、% 右齊一格 */
+  .st-num { display: inline-block; min-width: 3.6em; text-align: right; }
+  .st-pct { display: inline-flex; justify-content: space-between; min-width: 4.4em; font-size: 12px; color: var(--muted); font-weight: 400; white-space: nowrap; }
+  .st-pct .sl { font-style: normal; color: var(--meta); margin: 0 5px 0 7px; }
+  .st-pct.pct-good { color: var(--success); }
+  .st-pct.pct-mid { color: var(--warn); }
+  .st-pct.pct-bad { color: var(--danger); }
 
   .crm-info { position: relative; display: inline-flex; color: var(--meta); cursor: help; vertical-align: middle; }
   .crm-info:hover, .crm-info:focus-visible { color: var(--fg-2); }
@@ -225,7 +234,7 @@
   原型說明：本頁對應 v2 需求文件「其他分頁」三張 Tableau 報表（雙北_晚尖峰完成數 KPI／每日完成數 by 星期／晚尖峰每日任務數_完成狀況）。假資料即時生成、數字量級貼近截圖。
 </footer>
 
-<script src="../app.js?v=26"></script>
+<script src="../app.js?v=28"></script>
 <script>
 (function () {
   'use strict';
@@ -428,7 +437,7 @@
   }
 
   /* ═══ Tab 3：每日任務數・完成狀況 ═══ */
-  document.getElementById('st-info').innerHTML = CRM.infoIcon('每日有效任務數＝完成＋取消＋未現＋有車無承接＋搜無車；各狀態 % ＝ 該狀態 ÷ 每日有效任務數');
+  document.getElementById('st-info').innerHTML = CRM.infoIcon('每日有效任務數＝完成＋取消＋未現＋有車無承接＋搜無車；各狀態欄＝筆數 / 佔比（該狀態 ÷ 每日有效任務數；2026-07-15 使用者走查：% 併入數字欄）');
   function drawStatus() {
     var y = num('f-year3'), m = num('f-month3'), f = factorOf(val('f-region3'));
     var pk = document.getElementById('f-peak').value;
@@ -443,19 +452,21 @@
       { name: '每日完成任務數', color: 'var(--chart-2)', vals: days.map(function (r) { return Math.round(r.done * f); }) }
     ], days.length, days.map(function (r) { return r.d; }));
     var html = '<thead><tr><th>日（任務建立時間）</th><th class="wd">星期</th><th>每日有效任務數</th><th>隊員數</th>' +
-      '<th style="border-left:1px solid var(--border-soft)">完成</th><th>取消</th><th>未現</th><th>有車無承接</th><th>搜無車</th>' +
-      '<th style="border-left:1px solid var(--border-soft)">完成%</th><th>取消%</th><th>未現%</th><th>有車無承接%</th><th>搜無車%</th></tr></thead><tbody>';
+      '<th style="border-left:1px solid var(--border-soft)">完成 / %</th><th>取消 / %</th><th>未現 / %</th><th>有車無承接 / %</th><th>搜無車 / %</th></tr></thead><tbody>';
     days.forEach(function (r) {
       var pf = function (n) { return Math.round(n / r.valid * 1000) / 10; };
       var donePct = pf(r.done);
+      // 2026-07-15 使用者走查：% 獨立五欄移除、併入數字欄（例：7,316 / 67%）
+      var stCell = function (n, style, pcls) {
+        return '<td' + (style ? ' style="' + style + '"' : '') + '><span class="st-num">' + CRM.fmt(Math.round(n * f)) +
+          '</span><span class="st-pct' + (pcls ? ' ' + pcls : '') + '"><i class="sl">/</i>' + pf(n) + '%</span></td>';
+      };
       html += '<tr><td>' + y + '年' + m + '月' + r.d + '日</td><td class="wd">' + WD[r.wd] + '</td>' +
         '<td>' + CRM.fmt(Math.round(r.valid * f)) + '</td><td>' + CRM.fmt(Math.round(r.members * f)) + '</td>' +
-        '<td style="border-left:1px solid var(--border-soft);color:var(--fg-2);font-weight:500">' + CRM.fmt(Math.round(r.done * f)) + '</td>' +
-        '<td>' + CRM.fmt(Math.round(r.cancel * f)) + '</td><td>' + CRM.fmt(Math.round(r.noshow * f)) + '</td>' +
-        '<td style="color:var(--danger)">' + CRM.fmt(Math.round(r.noaccept * f)) + '</td><td>' + CRM.fmt(Math.round(r.nocar * f)) + '</td>' +
-        '<td style="border-left:1px solid var(--border-soft)" class="' + pctCls(donePct) + '">' + donePct + '%</td>' +
-        '<td>' + pf(r.cancel) + '%</td><td>' + pf(r.noshow) + '%</td>' +
-        '<td style="color:var(--danger)">' + pf(r.noaccept) + '%</td><td>' + pf(r.nocar) + '%</td></tr>';
+        stCell(r.done, 'border-left:1px solid var(--border-soft);color:var(--fg-2);font-weight:500', pctCls(donePct)) +
+        stCell(r.cancel) + stCell(r.noshow) +
+        stCell(r.noaccept, 'color:var(--danger)') +
+        stCell(r.nocar) + '</tr>';
     });
     html += '</tbody>';
     document.getElementById('status-table').innerHTML = html;

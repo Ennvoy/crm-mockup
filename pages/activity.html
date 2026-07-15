@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>隊員活動｜55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=27">
+<link rel="stylesheet" href="../tokens.css?v=28">
 <link rel="icon" href="data:,">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,6 +62,8 @@
   .grid-line { stroke: var(--border-soft); stroke-width: 1; }
 
   table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  /* 凍結首欄表格改 separate 繪製模型：collapse＋sticky 於 Chrome 滾動會開接縫透出底下數字（2026-07-15 尖峰頁使用者回報，同構預防） */
+  table.wk-matrix, table.contrib, table.mv-matrix { border-collapse: separate; border-spacing: 0; }
   th, td { padding: 9px 12px; text-align: right; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); white-space: nowrap; }
   th { color: var(--muted); font-weight: 500; background: var(--bg); }
   th:first-child, td:first-child { text-align: left; }
@@ -572,7 +574,7 @@
   </div>
 </div>
 
-<script src="../app.js?v=27"></script>
+<script src="../app.js?v=28"></script>
 <script>
 (function () {
   'use strict';

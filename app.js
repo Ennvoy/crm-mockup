@@ -388,18 +388,26 @@
         '.pref-seg{display:inline-flex;background:var(--surface-warm);border-radius:9999px;padding:2px}' +
         '.pref-seg button{border:none;background:transparent;padding:4px 11px;border-radius:9999px;font-size:12.5px;color:var(--muted);cursor:pointer;min-height:26px;font-family:inherit}' +
         '.pref-seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 0 0 1px var(--border-soft)}' +
+        /* 手機漢堡選單（2026-07-15 使用者拍板：桌機不動、窄螢幕收進抽屜） */
+        '.nav-burger{display:none;border:1px solid var(--border-soft);background:var(--surface);border-radius:8px;min-width:38px;min-height:32px;font-size:17px;line-height:1;color:var(--fg-2);cursor:pointer;font-family:inherit;align-items:center;justify-content:center;transition:background var(--motion-fast)}' +
+        '.nav-burger:hover{background:var(--surface-warm)}' +
         '@media(max-width:768px){' +
           '.nav-user{display:none}.brand-title{display:none}' +
           '.data-chip{font-size:11px;padding:3px 8px;white-space:nowrap}' +
-          '.nav-inner{padding:0 12px;gap:10px}' +
+          '.nav-inner{padding:0 12px;gap:10px;justify-content:space-between}' +
           '.crm-info-tip{max-width:180px}' +
           '.page{padding-left:14px;padding-right:14px}' +
+          '.nav-burger{display:inline-flex}' +
+          '.nav-links{display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border-soft);box-shadow:rgba(0,0,0,.12) 0 14px 28px;flex-direction:column;gap:2px;padding:8px 12px 12px;overflow-x:visible}' +
+          '#crm-nav.nav-open .nav-links{display:flex}' +
+          '.nav-link{min-height:44px;font-size:15.5px;border-radius:10px}' +
+          '.nav-link.active{background:var(--surface-warm);box-shadow:inset 3px 0 0 var(--brand-55688);border-radius:10px}' +
         '}';
       document.head.appendChild(st);
     }
     var html = '<div class="nav-inner">' +
       '<div class="nav-brand"><span class="brand-badge">55688</span><span class="brand-title">隊員 CRM</span></div>' +
-      '<div class="nav-links" role="navigation" aria-label="主選單">';
+      '<div class="nav-links" id="nav-links" role="navigation" aria-label="主選單">';
     NAV_ITEMS.forEach(function (it) {
       var cls = 'nav-link' + (it.key === activeKey ? ' active' : '') + (it.ready ? '' : ' pending');
       html += '<a class="' + cls + '" href="' + it.href + '" data-ready="' + it.ready + '" ' +
@@ -407,6 +415,7 @@
     });
     html += '</div>' +
       '<div class="nav-meta" style="position:relative">' +
+      '<button class="nav-burger" id="nav-burger" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="開啟主選單">☰</button>' +
       '<button class="pref-btn" id="pref-toggle" type="button" aria-haspopup="true" aria-expanded="false" title="顯示設定（字級／字重）">Aa</button>' +
       '<div class="pref-pop" id="pref-pop" role="menu" aria-label="顯示設定">' +
         '<div class="pref-row"><span class="pl">字型大小</span><span class="pref-seg" data-pref="fs">' +
@@ -423,6 +432,18 @@
         toast('此頁面將於下一批原型提供（本批交付：總覽）');
       });
     });
+    // 手機漢堡選單開合（Esc／點外側關閉；aria-expanded 同步）
+    var burger = document.getElementById('nav-burger');
+    function closeDrawer() { nav.classList.remove('nav-open'); burger.setAttribute('aria-expanded', 'false'); burger.textContent = '☰'; burger.setAttribute('aria-label', '開啟主選單'); }
+    burger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = nav.classList.toggle('nav-open');
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      burger.textContent = open ? '✕' : '☰';
+      burger.setAttribute('aria-label', open ? '關閉主選單' : '開啟主選單');
+    });
+    document.addEventListener('click', function (e) { if (nav.classList.contains('nav-open') && !nav.contains(e.target)) closeDrawer(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && nav.classList.contains('nav-open')) closeDrawer(); });
     initPrefs(nav);
   }
 
