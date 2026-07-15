@@ -313,6 +313,7 @@
   .excl-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
   .excl-add { display: flex; gap: 8px; align-items: center; }
   .excl-add input[type="date"] { flex: 1 1 auto; min-width: 0; border: 1px solid var(--border-soft); border-radius: 10px; padding: 8px 10px; font-family: inherit; background: var(--surface); color: var(--fg); }
+  .excl-add .btn { flex: 0 0 auto; white-space: nowrap; }
   .excl-chip { background: var(--surface-warm); color: var(--fg-2); border-radius: 9999px; padding: 3px 6px 3px 12px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
   .excl-chip button { border: none; background: transparent; color: var(--meta); cursor: pointer; font-size: 13px; line-height: 1; padding: 3px 5px; border-radius: 9999px; }
   .excl-chip button:hover { background: #e0ddd1; color: var(--danger); }
@@ -469,7 +470,7 @@
       <div class="modal-title" id="modal-title-txt">編輯活動主檔</div>
       <button class="modal-close" id="modal-close" type="button" aria-label="關閉">✕</button>
     </div>
-    <div class="modal-note">此操作需 <strong>activity.manage</strong> 權限（原型以已授權管理者視角預覽）。變更起迄日／比較區間／排除日期／成效計算時段／<strong>分析級距</strong>將即時重算全部成效統計（含級距×週達標儀表板與獎勵分組，REQ-ACT-008）；描述性欄位變更不觸發重算、仍寫審計。</div>
+    <div class="modal-note">此操作需 <strong>activity.manage</strong> 權限（原型以已授權管理者視角預覽）。變更起迄日／比較區間／排除日期／成效計算時段／<strong>分析級距</strong>將即時重算全部成效統計（含級距×週達標儀表板與獎勵分組，REQ-ACT-008）；描述性欄位變更不觸發重算、仍寫審計。<br><span class="soft-label">原型示意範圍：起迄日與分析級距（維度＋邊界）已實際連動重算；比較區間／排除日期／成效計算時段之重算為正式系統行為、本原型不重算。</span></div>
 
     <div class="field-row">
       <div class="field"><label for="m-name">活動名稱</label><input id="m-name" type="text" placeholder="例：8月早尖峰衝刺獎勵"></div>
@@ -547,8 +548,6 @@
       <div class="modal-section-sub">供人閱讀之規則說明，<strong>描述性欄位、不參與任何計算</strong>；達標判定一律依每日結算口徑（REQ-ACT-017）。</div>
       <div class="field"><label for="m-desc-goal">週目標說明</label><textarea id="m-desc-goal" placeholder="例：單週承接率較前期提升並維持晚尖峰上線"></textarea></div>
       <div class="field"><label for="m-desc-reward">活動獎勵</label><textarea id="m-desc-reward" placeholder="例：達標當週依承接率級距發放 300～500 元獎勵金"></textarea></div>
-      <div class="checkbox-line"><input type="checkbox" id="m-cum-enabled"><label for="m-cum-enabled">獎勵是否累計</label></div>
-      <div class="field" id="m-cum-cond-wrap" hidden><label for="m-cum-cond">累計條件</label><textarea id="m-cum-cond" placeholder="例：連續四週達標加碼一次（描述性）"></textarea></div>
     </div>
 
     <!-- 比較指標 + TA -->
@@ -655,7 +654,7 @@
       tierBounds: DIMS[o.tierDim].bounds.slice(),
       metrics: { task: true, online: true, revenue: true, accept: true },
       cond: o.cond || { region: [o.region], identity: ['小黃', '多元'], tier: '' },
-      descGoal: o.descGoal || '', descReward: o.descReward || '', cumEnabled: !!o.cumEnabled, cumCond: o.cumCond || '',
+      descGoal: o.descGoal || '', descReward: o.descReward || '',
       taSeg: o.taSeg || 0, taImport: o.taImport || o.taTotal, note: o.note || '',
       customNote: o.note || null, _dash: null
     };
@@ -665,7 +664,7 @@
     mkAct({ id: 'ACT-2026-06A', name: '雙北地區進步獎', type: '晚尖峰', start: '2026-06-01', end: '2026-07-31',
       region: '雙北', tierDim: 'accept', taTotal: 1264, taSplit: { '小黃': 831, '多元': 330, '多元試跑': 103 },
       scopeMode: 'pm', taSeg: 980, taImport: 284,
-      descGoal: '單週承接率較前期提升並維持晚尖峰上線時數。', descReward: '達標當週依承接率級距發放 300～500 元獎勵金。', cumEnabled: true, cumCond: '連續四週達標者期末加碼（描述性）。',
+      descGoal: '單週承接率較前期提升並維持晚尖峰上線時數。', descReward: '達標當週依承接率級距發放 300～500 元獎勵金。',
       note: '雙北晚尖峰（17:00–18:59）承接率進步獎，成效以晚尖峰時段計，達標依每日結算獎勵金額。' }),
     mkAct({ id: 'ACT-2026-06B', name: '桃園早尖峰衝刺獎', type: '早尖峰', start: '2026-06-15', end: '2026-07-31',
       region: '桃園', tierDim: 'tasks', taTotal: 386, taSplit: { '小黃': 300, '多元': 86, '多元試跑': 0 }, emptyIdentities: ['多元試跑'],
@@ -699,16 +698,45 @@
     if (TODAY <= addDays(a.end, 3)) return { key: 'grace', label: '已結束・結算收件中', badge: 'grace', desc: '迄日後 T+3 結算收件寬限窗內' };
     return { key: 'frozen', label: '已結束（統計凍結）', badge: 'frozen', desc: '逾寬限窗、統計凍結' };
   }
-  function tierDimOf(a) { return DIMS[a.tierDim]; }
-  function tiersFromBounds(dim, bounds) {
-    // 由邊界組成級距桶標籤（維度中立）。bounds 升冪，首值視為「0/最低」切點
-    var labels = [], u = dim.unit;
-    for (var i = 0; i < bounds.length; i++) {
-      if (i === 0) labels.push((bounds[0] === 0 ? '0' : '≤' + bounds[0]) + u);
-      else labels.push((bounds[i - 1] + (dim === DIMS.accept ? '' : '')) + '–' + bounds[i] + u);
+  function boundsEqual(x, y) {
+    if (x.length !== y.length) return false;
+    for (var i = 0; i < x.length; i++) if (Number(x[i]) !== Number(y[i])) return false;
+    return true;
+  }
+  function resamplePop(pop, n) {
+    // 桶數改變時線性重取樣人數分布：保留原輪廓、輸出 n 桶並正規化（決定性）
+    if (n === pop.length) return pop.slice();
+    var out = [], m = pop.length;
+    for (var i = 0; i < n; i++) {
+      var lo = i * m / n, hi = (i + 1) * m / n, acc = 0;
+      for (var j = Math.floor(lo); j < hi && j < m; j++) acc += pop[j] * (Math.min(hi, j + 1) - Math.max(lo, j));
+      out.push(acc);
     }
-    labels.push(bounds[bounds.length - 1] + u + ' 以上');
+    var sum = out.reduce(function (x, y) { return x + y; }, 0) || 1;
+    return out.map(function (v) { return v / sum; });
+  }
+  function tiersFromBounds(dimKey, bounds) {
+    // 由邊界組成級距桶標籤（維度中立）。bounds 升冪，首值視為「0/最低」切點
+    var u = DIMS[dimKey].unit, pre = dimKey === 'accept' ? '承接率 ' : '', labels = [];
+    labels.push(pre + (bounds[0] === 0 ? '0' : '≤' + bounds[0]) + u);
+    for (var i = 1; i < bounds.length; i++) labels.push(pre + bounds[i - 1] + '–' + bounds[i] + u);
+    labels.push(pre + bounds[bounds.length - 1] + u + ' 以上');
     return labels;
+  }
+  function tierDimOf(a) {
+    // 邊界＝預設時用 DIMS 常數（含 PPT 對齊之 labels/bonus）；被編輯過則派生 dim，
+    // labels/ticks/pop/bonus 隨新桶數重算——級距參數化之邊界端到端連動（REQ-ACT-018）
+    var base = DIMS[a.tierDim];
+    if (!a.tierBounds || boundsEqual(a.tierBounds, base.bounds)) return base;
+    var bs = a.tierBounds.map(Number), labels = tiersFromBounds(a.tierDim, bs), n = labels.length, u = base.unit;
+    var ticks = [bs[0] === 0 ? '0' + u : '≤' + bs[0] + u];
+    for (var i = 1; i < bs.length; i++) ticks.push(bs[i - 1] + '–' + bs[i]);
+    ticks.push(bs[bs.length - 1] + u + '↑');
+    var maxB = base.bonus[base.bonus.length - 1], minB = base.bonus.length > 1 ? base.bonus[1] : maxB;
+    var bonus = [0];
+    for (var k = 1; k < n; k++) bonus.push(Math.round((n <= 2 ? maxB : minB + (maxB - minB) * (k - 1) / (n - 2)) / 50) * 50);
+    return { name: base.name, unit: u, bounds: bs, labels: labels, ticks: ticks,
+      pop: resamplePop(base.pop, n), bonus: bonus, zeroNote: base.zeroNote, isAccept: a.tierDim === 'accept' };
   }
 
   /* ── 自然週切分（進行中以資料截至為端點；上限 6 週） ── */
@@ -776,7 +804,8 @@
       if (a.emptyIdentities.indexOf(idn) >= 0) { per[idn] = null; return; }
       var taFinal = a.taSplit ? a.taSplit[idn] : Math.round(a.taTotal * [0.66, 0.26, 0.08][ix]);
       var taWeekly = growing(taFinal, nW);
-      var matrix = MATRIX_DATA[a.id + '|' + idn] || genMatrix(a, idn, dim, nW, taWeekly);
+      // 硬編碼矩陣（PPT 轉錄）只在邊界＝預設時使用；邊界被編輯過＝派生 dim，一律改走生成（桶數/語意已變）
+      var matrix = (dim === DIMS[a.tierDim] && MATRIX_DATA[a.id + '|' + idn]) || genMatrix(a, idn, dim, nW, taWeekly);
       var nT = matrix.length;
       var weekHit = [], weekRate = [], tierTAweek = [];
       for (var w = 0; w < nW; w++) {
@@ -1030,7 +1059,7 @@
     var hiIdx = p.nT - 1;
     for (var t = 0; t < p.nT; t++) {
       var isHi = (t === hiIdx);
-      html += '<tr' + (isHi ? ' class="row-hi"' : '') + '><td class="tier-cell" tabindex="0" role="button" data-t="' + t + '" aria-label="' + dim.labels[t] + '：整列下鑽（不限週）">' + (isHi ? '<span class="star">★</span> ' : '') + dim.labels[t] + (t === 0 ? '<span class="soft-label">（' + (dim === DIMS.accept ? '含空值' : '無資料') + '）</span>' : '') + '</td>';
+      html += '<tr' + (isHi ? ' class="row-hi"' : '') + '><td class="tier-cell" tabindex="0" role="button" data-t="' + t + '" aria-label="' + dim.labels[t] + '：整列下鑽（不限週）">' + (isHi ? '<span class="star">★</span> ' : '') + dim.labels[t] + (t === 0 ? '<span class="soft-label">（' + (dim === DIMS.accept || dim.isAccept ? '含空值' : '無資料') + '）</span>' : '') + '</td>';
       for (var w = 0; w < weeks.length; w++) {
         var hit = p.matrix[t][w], tta = p.tierTAweek[w][t];
         var rate = tta > 0 ? Math.round(hit / tta * 1000) / 10 : null;
@@ -1342,10 +1371,10 @@
   var modal = document.getElementById('edit-modal');
   var fs = null, createCounter = 0;
   document.getElementById('m-type').innerHTML = TYPES.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join('');
-  document.getElementById('m-scope-info').outerHTML = CRM.infoIcon('依活動類型帶入預設值（早尖峰／晚尖峰對應時段，離峰＝全日扣除早晚尖峰），可調；成效統計僅計入此時段內任務（REQ-ACT-010）');
+  document.getElementById('m-scope-info').outerHTML = CRM.infoIcon('依活動類型帶入預設值（早尖峰／晚尖峰對應時段，離峰＝全日扣除早晚尖峰），可調；成效統計僅計入此時段內任務（REQ-ACT-010）。原型示意：本原型數字不隨此欄重算');
   document.getElementById('m-period-info').outerHTML = CRM.infoIcon('後＝活動期間本身（進行中以資料截至為端點）；前＝前期，預設與活動天數等長之鏡像區間，可自訂（REQ-ACT-011）');
-  document.getElementById('m-excl-base-info').outerHTML = CRM.infoIcon('被排除日不計入統計，日均以有效天數計；設定寫入審計日誌');
-  document.getElementById('m-excl-cur-info').outerHTML = CRM.infoIcon('被排除日不計入統計，日均以有效天數計；設定寫入審計日誌');
+  document.getElementById('m-excl-base-info').outerHTML = CRM.infoIcon('被排除日不計入統計，日均以有效天數計；設定寫入審計日誌。原型示意：本原型數字不隨排除日重算');
+  document.getElementById('m-excl-cur-info').outerHTML = CRM.infoIcon('被排除日不計入統計，日均以有效天數計；設定寫入審計日誌。原型示意：本原型數字不隨排除日重算');
   document.getElementById('m-tier-info').outerHTML = CRM.infoIcon('維度中立、不寫死承接率（REQ-ACT-018）；儲存時驗證邊界重疊／亂序／空值，違反則擋下');
   document.getElementById('m-cond-info').outerHTML = CRM.infoIcon('地區取車隊地區字典、身份別互斥分群、級距區間供顯示與頁內篩選（REQ-ACT-001）');
   document.getElementById('m-desc-info').outerHTML = CRM.infoIcon('2026-07-14 拍板降為描述性欄位：供人閱讀，不參與計算；達標一律依每日結算口徑（REQ-ACT-017）');
@@ -1355,19 +1384,20 @@
   function newFormState(a) {
     if (a) {
       var n = daysBetween(a.start, a.end), bend = addDays(a.start, -1), bstart = addDays(bend, -(n - 1));
+      if (a.baselineOverride) { bstart = a.baselineOverride.start; bend = a.baselineOverride.end; } // 已存自訂前期：回填實際值而非預設鏡像
       return { mode: 'edit', target: a, name: a.name, type: a.type, start: a.start, end: a.end,
         scopeMode: a.scopeMode, scopeSegs: a.scopeCustomSegs.map(function (s) { return { from: s.from, to: s.to }; }),
         baseCustom: !!a.baselineOverride, bstart: bstart, bend: bend, exclBase: a.exclBase.slice(), exclCur: a.exclCurrent.slice(),
         tierDim: a.tierDim, bounds: a.tierBounds.slice(),
         cond: { region: a.cond.region.slice(), identity: a.cond.identity.slice(), tier: a.cond.tier },
-        descGoal: a.descGoal, descReward: a.descReward, cumEnabled: a.cumEnabled, cumCond: a.cumCond,
+        descGoal: a.descGoal, descReward: a.descReward,
         metrics: { online: a.metrics.online, revenue: a.metrics.revenue, accept: a.metrics.accept },
         taSeg: a.taSeg, taImport: a.taImport, note: a.customNote || a.note };
     }
     var t = TYPES[0];
     return { mode: 'create', target: null, name: '', type: t, start: '', end: '', scopeMode: scopeDefaultOf(t), scopeSegs: [],
       baseCustom: false, bstart: '', bend: '', exclBase: [], exclCur: [], tierDim: 'accept', bounds: DIMS.accept.bounds.slice(),
-      cond: { region: [], identity: ['小黃', '多元'], tier: '' }, descGoal: '', descReward: '', cumEnabled: false, cumCond: '',
+      cond: { region: [], identity: ['小黃', '多元'], tier: '' }, descGoal: '', descReward: '',
       metrics: { online: true, revenue: true, accept: true }, taSeg: 0, taImport: 0, note: '' };
   }
   function formBaseWindow() {
@@ -1461,9 +1491,6 @@
     document.getElementById('m-cond-tier').value = fs.cond.tier;
     document.getElementById('m-desc-goal').value = fs.descGoal;
     document.getElementById('m-desc-reward').value = fs.descReward;
-    document.getElementById('m-cum-enabled').checked = fs.cumEnabled;
-    document.getElementById('m-cum-cond-wrap').hidden = !fs.cumEnabled;
-    document.getElementById('m-cum-cond').value = fs.cumCond;
     document.getElementById('m-metric-online').checked = fs.metrics.online;
     document.getElementById('m-metric-revenue').checked = fs.metrics.revenue;
     document.getElementById('m-metric-accept').checked = fs.metrics.accept;
@@ -1489,8 +1516,6 @@
   document.getElementById('m-cond-tier').addEventListener('input', function () { fs.cond.tier = this.value; });
   document.getElementById('m-desc-goal').addEventListener('input', function () { fs.descGoal = this.value; });
   document.getElementById('m-desc-reward').addEventListener('input', function () { fs.descReward = this.value; });
-  document.getElementById('m-cum-enabled').addEventListener('change', function () { fs.cumEnabled = this.checked; document.getElementById('m-cum-cond-wrap').hidden = !this.checked; });
-  document.getElementById('m-cum-cond').addEventListener('input', function () { fs.cumCond = this.value; });
   document.getElementById('m-metric-online').addEventListener('change', function () { fs.metrics.online = this.checked; });
   document.getElementById('m-metric-revenue').addEventListener('change', function () { fs.metrics.revenue = this.checked; });
   document.getElementById('m-metric-accept').addEventListener('change', function () { fs.metrics.accept = this.checked; });
@@ -1511,7 +1536,7 @@
       a.tierBounds = bounds; a.baselineOverride = fs.baseCustom ? { start: fs.bstart, end: fs.bend } : null;
       a.exclBase = fs.exclBase.slice(); a.exclCurrent = fs.exclCur.slice(); a.metrics = metrics;
       a.cond = { region: fs.cond.region.slice(), identity: fs.cond.identity.slice(), tier: fs.cond.tier };
-      a.descGoal = fs.descGoal; a.descReward = fs.descReward; a.cumEnabled = fs.cumEnabled; a.cumCond = fs.cumCond;
+      a.descGoal = fs.descGoal; a.descReward = fs.descReward;
       a.scopeCustomSegs = fs.scopeSegs.slice(); a._dash = null;
       ALL_ACTS.unshift(a); ACT_BY_ID[id] = a; justCreated.unshift(id);
       var y = a.start.slice(0, 4); var ysel = document.getElementById('f-year'); if (!ysel.querySelector('option[value="' + y + '"]')) ysel.insertAdjacentHTML('afterbegin', '<option value="' + y + '">' + y + ' 年</option>'); ysel.value = y;
@@ -1522,7 +1547,7 @@
       t.baselineOverride = fs.baseCustom ? { start: fs.bstart, end: fs.bend } : null; t.exclBase = fs.exclBase.slice(); t.exclCurrent = fs.exclCur.slice();
       t.tierDim = fs.tierDim; t.tierBounds = bounds; t.metrics = metrics;
       t.cond = { region: fs.cond.region.slice(), identity: fs.cond.identity.slice(), tier: fs.cond.tier };
-      t.descGoal = fs.descGoal; t.descReward = fs.descReward; t.cumEnabled = fs.cumEnabled; t.cumCond = fs.cumCond; t.customNote = fs.note; t._dash = null;
+      t.descGoal = fs.descGoal; t.descReward = fs.descReward; t.customNote = fs.note; t._dash = null;
       PART_CACHE = {};
       closeModal(); drawAllTable(); renderOngoingCards();
       if (oneState.actId === t.id) { oneState.drill = null; renderOne(); }
