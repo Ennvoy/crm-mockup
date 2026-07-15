@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>隊員活動｜55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=25">
+<link rel="stylesheet" href="../tokens.css?v=27">
 <link rel="icon" href="data:,">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -109,6 +109,8 @@
   .dist-bar { display: flex; height: 12px; border-radius: 9999px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--border); }
   .dist-bar > span { display: block; height: 100%; }
   .dist-ticks { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--meta); margin-top: 4px; }
+  .dist-ticks > span { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .dist-ticks .tick-n { font-size: 11px; color: var(--fg-2); font-weight: 600; font-variant-numeric: tabular-nums; }
   .sum-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
   .sum-asof { font-size: 12px; color: var(--meta); }
   .sum-cta { font-size: 13px; color: var(--muted); font-weight: 500; white-space: nowrap; transition: color var(--motion-fast); }
@@ -205,14 +207,11 @@
   @media (max-width: 820px) { .reward-cols { grid-template-columns: 1fr; } }
   .reward-prestart { margin-top: 14px; background: rgba(234,179,8,.1); border: 1px solid rgba(234,179,8,.4); border-radius: 10px; padding: 10px 13px; font-size: 12.5px; color: var(--fg-2); line-height: 1.6; display: flex; gap: 8px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
 
-  /* 收合次要分析 */
+  /* 次要分析（2026-07-15 使用者走查：不收合、固定展開） */
   .legacy-wrap { margin-top: 20px; }
   .legacy-hint { font-size: 12.5px; color: var(--meta); margin-bottom: 10px; }
-  details.legacy { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 12px; padding: 0; margin-bottom: 10px; }
-  details.legacy > summary { cursor: pointer; list-style: none; padding: 13px 16px; font-size: 14.5px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  details.legacy > summary::-webkit-details-marker { display: none; }
-  details.legacy > summary::after { content: "▾"; color: var(--meta); font-size: 12px; transition: transform var(--motion-fast); }
-  details.legacy[open] > summary::after { transform: rotate(180deg); }
+  .legacy { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 12px; padding: 0; margin-bottom: 10px; }
+  .legacy-head { padding: 13px 16px 4px; font-size: 14.5px; font-weight: 500; display: flex; align-items: center; justify-content: flex-start; gap: 10px; }
   .legacy-badge { font-size: 11px; color: var(--muted); background: var(--surface-warm); border-radius: 9999px; padding: 2px 10px; font-weight: 400; margin-left: 8px; }
   .legacy-body { padding: 4px 16px 18px; }
 
@@ -246,6 +245,11 @@
   .src-settle { background: rgba(234,179,8,.16); color: var(--brand-55688-deep); }
   .row-excluded { opacity: .6; }
   .row-excluded td:first-child { text-decoration: line-through; }
+  .name-late { background: rgba(234,179,8,.2); color: var(--warn); border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+  .sd-edit { border: none; background: transparent; color: var(--meta); cursor: pointer; font-size: 12px; padding: 1px 4px; border-radius: 5px; }
+  .sd-edit:hover { color: var(--accent); background: var(--surface-warm); }
+  .sd-adjusted { font-size: 10.5px; color: var(--accent); margin-left: 3px; }
+  .tbl-footnote { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.7; }
 
   /* 單一司機 */
   .driver-input-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -548,7 +552,7 @@
   </div>
 </div>
 
-<script src="../app.js?v=25"></script>
+<script src="../app.js?v=27"></script>
 <script>
 (function () {
   'use strict';
@@ -791,10 +795,14 @@
   /* ══════════════ Tab① 上區：進行中摘要卡（REQ-ACT-021） ══════════════ */
   var DIST_COLORS = ['var(--chart-4)', 'var(--chart-3)', 'var(--chart-2)', 'var(--chart-6)', 'var(--chart-1)', 'var(--chart-5)'];
   function distBarHtml(dim, dist) {
+    // 各級距「參加人數」分布（Word 1.a）：段寬＝人數占比；刻度下標人數、hover 顯示人數＋佔比（2026-07-15 使用者走查：比例看不出量，補數字）
     var total = dist.reduce(function (x, y) { return x + y; }, 0) || 1;
-    var bars = dist.map(function (v, i) { return '<span style="width:' + (v / total * 100) + '%;background:' + DIST_COLORS[i % DIST_COLORS.length] + '"></span>'; }).join('');
-    var ticks = dim.ticks.map(function (t) { return '<span>' + t + '</span>'; }).join('');
-    return '<div class="dist-bar" aria-hidden="true">' + bars + '</div><div class="dist-ticks">' + ticks + '</div>';
+    var bars = dist.map(function (v, i) {
+      var share = Math.round(v / total * 1000) / 10;
+      return '<span style="width:' + (v / total * 100) + '%;background:' + DIST_COLORS[i % DIST_COLORS.length] + '" title="' + dim.labels[i] + '：' + CRM.fmt(v) + ' 人（' + share + '%）"></span>';
+    }).join('');
+    var ticks = dim.ticks.map(function (t, i) { return '<span>' + t + '<b class="tick-n">' + CRM.fmt(dist[i]) + '</b></span>'; }).join('');
+    return '<div class="dist-bar">' + bars + '</div><div class="dist-ticks">' + ticks + '</div>';
   }
   function renderOngoingCards() {
     var host = document.getElementById('ongoing-cards');
@@ -814,7 +822,7 @@
         '<div class="sc-num"><div class="k">累計達標</div><div class="v">' + CRM.fmt(d.aggCumHit) + '<span class="u">人次</span></div></div>' +
         '<div class="sc-num"><div class="k">週達標平均</div><div class="v">' + CRM.fmt(d.aggWeekAvg) + '<span class="u">人/週</span></div></div>' +
         '</div>' +
-        '<div><div class="sc-dist-label"><span>' + dim.name + '級距分布</span><span>' + dim.labels.length + ' 級</span></div>' + distBarHtml(dim, d.aggTierTAfinal) + '</div>' +
+        '<div><div class="sc-dist-label"><span>' + dim.name + '級距分布（參加人數）' + CRM.infoIcon('該活動參加者依主檔分析級距之人數分布（最新週歸屬；Word 1.a 各級距參加隊員人數）——段寬＝占比、刻度下為人數，hover 各段看人數＋佔比') + '</span><span>' + dim.labels.length + ' 級</span></div>' + distBarHtml(dim, d.aggTierTAfinal) + '</div>' +
         '<div class="sum-foot"><span class="sum-asof">資料截至 ' + ACT_DATA_CUTOFF + '</span><span class="sum-cta">點擊查看單一活動 →</span></div>' +
         '</div>';
     }).join('');
@@ -1090,14 +1098,15 @@
     var tierRows = p.tierReward.map(function (v, t) {
       return '<tr><td>' + dim.labels[t] + '</td><td>$' + CRM.fmt(v) + '</td><td>' + (tierTotal > 0 ? pct1(v / tierTotal * 100) : '—') + '</td></tr>';
     }).join('');
-    var weekRows = p.weekReward.map(function (v, w) { return '<tr><td>' + d.weeks[w].label + '</td><td>$' + CRM.fmt(v) + '</td></tr>'; }).join('');
+    var weekTotal = p.weekReward.reduce(function (x, y) { return x + y; }, 0);
+    var weekRows = p.weekReward.map(function (v, w) { return '<tr><td>' + d.weeks[w].label + '</td><td>$' + CRM.fmt(v) + '</td><td>' + (weekTotal > 0 ? pct1(v / weekTotal * 100) : '—') + '</td></tr>'; }).join('');
     return '<section class="panel" style="margin-top:16px"><div class="panel-title">獎勵發放（' + oneState.identity + '）' +
       CRM.infoIcon('每日結算為唯一真相、系統只彙總不試算；各級距發放＝每筆結算金額依「結算日所屬週×該隊員該週級距」歸屬後加總（逐週歸屬，REQ-ACT-020）') + '</div>' +
       '<div class="reward-top"><div><div class="soft-label">總發放（Σreward_amount）</div><div class="reward-total">$' + CRM.fmt(p.totalReward) + '</div></div>' +
       '<div class="soft-label">資料截至 ' + asof + '・' + (st.key === 'grace' ? '已結束・結算收件中' : st.key === 'frozen' ? '已結束（統計凍結）' : '進行中・每日結算 T+1') + '</div></div>' +
       '<div class="reward-cols">' +
       '<div><div class="dp-title" style="font-size:14px">各級距發放</div><div class="chart-wrap"><table><thead><tr><th>級距</th><th>發放金額</th><th>佔比</th></tr></thead><tbody>' + tierRows + '</tbody></table></div></div>' +
-      '<div><div class="dp-title" style="font-size:14px">每週發放</div><div class="chart-wrap"><table><thead><tr><th>週</th><th>發放金額</th></tr></thead><tbody>' + weekRows + '</tbody></table></div></div>' +
+      '<div><div class="dp-title" style="font-size:14px">每週發放</div><div class="chart-wrap"><table><thead><tr><th>週</th><th>發放金額</th><th>佔比</th></tr></thead><tbody>' + weekRows + '</tbody></table></div></div>' +
       '</div>' +
       '<div class="reward-prestart"><span>⚠️ 起算前結算（獨立列示）' + CRM.infoIcon('結算日早於該隊員起算週者，金額仍計入總發放（財務事實不得剔除），但獨立列示、不計入任何週之達標對賬（SR-RT-133）') + '：<b>$' + CRM.fmt(p.preStart) + '</b></span><span class="soft-label">已列入匯入警告清單供覆核</span></div>' +
       '</section>';
@@ -1144,7 +1153,7 @@
       '</div></div></div>';
   }
 
-  /* ── 參加隊員清單（REQ-ACT-003；含報名方式/起算日/當週級距/來源；決定性生成） ── */
+  /* ── 參加隊員清單（REQ-ACT-003；含起算日/當週級距/來源，報名方式收進起算日 ⓘ——2026-07-15 使用者走查拿掉獨立欄；決定性生成） ── */
   var ENROLL = ['預先報名', '外撥同意-次週', '外撥同意-即刻'];
   var SURNAMES = ['王', '林', '張', '李', '陳', '黃', '吳', '劉', '蔡', '楊'];
   var GIVEN = ['志明', '淑惠', '建宏', '雅婷', '俊傑', '美玲', '文雄', '麗華', '家豪', '怡君'];
@@ -1202,24 +1211,51 @@
     var tbl = '<div class="ptable-controls"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + chip +
       '<div class="search-input" style="min-width:180px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input id="p-search" type="search" placeholder="搜尋隊編或姓名" aria-label="搜尋參加隊員"></div></div>' +
       '<div style="display:flex;gap:8px;align-items:center">' + handoffBtn + '<div class="pagination" id="p-pager"></div></div></div>' +
-      '<div class="chart-wrap"><table aria-label="參加隊員清單"><thead><tr><th>隊編</th><th>姓名</th><th>報名方式</th><th>起算日</th><th>來源</th><th>前期日均</th><th>迄今日均</th><th>變化</th><th>當週級距</th>' + thHit + '<th>Profile</th></tr></thead><tbody>';
-    if (!rows.length) tbl += '<tr><td colspan="12" style="text-align:center;color:var(--meta)">查無符合條件之隊員</td></tr>';
+      '<div class="chart-wrap"><table aria-label="參加隊員清單"><thead><tr><th>隊編</th><th>姓名</th><th>起算日</th><th>來源</th><th>前期日均</th><th>迄今日均</th><th>變化</th><th>當週級距</th>' + thHit + '<th>Profile</th></tr></thead><tbody>';
+    if (!rows.length) tbl += '<tr><td colspan="11" style="text-align:center;color:var(--meta)">查無符合條件之隊員</td></tr>';
     rows.forEach(function (pp) {
       var dcls = pp.delta > 0 ? 'delta-pos' : (pp.delta < 0 ? 'delta-neg' : 'delta-zero');
       var hitCell = a.observeOnly ? '' : '<td>' + (pp.lateExcluded ? '—' : (pp.wholeHit ? '<span class="delta-pos">✓</span>' : '<span class="delta-zero">✗</span>')) + '</td><td>' + (pp.cumReward > 0 ? '$' + CRM.fmt(pp.cumReward) : '—') + '</td>';
-      var lateBadge = pp.lateExcluded ? ' <span class="act-badge warn">同意過晚未及參與' + CRM.infoIcon('外撥同意-次週推導之起算日晚於活動迄日，排除於分母／達標／KPI 之外（SR-RT-131）') + '</span>' : '';
-      tbl += '<tr class="' + (pp.lateExcluded ? 'row-excluded' : '') + '"><td>' + pp.code + '</td><td>' + CRM.maskName(pp.name) + lateBadge + '</td>' +
-        '<td>' + pp.enroll + '</td><td>' + pp.startDate + '</td><td>' + srcTag(pp.source) + '</td>' +
+      var nameCell = pp.lateExcluded ? '<span class="name-late">' + CRM.maskName(pp.name) + '</span>' : CRM.maskName(pp.name);
+      tbl += '<tr class="' + (pp.lateExcluded ? 'row-excluded' : '') + '"><td>' + pp.code + '</td><td>' + nameCell + '</td>' +
+        '<td><span class="sd-val">' + pp.startDate + '</span>' + (pp.startAdjusted ? '<span class="sd-adjusted">已調整</span>' : '') + (pp.enroll ? '&nbsp;' + CRM.infoIcon('報名方式：' + pp.enroll + '（起算日由此推導，REQ-ACT-016）' + (pp.startAdjusted ? '；本筆起算日經人工調整（審計留軌）' : '')) : '') +
+        '&nbsp;<button type="button" class="sd-edit" data-code="' + pp.code + '" title="調整起算日（需 activity.manage；寫入審計、觸發回溯重算，REQ-ACT-016）" aria-label="調整 ' + pp.code + ' 起算日">✎</button></td><td>' + srcTag(pp.source) + '</td>' +
         '<td>' + pp.before + '</td><td>' + pp.after + '</td><td class="' + dcls + '">' + (pp.delta > 0 ? '+' : '') + pp.delta + '</td>' +
         '<td>' + pp.tierLabel + '</td>' + hitCell +
         '<td><a href="profile.html?m=' + encodeURIComponent(pp.code) + '">查看</a></td></tr>';
     });
     tbl += '</tbody></table></div>';
+    if (genParticipants(a, idn).some(function (p) { return p.lateExcluded; })) {
+      tbl += '<div class="tbl-footnote">⚠ <span class="name-late">姓名</span> 底色標示＝同意過晚未及參與：外撥次週推導之起算日晚於活動迄日，不計入分母／達標統計（SR-RT-131）</div>';
+    }
     host.innerHTML = tbl;
     document.getElementById('p-pager').innerHTML = '<button type="button" id="p-prev" ' + (oneState.page <= 1 ? 'disabled' : '') + '>上一頁</button><span>第 ' + oneState.page + ' / ' + totalPages + ' 頁・共 ' + list.length + ' 筆</span><button type="button" id="p-next" ' + (oneState.page >= totalPages ? 'disabled' : '') + '>下一頁</button>';
     var pv = document.getElementById('p-prev'), nx = document.getElementById('p-next');
     if (pv) pv.addEventListener('click', function () { oneState.page--; renderParticipantList(a, d); });
     if (nx) nx.addEventListener('click', function () { oneState.page++; renderParticipantList(a, d); });
+    // 起算日手動調整（REQ-ACT-016，2026-07-15 拍板）：✎ → 行內日期編輯，夾制活動起迄、寫審計、回溯重算（原型示意）
+    host.querySelectorAll('.sd-edit').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var td = btn.closest('td'), code = btn.dataset.code;
+        var cur = td.querySelector('.sd-val').textContent;
+        td.innerHTML = '<span style="display:inline-flex;gap:4px;align-items:center;white-space:nowrap">' +
+          '<input type="date" class="sd-input" value="' + cur + '" min="' + a.start + '" max="' + a.end + '" style="font-family:inherit;font-size:12.5px;padding:2px 6px;border:1px solid var(--border-soft);border-radius:6px;background:var(--surface);color:var(--fg)">' +
+          '<button type="button" class="sd-save btn btn-sm" style="min-height:26px;padding:2px 8px">✓</button>' +
+          '<button type="button" class="sd-cancel btn btn-sm" style="min-height:26px;padding:2px 8px">✕</button></span>';
+        td.querySelector('.sd-cancel').addEventListener('click', function () { renderParticipantList(a, d); });
+        td.querySelector('.sd-save').addEventListener('click', function () {
+          var v = td.querySelector('.sd-input').value;
+          if (!v) { renderParticipantList(a, d); return; }
+          if (v < a.start) v = a.start;
+          if (v > a.end) v = a.end;
+          var list0 = genParticipants(a, oneState.identity);
+          var p0 = list0.filter(function (x) { return x.code === code; })[0];
+          if (p0) { p0.startDate = v; p0.startAdjusted = true; }
+          CRM.toast('已調整 ' + code + ' 起算日為 ' + v + '（夾制於活動起迄內；已寫入審計、觸發回溯重算——原型示意，儀表板數字不即時連動）');
+          renderParticipantList(a, d);
+        });
+      });
+    });
     var si = document.getElementById('p-search'); si.value = oneState.q;
     si.addEventListener('input', function () { oneState.q = this.value; oneState.page = 1; renderParticipantList(a, d); });
     var dc = document.getElementById('drill-clear'); if (dc) dc.addEventListener('click', function () { oneState.drill = null; renderParticipantList(a, d); });
@@ -1230,10 +1266,10 @@
 
   /* ── 收合次要分析（四軸／級距遷移／參加隊員清單） ── */
   function legacyHtml(a, d, p, observeOnly) {
-    return '<div class="legacy-wrap"><div class="legacy-hint">次要分析（沿用現有區塊、位置下移，REQ-ACT-012／014／003）— 預設收合，需要時展開</div>' +
-      '<details class="legacy"><summary>四軸成效對照 <span class="legacy-badge">前期 vs 活動期間</span></summary><div class="legacy-body" id="fouraxis-host"></div></details>' +
-      '<details class="legacy"><summary>參加者級距遷移 <span class="legacy-badge">上線天數</span></summary><div class="legacy-body" id="mig-host"></div></details>' +
-      '<details class="legacy" id="part-details"><summary>參加隊員清單 <span class="legacy-badge">可搜尋／分頁／下鑽</span></summary><div class="legacy-body"><div id="part-list-host"></div></div></details></div>';
+    return '<div class="legacy-wrap"><div class="legacy-hint">次要分析（沿用現有區塊、位置下移，REQ-ACT-012／014／003）</div>' +
+      '<div class="legacy"><div class="legacy-head">四軸成效對照 <span class="legacy-badge">前期 vs 活動期間</span></div><div class="legacy-body" id="fouraxis-host"></div></div>' +
+      '<div class="legacy"><div class="legacy-head">參加者級距遷移 <span class="legacy-badge">上線天數</span></div><div class="legacy-body" id="mig-host"></div></div>' +
+      '<div class="legacy" id="part-details"><div class="legacy-head">參加隊員清單 <span class="legacy-badge">可搜尋／分頁／下鑽</span></div><div class="legacy-body"><div id="part-list-host"></div></div></div></div>';
   }
   function bindLegacy(a, d) {
     var fa = document.getElementById('fouraxis-host'); if (fa) fa.innerHTML = fourAxisHtml(a);
@@ -1242,8 +1278,6 @@
   }
   function drillTo(a, t, w) {
     oneState.drill = { t: t, w: w }; oneState.q = ''; oneState.page = 1;
-    var det = document.getElementById('part-details');
-    if (det) { det.open = true; }
     renderParticipantList(a, buildDash(a));
     var host = document.getElementById('part-list-host');
     if (host) host.scrollIntoView({ behavior: 'smooth', block: 'center' });

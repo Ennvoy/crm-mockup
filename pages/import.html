@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>資料匯入｜55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=25">
+<link rel="stylesheet" href="../tokens.css?v=26">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -172,7 +172,7 @@
 
 <main class="page">
   <h1>資料匯入</h1>
-  <div class="page-sub">8 種來源資料上傳與佇列狀態、匯入結果核對（含隊編消歧警告）、匯入歷史、批次刪除管理</div>
+  <div class="page-sub">9 種來源資料上傳與佇列狀態（每型可下載範本檔）、匯入結果核對（含隊編消歧警告）、匯入歷史、批次刪除管理</div>
 
   <div class="tabs" role="tablist" aria-label="資料匯入功能切換">
     <button class="tab" role="tab" id="tab-1" aria-selected="true" data-tab="upload">上傳與佇列</button>
@@ -189,16 +189,12 @@
       <div class="upload-grid">
         <div class="field">
           <label for="f-dataset">資料類型</label>
-          <select id="f-dataset" aria-label="選擇資料類型"></select>
-          <div class="field-hint" id="dataset-hint"></div>
-        </div>
-        <div class="field">
-          <label for="f-template">欄位映射範本</label>
           <div style="display:flex;gap:8px">
-            <select id="f-template" aria-label="選擇欄位映射範本" style="flex:1"></select>
-            <button class="btn" id="btn-manage-template" type="button">管理範本</button>
+            <select id="f-dataset" aria-label="選擇資料類型" style="flex:1"></select>
+            <button class="btn" id="btn-download-template" type="button">下載範本</button>
           </div>
-          <div class="field-hint">依資料類型套用對應之欄位對應規則（REQ-IMP-002）</div>
+          <div class="field-hint" id="dataset-hint"></div>
+          <div class="field-hint">各類型欄位固定（REQ-IMP-002 固定欄位制）——請照「下載範本」的標題列準備檔案；activity 兩類欄名待樣本校正（REQ-IMP-021）</div>
         </div>
         <div class="field" id="target-activity-wrap" style="display:none">
           <label for="f-activity">需指定目標活動</label>
@@ -210,9 +206,9 @@
       <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="拖放或點擊上傳檔案">
         <div class="dz-icon" aria-hidden="true">📥</div>
         <div class="dz-main">拖放檔案至此，或點擊選擇檔案</div>
-        <div class="dz-sub">支援 .csv / .xlsx；上傳後將依所選範本解析並加入下方佇列</div>
+        <div class="dz-sub">支援 .csv / .xlsx / .xls；上傳後依該類型固定欄位格式解析並加入下方佇列（標題列與範本不符→整檔拒收並出錯誤報告）</div>
       </div>
-      <div class="limit-note">單檔上限 50 萬列或 100MB（可由系統設定調整）；超過限制將直接拒收並於佇列標示失敗原因（REQ-IMP-014）。</div>
+      <div class="limit-note">統計類（任務統計/上線/承接統計）單檔上限 200 萬列或 300MB；其餘類型 50 萬列或 100MB（可由系統設定調整；REQ-IMP-014 分類型上限）；超過限制將直接拒收並於佇列標示失敗原因。</div>
 
       <div class="panel-title" style="margin-top:24px">匯入佇列<span id="queue-info"></span></div>
       <div class="chart-wrap"><table id="queue-table" aria-label="匯入佇列清單">
@@ -249,7 +245,7 @@
       <div id="dict-body"></div>
     </section>
     <section class="panel" id="pane-taskfail" hidden>
-      <div class="panel-title">task_details 匯入失敗</div>
+      <div class="panel-title">task_stats_member 匯入失敗</div>
       <div id="taskfail-body"></div>
     </section>
 
@@ -281,7 +277,7 @@
     <section class="panel" id="pane-batch-note" hidden>
       <div class="panel-title">匯入 API 與權杖規則</div>
       <p style="font-size:13.5px;color:var(--fg-2);line-height:1.8">
-        匯入 API（<code style="font-family:var(--font-mono)">POST /api/import</code>）行為與本頁 UI 一致，支援相同 8 種資料類型與欄位映射範本規則（REQ-IMP-001／002）。<br>
+        匯入 API（<code style="font-family:var(--font-mono)">POST /api/import</code>）行為與本頁 UI 一致，支援相同 9 種資料類型與固定欄位 schema 規則（REQ-IMP-001／002 固定欄位制）。<br>
         呼叫需附帶匯入權杖（token），權杖由「系統設定」核發與管理，綁定最小 scope、效期、可隨時撤銷，核發與撤銷全數寫入審計（REQ-IMP-013）。<br>
         同一權杖超過頻率限制時，API 回應 <code style="font-family:var(--font-mono)">429 Too Many Requests</code>（REQ-IMP-014）。<br>
         刪除批次（<code style="font-family:var(--font-mono)">admin.delete</code>）僅移除「最新來源批次」之列，且動作全數寫入審計（REQ-IMP-010）。
@@ -316,7 +312,7 @@
   原型說明：佇列／歷史／批次資料為原型模擬產生，實際匯入解析與 API 行為（REQ-IMP-001~016）將於正式版依規格串接後台。姓名一律去識別化顯示（陳○明），本頁非客服作業範圍不顯示全名；members 匯入欄位不含行動電話（電話僅存在客服模組）。members 每批視為正式隊員全量快照：未出現之既有正式隊員自動標記退隊，再出現時依隊編消歧規則自動或由管理員判定復原。新增／退隊清單之隊編可點擊直接查看該隊員 Profile（沿用既有隊編查詢邏輯，示意用生成資料，不代表與本頁人名一致）。
 </footer>
 
-<script src="../app.js?v=25"></script>
+<script src="../app.js?v=26"></script>
 <script>
 (function () {
   'use strict';
@@ -351,7 +347,8 @@
 
   /* ── §1 資料類型定義 ── */
   var DATASETS = [
-    { v: 'task_details', t: '任務明細', hint: '自然鍵：任務編號（task_id）' },
+    { v: 'task_stats_district', t: '任務統計・地區', hint: 'Tableau 端預聚合（2026-07-09 拍板取代原逐筆任務明細）；欄：資料日期、小時、上車縣市、上車行政區、任務完成狀況、任務數、車資合計；同一資料日整日替換冪等；2024-01 起永久保留' },
+    { v: 'task_stats_member', t: '任務統計・隊員', hint: '全維度單表（日×小時×隊編×行政區）；「任務數」欄＝完成任務數（僅完成件）；整日替換冪等；滾動保留 13 個月（REQ-IMP-018）' },
     { v: 'online_records', t: '上線紀錄', hint: '自然鍵：隊編＋日期＋時段' },
     { v: 'members', t: '隊員主檔', hint: '隊管系統逐組織匯出、腳本合併全量後傳入（任一組織缺→當日不傳，防誤標退隊）；隊編字串保留前導零；branch 拆複合前綴；不含地址/車牌/電話等欄（個資最小化）' },
     { v: 'activity_registrations', t: '活動報名', hint: '自然鍵：活動 ID＋隊編；含報名方式（預先報名／外撥同意-次週／外撥同意-即刻）與同意／通知日（外撥兩情境必填，起算日由系統推導，REQ-ACT-016）' },
@@ -362,11 +359,103 @@
   ];
   var DATASET_LABEL = {};
   DATASETS.forEach(function (d) { DATASET_LABEL[d.v] = d.t; });
-  var TEMPLATES = ['標準範本 v3（預設）', '舊版 Excel 匯出格式', '自訂範本 A（新北分公司）'];
+
+  /* ── REQ-IMP-021 範本檔下載：依 §4.1 目標 schema 之標題列＋2 列示例（現行 9 種匯入類型，
+     與資料類型下拉一一對應——舊制 task_details 已於 2026-07-14 自下拉移除、由兩種任務統計取代） ── */
+  var TEMPLATE_SCHEMAS = {
+    task_stats_district: {
+      headers: ['資料日期', '小時', '上車縣市', '上車行政區', '任務完成狀況', '任務數', '車資合計'],
+      rows: [
+        ['2026-07-06', '8', '台北市', '信義區', '完成', '42', '15680'],
+        ['2026-07-06', '18', '新北市', '板橋區', '取消', '5', '0']
+      ]
+    },
+    task_stats_member: {
+      headers: ['資料日期', '小時', '隊員編號', '上車縣市', '上車行政區', '完成任務數', '車資合計'],
+      rows: [
+        ['2026-07-06', '8', '0103', '台北市', '信義區', '3', '1215'],
+        ['2026-07-06', '18', '881205', '新北市', '板橋區', '2', '860']
+      ]
+    },
+    online_records: {
+      headers: ['member_code', 'date', 'hour', 'district'],
+      rows: [
+        ['0103', '2026-07-06', '8', '信義區'],
+        ['881205', '2026-07-06', '18', '板橋區']
+      ]
+    },
+    members: {
+      headers: ['member_code', 'name', '分公司', 'gender', 'activated_date', 'unit_mid', 'unit_sub', 'unit_team', 'title', 'brand', 'car_model', 'fleet_groups'],
+      rows: [
+        ['0103', '林志偉', '北區 台北分公司', 'M', '2022/03/15', '一中隊', '一分隊', '一小隊', '隊員', 'TOYOTA', 'RAV4', '好孕車組、提供刷卡付款'],
+        ['0217', '張淑芬', '北區 台北多元試跑', 'F', '2023/07/01', '二中隊', '三分隊', '二小隊', '隊員', 'TESLA', 'Model 3', '提供綁定付款、低底盤車']
+      ]
+    },
+    activity_registrations: {
+      headers: ['member_code', 'phone', 'activity_month', 'activity_type', '報名方式', '同意通知日'],
+      rows: [
+        ['0103', '0912345678', '2026-07', '晚尖峰', '預先報名', ''],
+        ['881205', '0987654321', '2026-07', '早尖峰', '外撥同意-次週', '2026-07-01']
+      ]
+    },
+    activity_results: {
+      headers: ['member_code', 'date', 'actual_completed', 'reward_amount', 'source', 'activity_name'],
+      rows: [
+        ['0103', '2026-07-06', '5', '600', '晚尖峰', '雙北地區進步獎'],
+        ['881205', '2026-07-06', '3', '300', '早尖峰', '桃園早尖峰衝刺獎']
+      ]
+    },
+    driver_inquiry_stats: {
+      headers: ['資料日期', '小時', 'member_code', 'inquiry_count', 'accepted_count'],
+      rows: [
+        ['2026-07-06', '8', '0103', '12', '4'],
+        ['2026-07-06', '18', '881205', '9', '3']
+      ]
+    },
+    outbound_history: {
+      headers: ['member_code', 'phone', '外撥專案', '聯繫時間', '司機回覆值'],
+      rows: [
+        ['0103', '0912345678', '6月晚尖峰意願調查', '2026-07-01 14:22', '參加'],
+        ['881205', '0987654321', '6月晚尖峰意願調查', '2026-07-01 15:10', '不參加']
+      ]
+    },
+    fleet_dictionary: {
+      headers: ['車隊', '隊員所屬分公司', '地區'],
+      rows: [
+        ['小黃', '台北分公司', '台北'],
+        ['多元', '幸福車隊', '台北']
+      ]
+    }
+  };
+  function csvField(v) {
+    v = String(v === null || v === undefined ? '' : v);
+    if (/["\r\n,]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
+    return v;
+  }
+  function buildTemplateCSV(key) {
+    var schema = TEMPLATE_SCHEMAS[key];
+    if (!schema) return null;
+    var lines = [schema.headers.map(csvField).join(',')];
+    schema.rows.forEach(function (r) { lines.push(r.map(csvField).join(',')); });
+    return '\ufeff' + lines.join('\r\n');
+  }
+  function downloadTemplate() {
+    var key = dsSel.value;
+    var csv = buildTemplateCSV(key);
+    if (!csv) { CRM.toast('此類型（' + (DATASET_LABEL[key] || key) + '）已由現行 §4.1 schema 取代，暫無對應範本'); return; }
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '範本_' + key + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
 
   var dsSel = document.getElementById('f-dataset');
   dsSel.innerHTML = DATASETS.map(function (d) { return '<option value="' + d.v + '"' + (d.v === 'members' ? ' selected' : '') + '>' + d.v + '｜' + d.t + '</option>'; }).join('');
-  document.getElementById('f-template').innerHTML = TEMPLATES.map(function (t, i) { return '<option' + (i === 0 ? ' selected' : '') + '>' + t + '</option>'; }).join('');
   document.getElementById('f-activity').innerHTML = DB.activities.map(function (a) { return '<option value="' + a.id + '">' + a.id + '｜' + a.name + '</option>'; }).join('');
 
   function updateDatasetHint() {
@@ -378,11 +467,9 @@
   }
   dsSel.addEventListener('change', updateDatasetHint);
   updateDatasetHint();
+  document.getElementById('btn-download-template').addEventListener('click', downloadTemplate);
 
-  document.getElementById('btn-manage-template').addEventListener('click', function () {
-    CRM.toast('原型示意：正式版可於此新增／編輯／刪除欄位映射範本（REQ-IMP-002）');
-  });
-  function dzActivate() { CRM.toast('原型示意：正式版將解析檔案並加入下方佇列（單檔上限 50 萬列或 100MB）'); }
+  function dzActivate() { CRM.toast('原型示意：正式版將依所選類型之固定欄位格式解析檔案並加入下方佇列（單檔上限依類型分級，見下方說明；REQ-IMP-014）'); }
   var dz = document.getElementById('dropzone');
   dz.addEventListener('click', dzActivate);
   dz.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dzActivate(); } });
@@ -391,9 +478,10 @@
   document.getElementById('queue-info').innerHTML = CRM.infoIcon('等待中／處理中／成功／失敗四種狀態；處理中顯示即時解析進度（REQ-IMP-005）');
   var QUEUE = [
     { file: 'members_full_20260707.csv', type: 'members', size: '3.1 MB', rows: 21847, status: 'processing', progress: 62 },
-    { file: 'task_details_20260706.csv', type: 'task_details', size: '18.6 MB', rows: 88204, status: 'waiting', note: '排隊中，等待前一檔處理完成' },
+    { file: 'task_stats_member_20260706.csv', type: 'task_stats_member', size: '18.6 MB', rows: 118204, status: 'waiting', note: '排隊中，等待前一檔處理完成' },
     { file: 'activity_results_ACT202607A.xlsx', type: 'activity_results', size: '0.8 MB', rows: 1284, status: 'success', note: '完成於 ' + ymdhm(-1, 6, 32) },
-    { file: 'online_records_20260706.csv', type: 'online_records', size: '106.4 MB', rows: 612340, status: 'fail', note: '超過單檔 100MB／50 萬列上限，拒收（REQ-IMP-014）' }
+    { file: 'online_records_20260706.csv', type: 'online_records', size: '106.4 MB', rows: 612340, status: 'success', note: '完成於 ' + ymdhm(-1, 6, 41) + '（統計類上限 200 萬列/300MB 內）' },
+    { file: 'outbound_history_20260706.csv', type: 'outbound_history', size: '8.2 MB', rows: 523400, status: 'fail', note: '超過其餘類型單檔 50 萬列上限，拒收（REQ-IMP-014）' }
   ];
   var STATUS_BADGE = { waiting: ['badge-wait', '等待中'], processing: ['badge-processing', '處理中'], success: ['badge-success', '成功'], fail: ['badge-fail', '失敗'] };
   function renderQueue() {
@@ -522,7 +610,7 @@
   document.getElementById('dict-info').innerHTML = CRM.infoIcon('匯入資料中出現字典查無對照之字串，先入庫並標記警告：行政區（district）待管理員於系統設定補齊後自動生效；車隊（branch）待下一次車隊對照表更新（後台不提供人工補齊，REQ-SET-007）');
   function renderDict() {
     var html = '<div class="dict-row"><div><div class="dict-raw">行政區查無對照：「三峽區」<span class="badge badge-pending" style="margin-left:8px">district</span></div>' +
-      '<div class="dict-meta">影響 47 筆任務明細／上線紀錄（REQ-SET-006）</div></div>' +
+      '<div class="dict-meta">影響 47 筆任務統計／上線紀錄（REQ-SET-006）</div></div>' +
       '<a class="link-btn" href="settings.html">前往系統設定補齊 →</a></div>' +
       '<div class="dict-row"><div><div class="dict-raw">車隊查無對照：「阿波羅車隊」<span class="badge badge-pending" style="margin-left:8px">branch</span></div>' +
       '<div class="dict-meta">影響 12 筆隊員主檔（REQ-SET-007）</div></div>' +
@@ -530,14 +618,14 @@
     document.getElementById('dict-body').innerHTML = html;
   }
 
-  /* ── §6 task_details 匯入失敗（全有全無） ── */
+  /* ── §6 task_stats_member 匯入失敗（全有全無） ── */
   function renderTaskFail() {
     var errRows = [
-      { line: 128, reason: '任務編號重複於同檔內（違反自然鍵唯一性）' },
+      { line: 128, reason: '同一（資料日期×小時×隊編×行政區）重複於同檔內' },
       { line: 4032, reason: '日期格式錯誤，應為 YYYY-MM-DD' },
       { line: 60021, reason: '隊編對應不到任何隊員主檔（含已退隊隊員）' }
     ];
-    var html = '<div class="warn-banner">⚠️ 驗證失敗，整檔不入庫（全有全無，REQ-IMP-003）：task_details_20260706.csv</div>' +
+    var html = '<div class="warn-banner">⚠️ 驗證失敗，整檔不入庫（全有全無，REQ-IMP-003）：task_stats_member_20260706.csv</div>' +
       '<button class="btn" type="button" id="btn-view-errors">查看錯誤報告</button>' +
       '<div class="chart-wrap" id="err-report-wrap" style="display:none;margin-top:14px"><table aria-label="錯誤報告"><thead><tr><th>列號</th><th>原因</th></tr></thead><tbody>' +
       errRows.map(function (r) { return '<tr><td class="num">' + CRM.fmt(r.line) + '</td><td>' + r.reason + '</td></tr>'; }).join('') +
@@ -561,7 +649,7 @@
   /* ── §7 匯入歷史（REQ-IMP-006／011／012） ── */
   var HISTORY = [
     { file: 'members_full_20260707.csv', type: 'members', executor: '匯入排程(system)', delta: -1, sh: [6, 28], eh: [6, 30], result: 'success', rows: 21847 },
-    { file: 'task_details_20260706.csv', type: 'task_details', executor: '匯入排程(system)', delta: 0, sh: [7, 10], eh: [7, 14], result: 'fail', rows: 0 },
+    { file: 'task_stats_member_20260706.csv', type: 'task_stats_member', executor: '匯入排程(system)', delta: 0, sh: [7, 10], eh: [7, 14], result: 'fail', rows: 0 },
     { file: 'activity_results_ACT202607A.xlsx', type: 'activity_results', executor: '李專員', delta: 0, sh: [6, 30], eh: [6, 32], result: 'success', rows: 1284 },
     { file: 'online_records_20260706.csv', type: 'online_records', executor: '匯入排程(system)', delta: 0, sh: [5, 40], eh: [5, 41], result: 'fail', rows: 0 },
     { file: 'driver_inquiry_stats_20260705.csv', type: 'driver_inquiry_stats', executor: '陳分析師', delta: 1, sh: [9, 5], eh: [9, 8], result: 'success', rows: 15420 },
@@ -600,8 +688,8 @@
   var BATCHES = [
     { id: 'M-088', type: 'members', delta: -1, h: [6, 30], executor: '匯入排程(system)', rows: 21847, latest: true },
     { id: 'M-087', type: 'members', delta: 6, h: [6, 22], executor: '匯入排程(system)', rows: 21802, latest: false },
-    { id: 'T-233', type: 'task_details', delta: 1, h: [9, 8], executor: '陳分析師', rows: 86910, latest: true },
-    { id: 'T-232', type: 'task_details', delta: 8, h: [9, 5], executor: '陳分析師', rows: 85204, latest: false },
+    { id: 'T-233', type: 'task_stats_member', delta: 1, h: [9, 8], executor: '陳分析師', rows: 86910, latest: true },
+    { id: 'T-232', type: 'task_stats_member', delta: 8, h: [9, 5], executor: '陳分析師', rows: 85204, latest: false },
     { id: 'AR-014', type: 'activity_results', delta: 0, h: [6, 32], executor: '李專員', rows: 1284, latest: true },
     { id: 'AR-013', type: 'activity_results', delta: 16, h: [10, 11], executor: '李專員', rows: 1190, latest: false }
   ];

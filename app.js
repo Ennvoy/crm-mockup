@@ -332,6 +332,28 @@
       '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 16v-5M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
       '<span class="crm-info-tip">' + text + '</span></span>';
   }
+  /* tooltip 出界修正（2026-07-15 使用者走查：捲動容器內 tip 被 overflow 裁切）：
+     hover/focus 時改 fixed 定位釘在 viewport 上，離開後還原——一律不被 .chart-wrap 等容器裁切 */
+  function positionTip(icon) {
+    var tip = icon.querySelector('.crm-info-tip'); if (!tip) return;
+    var r = icon.getBoundingClientRect();
+    var x = Math.max(150, Math.min(window.innerWidth - 150, r.left + r.width / 2));
+    tip.style.maxWidth = '300px';
+    tip.style.whiteSpace = 'normal';
+    tip.style.position = 'fixed';
+    tip.style.left = x + 'px';
+    tip.style.bottom = 'auto';
+    if (r.top > 90) { tip.style.top = (r.top - 8) + 'px'; tip.style.transform = 'translate(-50%,-100%)'; }
+    else { tip.style.top = (r.bottom + 8) + 'px'; tip.style.transform = 'translate(-50%,0)'; }
+  }
+  function resetTip(icon) {
+    var tip = icon.querySelector('.crm-info-tip'); if (!tip) return;
+    tip.style.position = ''; tip.style.left = ''; tip.style.top = ''; tip.style.bottom = ''; tip.style.transform = '';
+  }
+  document.addEventListener('mouseover', function (e) { var i = e.target.closest && e.target.closest('.crm-info'); if (i) positionTip(i); });
+  document.addEventListener('mouseout', function (e) { var i = e.target.closest && e.target.closest('.crm-info'); if (i) resetTip(i); });
+  document.addEventListener('focusin', function (e) { var i = e.target.closest && e.target.closest('.crm-info'); if (i) positionTip(i); });
+  document.addEventListener('focusout', function (e) { var i = e.target.closest && e.target.closest('.crm-info'); if (i) resetTip(i); });
 
   /* ── 共用導覽列 ── */
   var NAV_ITEMS = [
