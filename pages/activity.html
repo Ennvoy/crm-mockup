@@ -156,6 +156,10 @@
 
   table.wk-matrix th, table.wk-matrix td { text-align: center; padding: 8px 8px; }
   table.wk-matrix th:first-child, table.wk-matrix td:first-child { text-align: left; white-space: nowrap; position: sticky; left: 0; z-index: 2; background: var(--surface); box-shadow: 2px 0 0 var(--border-soft); }
+  .wk-matrix td.tier-cell { cursor: pointer; border-radius: 8px; transition: background var(--motion-fast), box-shadow var(--motion-fast); }
+  .wk-matrix td.tier-cell:hover { box-shadow: inset 0 0 0 1px rgba(201,100,66,.4), inset 0 0 0 999px rgba(201,100,66,.12); }
+  .wk-matrix td.tier-cell:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+  .wk-matrix tr.row-hi td.tier-cell:hover { box-shadow: inset 0 0 0 1px rgba(201,100,66,.4), inset 0 0 0 999px rgba(201,100,66,.18); }
   .wk-matrix td.cell { cursor: pointer; border-radius: 8px; transition: background var(--motion-fast); white-space: nowrap; }
   .wk-matrix td.cell:hover { background: rgba(201,100,66,.12); box-shadow: inset 0 0 0 1px rgba(201,100,66,.4); }
   .wk-matrix td.cell:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
@@ -223,9 +227,25 @@
   .stat-card .k { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
   .stat-card .v { font-size: 22px; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
   .stat-card .sub { font-size: 12px; color: var(--meta); margin-top: 6px; line-height: 1.5; }
-  .mig-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; }
-  .mig-grid > * { min-width: 0; }
-  @media (max-width: 700px) { .mig-grid { grid-template-columns: 1fr; } }
+  /* 級距移動分析（前期→期間交叉表，REQ-ACT-014 2026-07-15 改版） */
+  .mv-kpis { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 12px; }
+  .mv-chip { display: inline-flex; align-items: baseline; gap: 6px; background: var(--surface-warm); border: 1px solid var(--border-soft); border-radius: 10px; padding: 7px 12px; font-size: 12.5px; color: var(--fg-2); }
+  .mv-chip b { font-size: 16px; font-variant-numeric: tabular-nums; }
+  .mv-chip-up { background: rgba(47,133,90,.08); border-color: rgba(47,133,90,.25); }
+  .mv-chip-up b { color: #2f855a; }
+  .mv-chip-down { background: rgba(176,58,46,.06); border-color: rgba(176,58,46,.2); }
+  .mv-chip-down b { color: #b03a2e; }
+  .mv-sub { font-size: 11.5px; color: var(--muted); }
+  table.mv-matrix th, table.mv-matrix td { text-align: center; padding: 7px 8px; font-size: 12.5px; }
+  table.mv-matrix th:first-child, table.mv-matrix td:first-child { text-align: left; white-space: nowrap; position: sticky; left: 0; z-index: 2; background: var(--surface); box-shadow: 2px 0 0 var(--border-soft); }
+  table.mv-matrix td.mv-diag { background: var(--surface-warm); font-weight: 600; }
+  table.mv-matrix td.mv-up { background: rgba(47,133,90,.09); color: #2f855a; font-weight: 600; }
+  table.mv-matrix td.mv-down { background: rgba(176,58,46,.06); color: #b03a2e; }
+  table.mv-matrix td.mv-zero { color: var(--meta); font-weight: 400; opacity: .65; }
+  .mv-lg { font-weight: 600; }
+  .mv-lg-diag { color: var(--fg-2); }
+  .mv-lg-up { color: #2f855a; }
+  .mv-lg-down { color: #b03a2e; }
 
   /* 參加清單控制列 + 下鑽 chip */
   .ptable-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; margin-bottom: 12px; }
@@ -613,13 +633,14 @@
       zeroNote: '無資料＝0 元、歸最低桶' }
   };
 
-  /* ── 硬編碼矩陣（雙北照 PPT 轉錄、各級距加總＝週達標；多元/試跑由矩陣反推確保自洽） ── */
+  /* ── 硬編碼矩陣（雙北以 PPT 轉錄為基礎、各級距加總＝週達標；多元/試跑由矩陣反推確保自洽；
+        0 桶列依 2026-07-15 前期快照口徑補正——出身 0 者被活動帶動達標、逐週漸增） ── */
   var MATRIX_DATA = {
-    'ACT-2026-06A|小黃': [[0,0,0,0,0],[1,12,7,9,11],[13,25,17,22,19],[18,27,12,33,27],[23,25,12,29,21],[28,31,22,33,27]],
-    'ACT-2026-06A|多元': [[0,0,0,0,0],[2,5,4,3,6],[8,11,9,10,12],[10,14,8,15,12],[12,13,7,14,11],[9,11,8,12,10]],
-    'ACT-2026-06A|多元試跑': [[0,0,0,0,0],[1,2,1,2,2],[3,4,3,4,3],[3,4,2,4,3],[2,3,2,3,2],[2,2,1,2,2]],
-    'ACT-2026-06B|小黃': [[0,0,0],[8,11,9],[14,18,15],[10,13,12]],
-    'ACT-2026-06B|多元': [[0,0,0],[3,4,3],[5,6,5],[3,4,4]]
+    'ACT-2026-06A|小黃': [[2,4,5,7,9],[1,12,7,9,11],[13,25,17,22,19],[18,27,12,33,27],[23,25,12,29,21],[28,31,22,33,27]],
+    'ACT-2026-06A|多元': [[1,1,2,3,4],[2,5,4,3,6],[8,11,9,10,12],[10,14,8,15,12],[12,13,7,14,11],[9,11,8,12,10]],
+    'ACT-2026-06A|多元試跑': [[0,1,1,1,2],[1,2,1,2,2],[3,4,3,4,3],[3,4,2,4,3],[2,3,2,3,2],[2,2,1,2,2]],
+    'ACT-2026-06B|小黃': [[1,2,3],[8,11,9],[14,18,15],[10,13,12]],
+    'ACT-2026-06B|多元': [[0,1,1],[3,4,3],[5,6,5],[3,4,4]]
   };
 
   /* ══════════════ 活動主檔（決定性；含新欄位：tierDim/observeOnly/taSplit/對象條件/描述性欄位） ══════════════ */
@@ -726,7 +747,11 @@
     for (var w = 0; w < nW; w++) {
       var tta = tierTAof(taWeekly[w], dim);
       for (var t2 = 0; t2 < nT; t2++) {
-        if (t2 === 0) { mat[0][w] = 0; continue; } // 最低桶（0 活動）無獎勵→0 達標
+        if (t2 === 0) { // 前期快照口徑：0 出身者被活動帶動、逐週漸增（2026-07-15 拍板）
+          var r0 = 0.015 + w * 0.012 + (rnd(s, w * 10) - 0.5) * 0.01;
+          mat[0][w] = Math.max(0, Math.min(Math.round(tta[0] * Math.max(0.005, r0)), tta[0]));
+          continue;
+        }
         var baseRate = Math.min(0.05 + t2 * 0.055 + w * 0.012, 0.62);
         var noise = (rnd(s, w * 10 + t2) - 0.5) * 0.10;
         var hit = Math.round(tta[t2] * Math.max(0.01, baseRate + noise));
@@ -811,18 +836,16 @@
     document.getElementById('ongoing-note').innerHTML = '每張卡之級距軸依主檔分析級距各自不同（維度中立、跨活動不加總）；累計達標人次＝各週達標加總，週達標平均＝累計÷週數 ' + CRM.infoIcon('各卡指標一律逐活動獨立計算、不跨活動加總（不同活動之級距軸／時段口徑互異，REQ-ACT-021）');
     host.innerHTML = list.map(function (a) {
       var d = buildDash(a), dim = d.dim;
-      var incomplete = a.end > ACT_DATA_CUTOFF;
       return '<div class="sum-card" data-go="' + a.id + '" role="button" tabindex="0" aria-label="開啟 ' + a.name + ' 單一活動檢視">' +
         '<div class="sc-head"><div><div class="sc-name">' + a.name + '</div>' +
         '<div class="sc-meta"><span class="type-chip">' + a.type + '</span><span class="act-badge ongoing">● 進行中</span>' +
-        (incomplete ? '<span class="act-badge warn">資料未完整' + CRM.infoIcon('資料截至 ' + ACT_DATA_CUTOFF + ' 早於活動迄日 ' + a.end + '，活動期間尚未完整涵蓋（REQ-ACT-007）') + '</span>' : '') +
         '</div><div class="sc-meta">' + a.start + ' ~ ' + a.end + '</div></div></div>' +
         '<div class="sc-nums">' +
         '<div class="sc-num"><div class="k">參加者數 ' + CRM.infoIcon('截至最新週之已起算 TA 數（分群圈選＋報名匯入＋結算補入去重，REQ-ACT-015）') + '</div><div class="v">' + CRM.fmt(d.aggTA) + '<span class="u">人</span></div></div>' +
         '<div class="sc-num"><div class="k">累計達標</div><div class="v">' + CRM.fmt(d.aggCumHit) + '<span class="u">人次</span></div></div>' +
         '<div class="sc-num"><div class="k">週達標平均</div><div class="v">' + CRM.fmt(d.aggWeekAvg) + '<span class="u">人/週</span></div></div>' +
         '</div>' +
-        '<div><div class="sc-dist-label"><span>' + dim.name + '級距分布（參加人數）' + CRM.infoIcon('該活動參加者依主檔分析級距之人數分布（最新週歸屬；Word 1.a 各級距參加隊員人數）——段寬＝占比、刻度下為人數，hover 各段看人數＋佔比') + '</span><span>' + dim.labels.length + ' 級</span></div>' + distBarHtml(dim, d.aggTierTAfinal) + '</div>' +
+        '<div><div class="sc-dist-label"><span>前期' + dim.name + '級距分布（參加人數）' + CRM.infoIcon('該活動參加者依主檔分析級距之「前期快照」人數分布（活動開始前表現定桶，REQ-ACT-013；Word 1.a 各級距參加隊員人數）——段寬＝占比、刻度下為人數，hover 各段看人數＋佔比') + '</span><span>' + dim.labels.length + ' 級</span></div>' + distBarHtml(dim, d.aggTierTAfinal) + '</div>' +
         '<div class="sum-foot"><span class="sum-asof">資料截至 ' + ACT_DATA_CUTOFF + '</span><span class="sum-cta">點擊查看單一活動 →</span></div>' +
         '</div>';
     }).join('');
@@ -963,7 +986,7 @@
 
     // 純觀察型：無獎勵結算（REQ-ACT-017）
     if (a.observeOnly) {
-      html += '<div class="empty-box" style="text-align:left">本活動為<strong>純觀察型活動</strong>，無獎勵結算設計，達標與獎勵相關欄位一律顯示「<strong>—（無獎勵結算）</strong>」，不得以 0% 呈現 ' + CRM.infoIcon('達標＝Σreward>0；無結算檔者達標無從判定，故顯示「—」（REQ-ACT-017）') + '。<br>任務成效（前後任務數／級距遷移）仍可於下方次要分析檢視。</div>';
+      html += '<div class="empty-box" style="text-align:left">本活動為<strong>純觀察型活動</strong>，無獎勵結算設計，達標與獎勵相關欄位一律顯示「<strong>—（無獎勵結算）</strong>」，不得以 0% 呈現 ' + CRM.infoIcon('達標＝Σreward>0；無結算檔者達標無從判定，故顯示「—」（REQ-ACT-017）') + '。<br>任務成效（四軸前後對照）仍可於下方次要分析檢視。</div>';
       html += legacyHtml(a, d, p, true);
       host.innerHTML = html;
       bindLegacy(a, d);
@@ -982,8 +1005,8 @@
 
     // ② 左右雙欄：矩陣 / 週貢獻度
     html += '<div class="dash-cols">' +
-      '<div class="dash-panel"><div class="dp-title">各' + dim.name + '級距單週達標情況 <span class="soft-label">（達標數 / 參加人數・達標率，格可點下鑽）</span></div>' +
-      '<div class="panel-note" style="margin:2px 0 10px">級距軸＝主檔設定（本活動：' + dim.name + '）；格內達標率分母＝該週該級距已起算 TA</div>' +
+      '<div class="dash-panel"><div class="dp-title">各' + dim.name + '級距單週達標情況 <span class="soft-label">（達標數 / 參加人數・達標率，格或級距列可點下鑽）</span></div>' +
+      '<div class="panel-note" style="margin:2px 0 10px">級距軸＝主檔設定（本活動：' + dim.name + '）；級距歸屬＝前期快照定桶；格內達標率分母＝該週該級距已起算 TA　' + CRM.infoIcon('前期快照（2026-07-15 拍板，取代逐週歸屬）：每位參加者以「活動層前期視窗」（活動起始日往前等長鏡像）的' + dim.name + '一次定桶、整檔固定——每一列都是固定同一群人，呈現被活動逐週帶動的軌跡；活動期間的級距移動見下方「級距移動分析」。歷史週數字不因事後查看變動；僅結算寬限窗補件、名單補正、起算日調整會回溯重算（皆寫審計），寬限窗結束＝統計凍結（REQ-ACT-013／016／017）') + '</div>' +
       '<div class="chart-wrap">' + matrixHtml(a, d, p) + '</div>' +
       matrixNote(dim, p) + '</div>' +
       '<div class="dash-panel"><div class="dp-title">週貢獻度表現 <span class="soft-label">' + idn + '單週達標人數</span></div>' +
@@ -991,8 +1014,11 @@
       '<div class="chart-wrap" style="margin-top:12px">' + contribTableHtml(a, d, idn) + '</div></div>' +
       '</div>';
 
+    // ③′ 級距移動分析（REQ-ACT-014 2026-07-15 改版）
+    html += '<div class="dash-panel" style="margin-bottom:20px"><div class="dp-title">級距移動分析 <span class="soft-label">前期 → 活動期間・誰被帶動到哪</span> ' + CRM.infoIcon('取代原「參加者級距遷移（上線天數）」：維度跟隨主檔分析級距（本活動：' + dim.name + '）；列＝前期快照定桶（同矩陣口徑）、欄＝活動期間整段表現分桶。矩陣列固定不動、移動在此呈現（REQ-ACT-014，2026-07-15 拍板）') + '</div>' + moveHtml(a, d, idn) + '</div>';
+
     // ④ 各級距達標佔比
-    html += '<div class="dash-panel" style="margin-bottom:20px"><div class="dp-title">各級距達標佔比 <span class="soft-label">該級距達標數 ÷ 全體達標數</span> ' + CRM.infoIcon('逐週級距歸屬後之整檔加總佔比（REQ-ACT-013④）') + '</div>' + tierShareHtml(dim, p) + '</div>';
+    html += '<div class="dash-panel" style="margin-bottom:20px"><div class="dp-title">各級距達標佔比 <span class="soft-label">該級距達標數 ÷ 全體達標數</span> ' + CRM.infoIcon('級距＝前期快照（出身桶）：該出身級距之達標人次 ÷ 全體達標人次，整檔加總（REQ-ACT-013④）') + '</div>' + tierShareHtml(dim, p) + '</div>';
 
     // ⑤ 三點結論
     html += '<div class="panel-note" style="display:flex;align-items:center;gap:8px;margin:0 0 10px"><span class="rule-tag">🤖 規則式自動產生</span> 取自 KPI 與矩陣之機算重點，非人工撰寫、非生成式 AI</div>' +
@@ -1017,7 +1043,7 @@
     var hiIdx = p.nT - 1;
     for (var t = 0; t < p.nT; t++) {
       var isHi = (t === hiIdx);
-      html += '<tr' + (isHi ? ' class="row-hi"' : '') + '><td>' + (isHi ? '<span class="star">★</span> ' : '') + dim.labels[t] + (t === 0 ? '<span class="soft-label">（' + (dim === DIMS.accept ? '含空值' : '無資料') + '）</span>' : '') + '</td>';
+      html += '<tr' + (isHi ? ' class="row-hi"' : '') + '><td class="tier-cell" tabindex="0" role="button" data-t="' + t + '" aria-label="' + dim.labels[t] + '：整列下鑽（不限週）">' + (isHi ? '<span class="star">★</span> ' : '') + dim.labels[t] + (t === 0 ? '<span class="soft-label">（' + (dim === DIMS.accept ? '含空值' : '無資料') + '）</span>' : '') + '</td>';
       for (var w = 0; w < weeks.length; w++) {
         var hit = p.matrix[t][w], tta = p.tierTAweek[w][t];
         var rate = tta > 0 ? Math.round(hit / tta * 1000) / 10 : null;
@@ -1031,11 +1057,16 @@
   function matrixNote(dim, p) {
     var hiRow = p.matrix[p.nT - 1], hiFirst = hiRow[0];
     var mn = Math.min.apply(null, hiRow), mx = Math.max.apply(null, hiRow);
-    return '<div class="matrix-note"><span class="star">★</span> 最高級距（' + dim.labels[p.nT - 1] + '）首週 <b>' + hiFirst + '</b> 人達標，各週落在 <b>' + mn + '–' + mx + '</b> 人；此列人數少但達標率相對高，屬主要達標來源之一。</div>';
+    return '<div class="matrix-note"><span class="star">★</span> 最高級距（' + dim.labels[p.nT - 1] + '）首週 <b>' + hiFirst + '</b> 人達標，各週落在 <b>' + mn + '–' + mx + '</b> 人；此列人數少但達標率相對高，屬主要達標來源之一。' + (p.tierSum[0] > 0 ? ' 最低級距（' + dim.labels[0] + '）出身者整檔已有 <b>' + CRM.fmt(p.tierSum[0]) + '</b> 人次被帶動達標＝活動驅動力證據。' : '') + '</div>';
   }
   function bindMatrix(a, d) {
     document.querySelectorAll('#dash-body .wk-matrix td.cell').forEach(function (td) {
       function fire() { drillTo(a, Number(td.dataset.t), Number(td.dataset.w)); }
+      td.addEventListener('click', fire);
+      td.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fire(); } });
+    });
+    document.querySelectorAll('#dash-body .wk-matrix td.tier-cell').forEach(function (td) {
+      function fire() { drillTo(a, Number(td.dataset.t), null); }
       td.addEventListener('click', fire);
       td.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fire(); } });
     });
@@ -1101,7 +1132,7 @@
     var weekTotal = p.weekReward.reduce(function (x, y) { return x + y; }, 0);
     var weekRows = p.weekReward.map(function (v, w) { return '<tr><td>' + d.weeks[w].label + '</td><td>$' + CRM.fmt(v) + '</td><td>' + (weekTotal > 0 ? pct1(v / weekTotal * 100) : '—') + '</td></tr>'; }).join('');
     return '<section class="panel" style="margin-top:16px"><div class="panel-title">獎勵發放（' + oneState.identity + '）' +
-      CRM.infoIcon('每日結算為唯一真相、系統只彙總不試算；各級距發放＝每筆結算金額依「結算日所屬週×該隊員該週級距」歸屬後加總（逐週歸屬，REQ-ACT-020）') + '</div>' +
+      CRM.infoIcon('每日結算為唯一真相、系統只彙總不試算；各級距發放＝每筆結算金額依該隊員之前期級距快照歸戶加總（2026-07-15 拍板改快照口徑，與矩陣一致；REQ-ACT-020）') + '</div>' +
       '<div class="reward-top"><div><div class="soft-label">總發放（Σreward_amount）</div><div class="reward-total">$' + CRM.fmt(p.totalReward) + '</div></div>' +
       '<div class="soft-label">資料截至 ' + asof + '・' + (st.key === 'grace' ? '已結束・結算收件中' : st.key === 'frozen' ? '已結束（統計凍結）' : '進行中・每日結算 T+1') + '</div></div>' +
       '<div class="reward-cols">' +
@@ -1138,22 +1169,54 @@
     }).join('') + '</div>';
   }
 
-  /* ── 參加者級距遷移（上線天數，REQ-ACT-014；收合） ── */
-  function migrationHtml(a) {
-    var s = seedOf(a.id + '|mig'); function r(k) { return rnd(s, k); }
-    var reactivated = Math.round(a.taTotal * (0.06 + r(1) * 0.05));
-    var churned = Math.round(a.taTotal * (0.04 + r(2) * 0.04));
-    var net = [Math.round((r(3) - 0.4) * 60), Math.round((r(4) - 0.3) * 50), Math.round((r(5) - 0.2) * 40)];
-    var labels = ['1–10 天', '11–20 天', '21+ 天'];
-    return '<div class="mig-grid"><div class="stat-grid" style="grid-template-columns:1fr">' +
-      '<div class="stat-card"><div class="k">重新啟動 ' + CRM.infoIcon('前期 0 天 → 活動期間有上線') + '</div><div class="v delta-pos">+' + CRM.fmt(reactivated) + ' 人</div></div>' +
-      '<div class="stat-card"><div class="k">流失 ' + CRM.infoIcon('前期有上線 → 活動期間 0 天') + '</div><div class="v delta-neg">−' + CRM.fmt(churned) + ' 人</div></div></div>' +
-      '<div class="stat-card"><div class="k">各級距淨增減</div><div class="v" style="font-size:14px;line-height:2">' +
-      labels.map(function (lb, i) { var n = net[i], cls = n > 0 ? 'delta-pos' : (n < 0 ? 'delta-neg' : 'delta-zero'); return lb + '：<span class="' + cls + '">' + (n > 0 ? '+' : '') + CRM.fmt(n) + '</span>'; }).join('<br>') +
-      '</div></div></div>';
+  /* ── 級距移動分析（REQ-ACT-014 2026-07-15 改版：前期→期間交叉表，取代原上線天數遷移視圖） ── */
+  function moveMatrixOf(a, idn, rowSums) {
+    var nT = rowSums.length, s = seedOf(a.id + '|' + idn + '|mv'), M = [];
+    for (var f = 0; f < nT; f++) {
+      var n = rowSums[f], w = [], t;
+      for (t = 0; t < nT; t++) {
+        var dlt = t - f, base;
+        if (f === 0) base = dlt === 0 ? 0.52 : (dlt === 1 ? 0.26 : (dlt === 2 ? 0.13 : (dlt === 3 ? 0.06 : 0.03)));
+        else base = dlt === 0 ? 0.62 : (dlt === 1 ? 0.19 : (dlt === 2 ? 0.05 : (dlt === -1 ? 0.09 : (dlt < -1 ? 0.02 : 0.015))));
+        w.push(Math.max(0.001, base + (rnd(s, f * 10 + t) - 0.5) * 0.04));
+      }
+      var sw = 0; for (t = 0; t < nT; t++) sw += w[t];
+      var row = [], used = 0;
+      for (t = 0; t < nT; t++) { var v = Math.floor(n * w[t] / sw); row.push(v); used += v; }
+      row[f] += n - used;
+      M.push(row);
+    }
+    return M;
+  }
+  function moveHtml(a, d, idn) {
+    var dim = d.dim, p = d.per[idn], nT = p.nT;
+    var rowSums = tierTAof(p.taFinal, dim);
+    var M = moveMatrixOf(a, idn, rowSums);
+    var up = 0, stay = 0, down = 0, lowUp = 0, drop0 = 0;
+    for (var f = 0; f < nT; f++) for (var t = 0; t < nT; t++) {
+      if (t > f) up += M[f][t]; else if (t === f) stay += M[f][t]; else down += M[f][t];
+      if (f === 0 && t > 0) lowUp += M[f][t];
+      if (f > 0 && t === 0) drop0 += M[f][t];
+    }
+    var kpi = '<div class="mv-kpis">' +
+      '<span class="mv-chip mv-chip-up">上移 <b>' + CRM.fmt(up) + '</b> 人<span class="mv-sub">其中 ' + dim.labels[0] + ' 出身 ' + CRM.fmt(lowUp) + ' 人</span></span>' +
+      '<span class="mv-chip">持平 <b>' + CRM.fmt(stay) + '</b> 人</span>' +
+      '<span class="mv-chip mv-chip-down">下移 <b>' + CRM.fmt(down) + '</b> 人<span class="mv-sub">其中落入最低桶 ' + CRM.fmt(drop0) + ' 人</span></span></div>';
+    var head = '<tr><th>前期＼期間</th>' + dim.ticks.map(function (tk) { return '<th>' + tk + '</th>'; }).join('') + '</tr>';
+    var body = '';
+    for (var f2 = 0; f2 < nT; f2++) {
+      body += '<tr><td>' + dim.labels[f2] + ' <span class="soft-label">' + CRM.fmt(rowSums[f2]) + ' 人</span></td>';
+      for (var t2 = 0; t2 < nT; t2++) {
+        var v2 = M[f2][t2], cls = t2 === f2 ? 'mv-diag' : (t2 > f2 ? 'mv-up' : 'mv-down');
+        body += '<td class="' + cls + (v2 === 0 ? ' mv-zero' : '') + '" title="前期 ' + dim.labels[f2] + ' → 期間 ' + dim.labels[t2] + '：' + CRM.fmt(v2) + ' 人">' + CRM.fmt(v2) + '</td>';
+      }
+      body += '</tr>';
+    }
+    return kpi + '<div class="chart-wrap"><table class="mv-matrix" aria-label="級距移動分析：前期→活動期間交叉表"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+      '<div class="panel-note" style="margin:8px 0 0">列＝前期快照級距（人數固定）、欄＝活動期間整段' + dim.name + '之分桶；<span class="mv-lg mv-lg-diag">對角線＝持平</span>、<span class="mv-lg mv-lg-up">右側＝上移</span>、<span class="mv-lg mv-lg-down">左側＝下移</span>。例：首列＝' + dim.labels[0] + ' 出身者活動期間被帶動到哪一級。</div>';
   }
 
-  /* ── 參加隊員清單（REQ-ACT-003；含起算日/當週級距/來源，報名方式收進起算日 ⓘ——2026-07-15 使用者走查拿掉獨立欄；決定性生成） ── */
+  /* ── 參加隊員清單（REQ-ACT-003；含起算日/前期級距（快照口徑）/來源，報名方式收進起算日 ⓘ——2026-07-15 使用者走查拿掉獨立欄；決定性生成） ── */
   var ENROLL = ['預先報名', '外撥同意-次週', '外撥同意-即刻'];
   var SURNAMES = ['王', '林', '張', '李', '陳', '黃', '吳', '劉', '蔡', '楊'];
   var GIVEN = ['志明', '淑惠', '建宏', '雅婷', '俊傑', '美玲', '文雄', '麗華', '家豪', '怡君'];
@@ -1177,7 +1240,7 @@
       var before = Math.round((2 + r(5) * 4) * 10) / 10;
       var delta = Math.round((r(6) - 0.3) * 4 * 10) / 10;
       var after = Math.max(0, Math.round((before + delta) * 10) / 10);
-      var tier = 1 + Math.floor(r(7) * (nT - 1)); // 非 0 桶
+      var tier = i % 9 === 0 ? 0 : 1 + Math.floor(r(7) * (nT - 1)); // 前期快照定桶；含最低桶出身示範筆（被帶動達標情境）
       var wholeHit = !a.observeOnly && !lateExcluded && r(8) < (0.35 + tier * 0.09);
       var cumReward = wholeHit ? (Math.round((dim.bonus[tier] * (1 + Math.floor(r(9) * 4))) / 50) * 50) : 0;
       list.push({
@@ -1205,13 +1268,13 @@
     var totalPages = Math.max(1, Math.ceil(list.length / oneState.pageSize));
     if (oneState.page > totalPages) oneState.page = totalPages;
     var rows = list.slice((oneState.page - 1) * oneState.pageSize, oneState.page * oneState.pageSize);
-    var chip = oneState.drill ? '<span class="filter-chip">下鑽篩選：' + dim.labels[oneState.drill.t] + ' × ' + d.weeks[oneState.drill.w].label + '<button type="button" id="drill-clear" aria-label="清除下鑽篩選">✕</button></span>' : '';
+    var chip = oneState.drill ? '<span class="filter-chip">下鑽篩選：' + dim.labels[oneState.drill.t] + (oneState.drill.w == null ? '（不限週）' : ' × ' + d.weeks[oneState.drill.w].label) + '<button type="button" id="drill-clear" aria-label="清除下鑽篩選">✕</button></span>' : '';
     var handoffBtn = '<button class="btn btn-sm" type="button" id="btn-seg-handoff" title="需 profile.view 權限（原型以已授權管理者視角預覽）">帶入分群篩選 →</button>';
     var thHit = a.observeOnly ? '' : '<th>整檔達標</th><th>累計獲獎</th>';
     var tbl = '<div class="ptable-controls"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + chip +
       '<div class="search-input" style="min-width:180px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input id="p-search" type="search" placeholder="搜尋隊編或姓名" aria-label="搜尋參加隊員"></div></div>' +
       '<div style="display:flex;gap:8px;align-items:center">' + handoffBtn + '<div class="pagination" id="p-pager"></div></div></div>' +
-      '<div class="chart-wrap"><table aria-label="參加隊員清單"><thead><tr><th>隊編</th><th>姓名</th><th>起算日</th><th>來源</th><th>前期日均</th><th>迄今日均</th><th>變化</th><th>當週級距</th>' + thHit + '<th>Profile</th></tr></thead><tbody>';
+      '<div class="chart-wrap"><table aria-label="參加隊員清單"><thead><tr><th>隊編</th><th>姓名</th><th>起算日</th><th>來源</th><th>前期日均</th><th>迄今日均</th><th>變化</th><th>前期級距</th>' + thHit + '<th>Profile</th></tr></thead><tbody>';
     if (!rows.length) tbl += '<tr><td colspan="11" style="text-align:center;color:var(--meta)">查無符合條件之隊員</td></tr>';
     rows.forEach(function (pp) {
       var dcls = pp.delta > 0 ? 'delta-pos' : (pp.delta < 0 ? 'delta-neg' : 'delta-zero');
@@ -1260,20 +1323,18 @@
     si.addEventListener('input', function () { oneState.q = this.value; oneState.page = 1; renderParticipantList(a, d); });
     var dc = document.getElementById('drill-clear'); if (dc) dc.addEventListener('click', function () { oneState.drill = null; renderParticipantList(a, d); });
     document.getElementById('btn-seg-handoff').addEventListener('click', function () {
-      handoffToSeg({ source: 'activity', activityId: a.id, activityName: a.name, identity: idn, week: oneState.drill ? d.weeks[oneState.drill.w].label : null, tier: oneState.drill ? dim.labels[oneState.drill.t] : null, kind: oneState.drill ? 'tier-cell' : 'list-filter' });
+      handoffToSeg({ source: 'activity', activityId: a.id, activityName: a.name, identity: idn, week: (oneState.drill && oneState.drill.w != null) ? d.weeks[oneState.drill.w].label : null, tier: oneState.drill ? dim.labels[oneState.drill.t] : null, kind: oneState.drill ? (oneState.drill.w == null ? 'tier-row' : 'tier-cell') : 'list-filter' });
     });
   }
 
-  /* ── 收合次要分析（四軸／級距遷移／參加隊員清單） ── */
+  /* ── 收合次要分析（四軸／參加隊員清單；級距遷移已升級為儀表板「級距移動分析」REQ-ACT-014） ── */
   function legacyHtml(a, d, p, observeOnly) {
-    return '<div class="legacy-wrap"><div class="legacy-hint">次要分析（沿用現有區塊、位置下移，REQ-ACT-012／014／003）</div>' +
+    return '<div class="legacy-wrap"><div class="legacy-hint">次要分析（沿用現有區塊、位置下移，REQ-ACT-012／003）</div>' +
       '<div class="legacy"><div class="legacy-head">四軸成效對照 <span class="legacy-badge">前期 vs 活動期間</span></div><div class="legacy-body" id="fouraxis-host"></div></div>' +
-      '<div class="legacy"><div class="legacy-head">參加者級距遷移 <span class="legacy-badge">上線天數</span></div><div class="legacy-body" id="mig-host"></div></div>' +
       '<div class="legacy" id="part-details"><div class="legacy-head">參加隊員清單 <span class="legacy-badge">可搜尋／分頁／下鑽</span></div><div class="legacy-body"><div id="part-list-host"></div></div></div></div>';
   }
   function bindLegacy(a, d) {
     var fa = document.getElementById('fouraxis-host'); if (fa) fa.innerHTML = fourAxisHtml(a);
-    var mg = document.getElementById('mig-host'); if (mg) mg.innerHTML = migrationHtml(a);
     renderParticipantList(a, d);
   }
   function drillTo(a, t, w) {

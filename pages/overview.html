@@ -459,7 +459,7 @@
       reward: 342000,    // 累計發放獎勵＝ΣtotalReward（總發放，Σreward_amount；口徑同活動頁 REQ-ACT-020）
       ta: 1264,          // 參加者數＝合併後 TA（aggTA，REQ-ACT-015）
       extraTasks: 3868,  // 較活動前增加（＝年度列表「因活動增加任務總數」，REQ-ACT-002）
-      cumHit: 802, weekAvg: 160,   // 累計達標人次 aggCumHit／週達標平均 aggWeekAvg（nW=5，REQ-ACT-017/019）
+      cumHit: 845, weekAvg: 169,   // 累計達標人次 aggCumHit／週達標平均 aggWeekAvg（nW=5，REQ-ACT-017/019；0 桶列 2026-07-15 快照口徑補正後同步）
       tierDimName: '承接率', ticks: ['0%', '1–20', '20–40', '40–60', '60–80', '80%↑'],
       before: [140, 320, 360, 240, 140, 64],   // 活動前分布（決定性生成，Σ=1264）
       after:  [76, 202, 329, 303, 228, 126]    // 迄今分布＝aggTierTAfinal（Σ=1264）
@@ -467,7 +467,7 @@
     {
       id: 'ACT-2026-06B', name: '桃園早尖峰衝刺獎', type: '早尖峰', start: '2026-06-15', end: '2026-07-31',
       cumTasks: 4577, reward: 48900, ta: 386, extraTasks: 1181,
-      cumHit: 147, weekAvg: 49,   // nW=3
+      cumHit: 155, weekAvg: 52,   // nW=3（0 桶列 2026-07-15 快照口徑補正後同步）
       tierDimName: '完成任務數', ticks: ['0 趟', '1–3', '4–6', '7+ 趟'],
       before: [70, 150, 110, 56],   // Σ=386
       after:  [39, 116, 146, 85]    // 迄今分布＝aggTierTAfinal（Σ=386）
