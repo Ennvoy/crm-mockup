@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>尖峰完成數 — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=29">
+<link rel="stylesheet" href="../tokens.css?v=35">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -130,9 +130,13 @@
       <div class="panel-head">
         <div class="panel-title" id="kpi-title"></div>
         <div class="filters" role="group" aria-label="完成數 KPI 篩選">
-          <select id="f-region1" aria-label="選擇地區"><option>雙北地區</option><option>全台</option></select>
+          <select id="f-region1" aria-label="選擇地區">
+            <option>全台</option><option selected>雙北地區</option>
+            <option>台北市</option><option>新北市</option><option>桃園市</option><option>台中市</option><option>台南市</option><option>高雄市</option>
+            <option disabled>──其他縣市（正式版全列）──</option>
+          </select>
           <select id="f-peak1" aria-label="選擇時段"><option value="morning">早尖峰</option><option value="evening" selected>晚尖峰</option><option value="offpeak">離峰</option></select>
-          <button class="btn" id="btn-export1" type="button">匯出</button>
+          <button class="btn" id="btn-export1" type="button" title="需 report.export 權限（REQ-GEN-006）">匯出</button>
         </div>
       </div>
       <div class="panel-note" style="margin:-4px 0 10px">直接呈現近 3 年（2024–2026）年度對照・早尖峰 07:00~08:59・晚尖峰 17:00~18:59・離峰＝其餘時段（排除規則已於資料源頭處理） <span id="kpi-info"></span></div>
@@ -146,7 +150,11 @@
       <div class="panel-head">
         <div class="panel-title" id="wd-title"></div>
         <div class="filters" role="group" aria-label="每日完成數篩選">
-          <select id="f-region2" aria-label="選擇地區"><option>雙北地區</option><option>全台</option></select>
+          <select id="f-region2" aria-label="選擇地區">
+            <option>全台</option><option selected>雙北地區</option>
+            <option>台北市</option><option>新北市</option><option>桃園市</option><option>台中市</option><option>台南市</option><option>高雄市</option>
+            <option disabled>──其他縣市（正式版全列）──</option>
+          </select>
           <select id="f-year2" aria-label="選擇年份"><option>2026</option><option>2025</option><option>2024</option></select>
           <select id="f-month2" aria-label="選擇月份">
             <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
@@ -154,7 +162,7 @@
             <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
             <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
           </select>
-          <button class="btn" id="btn-export2" type="button">匯出</button>
+          <button class="btn" id="btn-export2" type="button" title="需 report.export 權限（REQ-GEN-006）">匯出</button>
         </div>
       </div>
       <div class="panel-note" style="margin:-4px 0 10px">同一星期別的日期併列，快速比對同星期的表現 <span id="wd-info"></span></div>
@@ -172,7 +180,11 @@
       <div class="panel-head">
         <div class="panel-title" id="st-title"></div>
         <div class="filters" role="group" aria-label="每日任務數篩選">
-          <select id="f-region3" aria-label="選擇地區"><option>雙北地區</option><option>全台</option></select>
+          <select id="f-region3" aria-label="選擇地區">
+            <option>全台</option><option selected>雙北地區</option>
+            <option>台北市</option><option>新北市</option><option>桃園市</option><option>台中市</option><option>台南市</option><option>高雄市</option>
+            <option disabled>──其他縣市（正式版全列）──</option>
+          </select>
           <select id="f-year3" aria-label="選擇年份"><option>2026</option><option>2025</option><option>2024</option></select>
           <select id="f-month3" aria-label="選擇月份">
             <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
@@ -186,7 +198,7 @@
             <option value="4">星期四</option><option value="5">星期五</option><option value="6">星期六</option><option value="0">星期日</option>
           </select>
           <select id="f-peak" aria-label="選擇尖峰時段"><option value="evening">晚尖峰</option><option value="morning">早尖峰</option><option value="offpeak">離峰</option></select>
-          <button class="btn" id="btn-export3" type="button">匯出</button>
+          <button class="btn" id="btn-export3" type="button" title="需 report.export 權限（REQ-GEN-006）">匯出</button>
         </div>
       </div>
       <div class="legend" style="margin-bottom:10px">
@@ -200,6 +212,7 @@
         <span><i style="background:var(--chart-6)"></i>未現</span>
         <span><i style="background:var(--chart-5)"></i>有車無承接</span>
         <span><i style="background:var(--chart-3)"></i>搜無車</span>
+        <span><i style="background:var(--muted)"></i>其他</span>
         <span id="st-info"></span>
       </div>
       <div class="chart-wrap"><table id="status-table" aria-label="每日任務完成狀況表"></table></div>
@@ -211,6 +224,7 @@
     <div class="state-icon" aria-hidden="true">🗂️</div>
     <div class="state-title">尚無資料</div>
     <div class="state-desc">此期間還沒有匯入任務明細，請先到「資料匯入」上傳檔案。</div>
+    <div style="margin-top:16px"><a class="btn" href="import.html">前往資料匯入</a></div>
   </div>
   <div class="state-layer" id="st-loading" aria-label="載入中">
     <div style="display:grid;gap:12px;max-width:960px;margin:0 auto">
@@ -222,6 +236,7 @@
     <div class="state-icon" aria-hidden="true">⚠️</div>
     <div class="state-title">資料載入失敗</div>
     <div class="state-desc">連線發生問題（HTTP 500），請稍後再試。</div>
+    <button class="btn" type="button" id="btn-retry">重試</button>
   </div>
   <div class="state-layer" id="st-forbidden">
     <div class="state-icon" aria-hidden="true">🔒</div>
@@ -234,7 +249,7 @@
   原型說明：本頁對應 v2 需求文件「其他分頁」三張 Tableau 報表（雙北_晚尖峰完成數 KPI／每日完成數 by 星期／晚尖峰每日任務數_完成狀況）。假資料即時生成、數字量級貼近截圖。
 </footer>
 
-<script src="../app.js?v=29"></script>
+<script src="../app.js?v=35"></script>
 <script>
 (function () {
   'use strict';
@@ -269,7 +284,9 @@
     var noaccept = Math.round(valid * (0.10 + rnd(s + 4) * 0.16));
     var nocar = Math.max(0, valid - done - cancel - noshow - noaccept);
     var members = Math.round(1900 + rnd(s + 5) * 1300);
-    return { d: d, wd: wd, valid: valid, done: done, cancel: cancel, noshow: noshow, noaccept: noaccept, nocar: nocar, members: members };
+    // 「其他」狀態：實測極少量（§4.1 task_stats_district 單日 37 筆量級），獨立列示、不併入五狀態與有效任務數（REQ-OV-010③）
+    var other = Math.round(rnd(s + 6) * 40);
+    return { d: d, wd: wd, valid: valid, done: done, cancel: cancel, noshow: noshow, noaccept: noaccept, nocar: nocar, members: members, other: other };
   }
   function monthDays(y, m, peak) {
     var arr = [];
@@ -310,10 +327,13 @@
 
   function val(id) { return document.getElementById(id).value; }
   function num(id) { return Number(val(id)); }
-  function factorOf(rg) { return rg === '全台' ? 2.4 : 1; }
+  // 地區倍率：雙北地區＝基準 1（原型假資料量級以此校準）、全台＝2.4（既有邏輯，2026-07-09 主管走查）
+  // 各縣市倍率為新增示意值（REQ-OV-010 補訂），彼此加總 ≈1（相對「全台＝1.0」正規化：台北 0.32＋新北 0.26＝0.58 對齊雙北占全台之既有假設）
+  var REGION_FACTOR = { '全台': 2.4, '雙北地區': 1, '台北市': 0.32, '新北市': 0.26, '桃園市': 0.12, '台中市': 0.14, '台南市': 0.07, '高雄市': 0.09 };
+  function factorOf(rg) { return REGION_FACTOR.hasOwnProperty(rg) ? REGION_FACTOR[rg] : 1; }
 
   /* ═══ Tab 1：完成數 KPI（直接呈現近 3 年年度對照；篩選＝地區＋時段，主管走查回饋 2026-07-09） ═══ */
-  document.getElementById('kpi-info').innerHTML = CRM.infoIcon('完成數＝任務狀態 completed；月值＝該月每日完成數平均。時段：早尖峰 07:00–08:59、晚尖峰 17:00–18:59、離峰＝全日扣除早晚尖峰之其餘時段（隨系統設定之尖峰區間調整自動連動，見 REQ-SET-001；對齊現行 Tableau KPI 口徑）');
+  document.getElementById('kpi-info').innerHTML = CRM.infoIcon('完成數＝任務狀態 completed；月值＝該月每日完成數平均。時段：早尖峰 07:00–08:59、晚尖峰 17:00–18:59、離峰＝全日扣除早晚尖峰之其餘時段（隨系統設定之尖峰區間調整自動連動，見 REQ-SET-001；對齊現行 Tableau KPI 口徑）；地區＝上車縣市（任務事件層級，REQ-OV-010）');
   var KPI_YEARS = [2024, 2025, 2026];
   var YEAR_COLORS = { 2024: 'var(--chart-4)', 2025: 'var(--chart-2)', 2026: 'var(--chart-1)' };
   var PEAK_LABEL = { morning: '早尖峰', evening: '晚尖峰', offpeak: '離峰' };
@@ -384,7 +404,7 @@
   }
 
   /* ═══ Tab 2：每日完成數 by 星期 ═══ */
-  document.getElementById('wd-info').innerHTML = CRM.infoIcon('每日完成率＝每日完成任務數 ÷ 每日有效任務數；日均完成任務數（累計）＝當月 1 日起至該日之完成數累計平均');
+  document.getElementById('wd-info').innerHTML = CRM.infoIcon('每日完成率＝每日完成任務數 ÷ 每日有效任務數；日均完成任務數（累計）＝當月 1 日起至該日之完成數累計平均；地區＝上車縣市（任務事件層級，REQ-OV-010）');
   function drawWeekday() {
     var y = num('f-year2'), m = num('f-month2'), f = factorOf(val('f-region2'));
     document.getElementById('wd-title').textContent = val('f-region2') + '・每日完成數 by 星期（' + y + ' 年 ' + m + ' 月）';
@@ -403,6 +423,8 @@
     ], am.length);
     // group by weekday（一 → 日）；星期欄以 rowspan 合併置中、日欄純數字
     var order = [1, 2, 3, 4, 5, 6, 0];
+    var rateInfo = CRM.infoIcon('每日完成率＝每日完成任務數 ÷ 每日有效任務數 ×100%（REQ-OV-010②）');
+    var cumInfo = CRM.infoIcon('日均完成（累計）＝當月 1 日起至該日之完成任務數累計平均（REQ-OV-010②）');
     var html = '<thead><tr>' +
       '<th class="wd" rowspan="2" style="text-align:center;vertical-align:middle">星期</th>' +
       '<th class="day-head" rowspan="2" style="vertical-align:middle">日</th>' +
@@ -410,9 +432,9 @@
       '<th class="grp" colspan="4" style="border-left:1px solid var(--border-soft)">晚尖峰</th>' +
       '<th class="grp" colspan="4" style="border-left:1px solid var(--border-soft)">離峰</th></tr>' +
       '<tr>' +
-      '<th style="border-left:1px solid var(--border-soft)">每日有效任務數</th><th>每日完成任務數</th><th>每日完成率</th><th>日均完成（累計）</th>' +
-      '<th style="border-left:1px solid var(--border-soft)">每日有效任務數</th><th>每日完成任務數</th><th>每日完成率</th><th>日均完成（累計）</th>' +
-      '<th style="border-left:1px solid var(--border-soft)">每日有效任務數</th><th>每日完成任務數</th><th>每日完成率</th><th>日均完成（累計）</th></tr></thead><tbody>';
+      '<th style="border-left:1px solid var(--border-soft)">每日有效任務數</th><th>每日完成任務數</th><th>每日完成率' + rateInfo + '</th><th>日均完成（累計）' + cumInfo + '</th>' +
+      '<th style="border-left:1px solid var(--border-soft)">每日有效任務數</th><th>每日完成任務數</th><th>每日完成率' + rateInfo + '</th><th>日均完成（累計）' + cumInfo + '</th>' +
+      '<th style="border-left:1px solid var(--border-soft)">每日有效任務數</th><th>每日完成任務數</th><th>每日完成率' + rateInfo + '</th><th>日均完成（累計）' + cumInfo + '</th></tr></thead><tbody>';
     order.forEach(function (wd) {
       var rows = [];
       am.forEach(function (r, i) { if (r.wd === wd) rows.push(i); });
@@ -437,7 +459,7 @@
   }
 
   /* ═══ Tab 3：每日任務數・完成狀況 ═══ */
-  document.getElementById('st-info').innerHTML = CRM.infoIcon('每日有效任務數＝完成＋取消＋未現＋有車無承接＋搜無車；各狀態欄＝筆數 / 佔比（該狀態 ÷ 每日有效任務數；2026-07-15 使用者走查：% 併入數字欄）');
+  document.getElementById('st-info').innerHTML = CRM.infoIcon('每日有效任務數＝完成＋取消＋未現＋有車無承接＋搜無車；各狀態欄＝筆數 / 佔比（該狀態 ÷ 每日有效任務數；2026-07-15 使用者走查：% 併入數字欄）；地區＝上車縣市（任務事件層級，REQ-OV-010）');
   function drawStatus() {
     var y = num('f-year3'), m = num('f-month3'), f = factorOf(val('f-region3'));
     var pk = document.getElementById('f-peak').value;
@@ -451,8 +473,11 @@
       { name: '每日有效任務數', color: 'var(--chart-4)', vals: days.map(function (r) { return Math.round(r.valid * f); }) },
       { name: '每日完成任務數', color: 'var(--chart-2)', vals: days.map(function (r) { return Math.round(r.done * f); }) }
     ], days.length, days.map(function (r) { return r.d; }));
-    var html = '<thead><tr><th>日（任務建立時間）</th><th class="wd">星期</th><th>每日有效任務數</th><th>隊員數</th>' +
-      '<th style="border-left:1px solid var(--border-soft)">完成 / %</th><th>取消 / %</th><th>未現 / %</th><th>有車無承接 / %</th><th>搜無車 / %</th></tr></thead><tbody>';
+    var validInfo = CRM.infoIcon('有效任務數＝五種任務狀態全數加總（完成＋取消＋未現＋有車無承接＋搜無車），不含「其他」狀態（名詞表；REQ-OV-010③）');
+    var otherInfo = CRM.infoIcon('「其他」狀態：定義待資料源確認、獨立列示不併入五狀態與有效任務數（REQ-OV-010③；§4.1 task_stats_district 註記）');
+    var html = '<thead><tr><th>日（任務建立時間）</th><th class="wd">星期</th><th>每日有效任務數' + validInfo + '</th><th>隊員數</th>' +
+      '<th style="border-left:1px solid var(--border-soft)">完成 / %</th><th>取消 / %</th><th>未現 / %</th><th>有車無承接 / %</th><th>搜無車 / %</th>' +
+      '<th style="border-left:1px solid var(--border-soft)">其他 / %' + otherInfo + '</th></tr></thead><tbody>';
     days.forEach(function (r) {
       var pf = function (n) { return Math.round(n / r.valid * 1000) / 10; };
       var donePct = pf(r.done);
@@ -466,7 +491,8 @@
         stCell(r.done, 'border-left:1px solid var(--border-soft);color:var(--fg-2);font-weight:500', pctCls(donePct)) +
         stCell(r.cancel) + stCell(r.noshow) +
         stCell(r.noaccept, 'color:var(--danger)') +
-        stCell(r.nocar) + '</tr>';
+        stCell(r.nocar) +
+        stCell(r.other, 'border-left:1px solid var(--border-soft);color:var(--muted)') + '</tr>';
     });
     html += '</tbody>';
     document.getElementById('status-table').innerHTML = html;
@@ -481,6 +507,7 @@
       Object.keys(PANES).forEach(function (k) {
         document.getElementById(PANES[k]).hidden = (k !== t.dataset.tab);
       });
+      navCommit && navCommit();
     });
   });
 
@@ -488,10 +515,60 @@
   ['f-region1', 'f-peak1'].forEach(function (id) { document.getElementById(id).addEventListener('change', drawKpi); });
   ['f-region2', 'f-year2', 'f-month2'].forEach(function (id) { document.getElementById(id).addEventListener('change', drawWeekday); });
   ['f-region3', 'f-year3', 'f-month3', 'f-peak', 'f-weekday'].forEach(function (id) { document.getElementById(id).addEventListener('change', drawStatus); });
-  [['btn-export1', '完成數 KPI'], ['btn-export2', '每日完成數 by 星期'], ['btn-export3', '每日任務數・完成狀況']].forEach(function (p) {
-    document.getElementById(p[0]).addEventListener('click', function () {
-      CRM.toast('匯出「' + p[1] + '」Excel／CSV（原型示意；正式版需 report.export 權限並記審計）');
+  /* ── CSV 匯出（真下載；共用邏輯見 app.js CRM.downloadCsv） ── */
+  function tableToRows(table) {
+    var rows = [];
+    table.querySelectorAll('tr').forEach(function (tr) {
+      var row = [];
+      tr.querySelectorAll('th,td').forEach(function (c) {
+        var clone = c.cloneNode(true);
+        // 口徑 ⓘ（REQ-GEN-002）為 UI hover 提示，其 tooltip 文字不應混入 CSV 標題列
+        clone.querySelectorAll('.crm-info').forEach(function (icon) { icon.remove(); });
+        row.push(clone.textContent.trim());
+      });
+      rows.push(row);
     });
+    return rows;
+  }
+  // Tab2 表格含 rowspan/colspan（星期合併儲存格＋分組表頭），DOM 直讀會錯位，改重用資料來源組平面表
+  function weekdayExportRows() {
+    var y = num('f-year2'), m = num('f-month2'), f = factorOf(val('f-region2'));
+    var am = monthDays(y, m, 'morning'), pm = monthDays(y, m, 'evening'), op = monthDays(y, m, 'offpeak');
+    function withCum(days) {
+      var sum = 0;
+      return days.map(function (r, i) { sum += r.done; return Math.round(sum / (i + 1)); });
+    }
+    var amCum = withCum(am), pmCum = withCum(pm), opCum = withCum(op);
+    var rows = [['星期', '日',
+      '早尖峰每日有效任務數', '早尖峰每日完成任務數', '早尖峰每日完成率', '早尖峰日均完成（累計）',
+      '晚尖峰每日有效任務數', '晚尖峰每日完成任務數', '晚尖峰每日完成率', '晚尖峰日均完成（累計）',
+      '離峰每日有效任務數', '離峰每日完成任務數', '離峰每日完成率', '離峰日均完成（累計）']];
+    [1, 2, 3, 4, 5, 6, 0].forEach(function (wd) {
+      am.forEach(function (r, i) {
+        if (r.wd !== wd) return;
+        var p = pm[i], o = op[i];
+        var amRate = Math.round(r.done / r.valid * 1000) / 10;
+        var pmRate = Math.round(p.done / p.valid * 1000) / 10;
+        var opRate = Math.round(o.done / o.valid * 1000) / 10;
+        rows.push([WD[wd], r.d,
+          Math.round(r.valid * f), Math.round(r.done * f), amRate + '%', Math.round(amCum[i] * f),
+          Math.round(p.valid * f), Math.round(p.done * f), pmRate + '%', Math.round(pmCum[i] * f),
+          Math.round(o.valid * f), Math.round(o.done * f), opRate + '%', Math.round(opCum[i] * f)]);
+      });
+    });
+    return rows;
+  }
+  document.getElementById('btn-export1').addEventListener('click', function () {
+    CRM.downloadCsv('完成數KPI_' + DB.meta.dataAsOf + '.csv', tableToRows(document.getElementById('kpi-table')));
+    CRM.toast('已下載（匯出寫入審計——原型示意）');
+  });
+  document.getElementById('btn-export2').addEventListener('click', function () {
+    CRM.downloadCsv('每日完成數by星期_' + DB.meta.dataAsOf + '.csv', weekdayExportRows());
+    CRM.toast('已下載（匯出寫入審計——原型示意）');
+  });
+  document.getElementById('btn-export3').addEventListener('click', function () {
+    CRM.downloadCsv('每日任務數完成狀況_' + DB.meta.dataAsOf + '.csv', tableToRows(document.getElementById('status-table')));
+    CRM.toast('已下載（匯出寫入審計——原型示意）');
   });
 
   function redraw() { drawKpi(); drawWeekday(); drawStatus(); }
@@ -503,7 +580,24 @@
     });
   });
 
+  document.getElementById('btn-retry').addEventListener('click', function () {
+    document.querySelector('[data-state="normal"]').click();
+    CRM.toast('已重新載入');
+  });
+
   redraw();
+
+  /* 頁內歷史（2026-07-16） */
+  function getViewState() {
+    var cur = document.querySelector('.tab[aria-selected="true"]');
+    return { tab: cur ? cur.dataset.tab : 'kpi' };
+  }
+  function applyViewState(st) {
+    var tab = (st && PANES[st.tab]) ? st.tab : 'kpi';
+    var el = document.querySelector('.tab[data-tab="' + tab + '"]');
+    if (el) el.click();
+  }
+  var navCommit = CRM.initPageHistory(getViewState, applyViewState);
 })();
 </script>
 

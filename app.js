@@ -5,18 +5,18 @@
 (function () {
   'use strict';
 
-  var STORE_KEY = 'crm55688_proto_v17';
+  var STORE_KEY = 'crm55688_proto_v19';
 
   /* 活動參加名單生成（deterministic；每活動 40 筆示意，前 3 筆為完整 Profile 假資料隊員） */
   function buildParticipants() {
     var SURNAMES = ['王', '林', '張', '李', '陳', '黃', '吳', '劉', '蔡', '楊'];
     var GIVEN = ['志明', '淑惠', '建宏', '雅婷', '俊傑', '美玲', '文雄', '麗華', '家豪', '怡君'];
-    var IDS = ['小黃', '小黃', '多元', '小黃', '試跑'];
+    var IDS = ['小黃', '小黃', '多元', '小黃', '多元試跑'];
     function gen(actKey, n) {
       var seedFixed = [
         { code: '123456', name: '陳大明', identity: '小黃', before: 5.2, after: 7.8 },
         { code: '0103', name: '林志偉', identity: '多元', before: 3.1, after: 4.6 },
-        { code: '0217', name: '張淑芬', identity: '試跑', before: 1.2, after: 1.9 }
+        { code: '0217', name: '張淑芬', identity: '多元試跑', before: 1.2, after: 1.9 }
       ];
       var list = seedFixed.slice();
       for (var i = 0; i < n - 3; i++) {
@@ -122,6 +122,22 @@
     ['台北', '桃園', '宜蘭'].forEach(function (rg) {
       branchRegions[rg] = fleetDict.filter(function (f) { return f.region === rg; }).map(function (f) { return f.name; });
     });
+    // 隊員每日／年趨勢種子（①REQ-PROF-002 趨勢粒度日/年：taskTrend daily/yearly，deterministic sine 種子，與 profile.html genMember 之 trend() 同構）
+    function buildDailyYearly(seedBase, monthlyTasks) {
+      function gen(base, n) {
+        var arr = [];
+        for (var j = 0; j < n; j++) {
+          var x = Math.sin((seedBase + j) * 12.9898) * 43758.5453;
+          var r = x - Math.floor(x);
+          arr.push(Math.max(1, Math.round(base * (0.88 + r * 0.24) + j * base * 0.015)));
+        }
+        return arr;
+      }
+      return { daily: gen(monthlyTasks / 30, 30), yearly: gen(monthlyTasks * 12, 3) };
+    }
+    var dy123456 = buildDailyYearly(101, 156);
+    var dy0103 = buildDailyYearly(202, 98);
+    var dy0217 = buildDailyYearly(303, 41);
     return {
       meta: {
         dataAsOf: '2026-07-06',        // 資料截至（昨日）
@@ -147,6 +163,24 @@
           { d: '新店區', tasks: 17651, accepted: 11982 },
           { d: '三重區', tasks: 21467, accepted: 14322 },
           { d: '新莊區', tasks: 20894, accepted: 14075 }
+        ],
+        '桃園市': [
+          { d: '桃園區', tasks: 15420, accepted: 10630 },
+          { d: '中壢區', tasks: 13980, accepted: 9540 },
+          { d: '平鎮區', tasks: 8760, accepted: 5850 },
+          { d: '龜山區', tasks: 7340, accepted: 4830 }
+        ],
+        '台中市': [
+          { d: '西屯區', tasks: 16850, accepted: 11720 },
+          { d: '北屯區', tasks: 14210, accepted: 9680 },
+          { d: '南屯區', tasks: 9870, accepted: 6650 },
+          { d: '西區', tasks: 7920, accepted: 5210 }
+        ],
+        '高雄市': [
+          { d: '左營區', tasks: 14680, accepted: 10020 },
+          { d: '三民區', tasks: 13120, accepted: 8830 },
+          { d: '鳳山區', tasks: 10450, accepted: 6980 },
+          { d: '苓雅區', tasks: 8290, accepted: 5460 }
         ]
       },
       // 活動清單（與 pages/activity.html 假資料同源，2026-07-14 手動同步；seg.js 指定活動下拉／handoff 查找、import.html 目標活動下拉共用。
@@ -201,7 +235,7 @@
           acceptRate: 32, joinedActivity: true, activityTypes: ['獎勵活動', '培訓課程'],
           monthlyTasks: 156, monthlyIncome: 48600, topDistricts: ['信義區', '南港區', '內湖區'],
           refuseReasons: ['低價', '距離遠', '目的地不符'],
-          taskTrend: { weekly: [34, 38, 36, 41, 39, 42, 40], monthly: [148, 152, 149, 158, 161, 156], quarterly: [438, 455, 471, 462] },
+          taskTrend: { daily: dy123456.daily, weekly: [34, 38, 36, 41, 39, 42, 40], monthly: [148, 152, 149, 158, 161, 156], quarterly: [438, 455, 471, 462], yearly: dy123456.yearly },
           incomeTrend: { monthly: [45200, 46800, 45900, 49100, 50200, 48600] },
           contacts: [
             { date: '2026-06-18 14:22', project: '6月晚尖峰意願調查', content: '意願：參加；不願承接原因：低價、距離遠', result: '參加' },
@@ -216,19 +250,19 @@
           acceptRate: 21, joinedActivity: true, activityTypes: ['獎勵活動'],
           monthlyTasks: 98, monthlyIncome: 31400, topDistricts: ['板橋區', '中和區', '三重區'],
           refuseReasons: ['低價'],
-          taskTrend: { weekly: [20, 22, 21, 25, 24, 26, 23], monthly: [88, 92, 95, 90, 101, 98], quarterly: [265, 278, 289, 284] },
+          taskTrend: { daily: dy0103.daily, weekly: [20, 22, 21, 25, 24, 26, 23], monthly: [88, 92, 95, 90, 101, 98], quarterly: [265, 278, 289, 284], yearly: dy0103.yearly },
           incomeTrend: { monthly: [28900, 29800, 30500, 29400, 32100, 31400] },
           contacts: [
             { date: '2026-05-30 11:15', project: '6月晚尖峰意願調查', content: '意願：參加', result: '參加' }
           ]
         },
         '0217': {
-          code: '0217', name: '張淑芬', identity: '試跑', region: '台北市', branch: '台北多元試跑', carModel: '商務型', fleetGroups: ['預設'],
+          code: '0217', name: '張淑芬', identity: '多元試跑', region: '台北市', branch: '台北多元試跑', carModel: '商務型', fleetGroups: ['預設'],
           onlineDays: { month: 9, quarter: 22, year: 61 }, evePeakDays: 4, mornPeakDays: 6,
           acceptRate: 8, joinedActivity: false, activityTypes: [],
           monthlyTasks: 41, monthlyIncome: 12800, topDistricts: ['大安區', '中山區', '松山區'],
           refuseReasons: [],
-          taskTrend: { weekly: [8, 10, 9, 11, 12, 10, 11], monthly: [32, 35, 38, 40, 43, 41], quarterly: [98, 105, 112, 119] },
+          taskTrend: { daily: dy0217.daily, weekly: [8, 10, 9, 11, 12, 10, 11], monthly: [32, 35, 38, 40, 43, 41], quarterly: [98, 105, 112, 119], yearly: dy0217.yearly },
           incomeTrend: { monthly: [9800, 10500, 11400, 12100, 13000, 12800] },
           contacts: []
         }
@@ -273,6 +307,31 @@
     if (n.length <= 1) return n;
     if (n.length === 2) return n.charAt(0) + '○';
     return n.charAt(0) + new Array(n.length - 1).join('○') + n.charAt(n.length - 1);
+  }
+
+  /* 電話去識別化（REQ-PROF-007 收窄：0912-345-678→0912-***-678，保留前四碼與末三碼；空值/待補/非預期格式原樣回傳） */
+  function maskPhone(p) {
+    p = String(p || '');
+    if (!p || p === '待補') return p;
+    var m = /^(\d{4})-(\d{3})-(\d{3})$/.exec(p);
+    if (!m) return p;
+    return m[1] + '-***-' + m[3];
+  }
+
+  /* ── CSV 匯出（BOM＋逗號/引號/換行跳脫；供各頁「匯出」鈕組 rows 後呼叫） ── */
+  function csvCell(v) {
+    v = v == null ? '' : String(v);
+    if (/["\n,]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
+    return v;
+  }
+  function downloadCsv(filename, rows) {
+    var text = rows.map(function (row) { return row.map(csvCell).join(','); }).join('\r\n');
+    var blob = new Blob(['\uFEFF' + text], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
   /* ── Toast（提示未完成頁面等） ── */
@@ -361,7 +420,7 @@
     { key: 'capacity', label: '運力分析', href: 'capacity.html', ready: true },  // 2026-07-13 重規劃：三分頁＝尖峰運力 YoY／承接率分析／缺口快速觀察（原運力查詢四子分頁歸檔）
     { key: 'profile', label: '隊員 Profile', href: 'profile.html', ready: true },
     { key: 'activity', label: '隊員活動', href: 'activity.html', ready: true },
-    { key: 'callcenter', label: '客服紀錄', href: 'callcenter.html', ready: true },
+    { key: 'callcenter', label: '客服外撥', href: 'callcenter.html', ready: true },  // 2026-07-16 使用者拍板改名（原「客服紀錄」）
     { key: 'import', label: '資料匯入', href: 'import.html', ready: true },
     { key: 'settings', label: '系統設定', href: 'settings.html', ready: true }
   ];
@@ -488,12 +547,37 @@
     });
   }
 
+  /* ── 頁內畫面歷史（2026-07-16 使用者拍板：所有 tab 切換＋下鑽記入瀏覽器歷史，「上一頁」先頁內回退再離開頁面） ──
+     頁面端用法：
+       var commit = CRM.initPageHistory(getViewState, applyViewState);
+       // getViewState()：回傳可 JSON 序列化的目前畫面狀態物件（tab、下鑽 id…）
+       // applyViewState(st)：把畫面切到指定狀態（冪等、不推歷史）
+       // 每個使用者觸發的切換 listener 末尾呼叫 commit()
+     popstate 還原期間 commit() 自動抑制；同狀態不重複推；不動 URL（既有 #act=／?m= 深連結不受影響） */
+  function initPageHistory(getState, applyState) {
+    var suppress = false;
+    var initial = getState();
+    window.addEventListener('popstate', function (e) {
+      suppress = true;
+      try { applyState(e.state || initial); } finally { suppress = false; }
+    });
+    history.replaceState(initial, '');
+    return function commit() {
+      if (suppress) return;
+      var st = getState();
+      if (JSON.stringify(history.state) === JSON.stringify(st)) return;
+      history.pushState(st, '');
+    };
+  }
+
   /* ── 匯出到全域 ── */
   window.CRM = {
     load: load, save: save, reset: reset,
-    fmt: fmt, pct: pct, maskName: maskName, toast: toast,
+    fmt: fmt, pct: pct, maskName: maskName, maskPhone: maskPhone, toast: toast,
     mountStateSwitcher: mountStateSwitcher,
     mountNav: mountNav,
-    infoIcon: infoIcon
+    infoIcon: infoIcon,
+    initPageHistory: initPageHistory,
+    downloadCsv: downloadCsv
   };
 })();

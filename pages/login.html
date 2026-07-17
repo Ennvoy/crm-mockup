@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>登入｜55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=29">
+<link rel="stylesheet" href="../tokens.css?v=35">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -73,16 +73,16 @@
 
   .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
   .field label { font-size: 13.5px; color: var(--fg-2); font-weight: 500; }
-  .field input[type="text"], .field input[type="password"] {
+  .field input[type="email"], .field input[type="password"] {
     border: 1px solid var(--border-soft); border-radius: 10px; padding: 12px 14px; font-size: 15px;
     font-family: inherit; background: var(--surface); color: var(--fg); min-height: 46px; width: 100%;
   }
   .field input:hover { border-color: #d1cfc5; }
   .pwd-wrap { position: relative; }
-  .pwd-wrap input { padding-right: 44px; }
+  .pwd-wrap input { padding-right: 50px; }
   .pwd-toggle {
     position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: transparent; border: none;
-    color: var(--muted); cursor: pointer; min-width: 36px; min-height: 36px; border-radius: 8px;
+    color: var(--muted); cursor: pointer; min-width: 44px; min-height: 44px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center; transition: background var(--motion-fast), color var(--motion-fast);
   }
   .pwd-toggle:hover { background: var(--surface-warm); color: var(--fg-2); }
@@ -120,10 +120,19 @@
   .role-toggle { display: inline-flex; background: var(--surface); border-radius: 9999px; padding: 2px; box-shadow: 0 0 0 1px var(--border-soft); margin-bottom: 10px; }
   .role-toggle button {
     border: none; background: transparent; padding: 6px 14px; border-radius: 9999px; font-size: 12.5px;
-    color: var(--muted); cursor: pointer; min-height: 30px; font-family: inherit;
+    color: var(--muted); cursor: pointer; min-height: 44px; min-width: 44px; font-family: inherit;
   }
   .role-toggle button[aria-pressed="true"] { background: var(--brand-55688); color: var(--brand-55688-on); font-weight: 500; }
   .forgot-text { font-size: 13px; color: var(--fg-2); line-height: 1.7; }
+
+  /* 示範帳號提示（登入卡下方，供走查 REQ-AUTH-007 首次登入強制改密碼） */
+  .demo-hint {
+    width: 100%; max-width: 420px; font-size: 12px; color: var(--muted); text-align: center;
+    line-height: 1.6; padding: 0 6px;
+  }
+  .demo-hint code {
+    background: var(--surface-warm); border-radius: 4px; padding: 1px 6px; font-family: inherit; color: var(--fg-2);
+  }
 
   /* 原型狀態切換 */
   .proto-switcher {
@@ -149,7 +158,7 @@
 <div class="bg-decor" aria-hidden="true"><div class="bg-dots"></div></div>
 
 <main class="login-wrap">
-  <div class="login-card">
+  <div class="login-card" id="login-card">
     <div class="idle-banner" id="idle-banner" role="alert" hidden>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3.2 2"/></svg>
       <span>閒置超過 8 小時，連線已失效，請重新登入（REQ-AUTH-003）</span>
@@ -164,7 +173,7 @@
     <form id="login-form" novalidate>
       <div class="field">
         <label for="f-acc">帳號</label>
-        <input id="f-acc" name="acc" type="text" autocomplete="username" placeholder="請輸入帳號">
+        <input id="f-acc" name="acc" type="email" autocomplete="username" placeholder="請輸入帳號">
       </div>
       <div class="field">
         <label for="f-pwd">密碼</label>
@@ -197,8 +206,61 @@
         <button type="button" data-role="user" aria-pressed="true">一般使用者</button>
         <button type="button" data-role="admin" aria-pressed="false">super admin</button>
       </div>
-      <div class="forgot-text" id="forgot-text"></div>
+      <div class="forgot-text" id="forgot-text-user"></div>
+
+      <div id="forgot-admin" hidden>
+        <div class="forgot-text">break-glass 自助重設：以綁定 email 收取重設連結，不需其他管理員介入；完成後系統自動寫入審計並即時通知其他啟用中 super admin（REQ-RBAC-003）。</div>
+        <div class="field" id="forgot-admin-form">
+          <label for="f-reset-email">綁定 email</label>
+          <input id="f-reset-email" type="email" placeholder="請輸入 super admin 綁定 email" autocomplete="email" required>
+        </div>
+        <button class="btn-login" id="btn-send-reset" type="button">寄送重設信</button>
+
+        <div id="forgot-admin-sent" role="status" aria-live="polite" hidden>
+          <div class="forgot-text" id="forgot-sent-text"></div>
+          <button class="link-forgot" id="btn-back-login" type="button">返回登入</button>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <div class="demo-hint">示範帳號：<code>newuser@55688.com.tw</code>（帳號含「new」即觸發首次登入強制改密碼流程，REQ-AUTH-007；密碼任意輸入即可）</div>
+
+  <div class="login-card" id="pwdchange-card" hidden>
+    <div class="brand-block">
+      <div class="brand-mark" aria-hidden="true">55688</div>
+      <div class="brand-title">首次登入請變更密碼</div>
+      <div class="brand-sub">為保障帳號安全，請先設定新密碼再繼續</div>
+    </div>
+
+    <form id="pwdchange-form" novalidate>
+      <div class="field">
+        <label for="pc-new">新密碼</label>
+        <div class="pwd-wrap">
+          <input id="pc-new" type="password" autocomplete="new-password" placeholder="請輸入新密碼">
+          <button class="pwd-toggle" id="pc-new-toggle" type="button" aria-label="顯示密碼">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="hint">至少 8 碼</div>
+      </div>
+      <div class="field">
+        <label for="pc-confirm">確認密碼</label>
+        <div class="pwd-wrap">
+          <input id="pc-confirm" type="password" autocomplete="new-password" placeholder="請再次輸入新密碼">
+          <button class="pwd-toggle" id="pc-confirm-toggle" type="button" aria-label="顯示密碼">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="error-box" id="pc-error" role="alert" hidden>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+        <span id="pc-error-text"></span>
+      </div>
+
+      <button class="btn-login" id="btn-pwdchange" type="submit">完成變更</button>
+    </form>
   </div>
 
   <div class="proto-switcher">
@@ -213,7 +275,7 @@
   </div>
 </main>
 
-<script src="../app.js?v=29"></script>
+<script src="../app.js?v=35"></script>
 <script>
 (function () {
   'use strict';
@@ -235,6 +297,8 @@
   var lockExtra = document.getElementById('lock-extra');
   var loginBtn = document.getElementById('btn-login');
   var form = document.getElementById('login-form');
+  var loginCard = document.getElementById('login-card');
+  var pwdchangeCard = document.getElementById('pwdchange-card');
   var currentState = 'default';
 
   function setState(state) {
@@ -249,43 +313,120 @@
     }
     lockExtra.hidden = (state !== 'locked');
     loginBtn.disabled = (state === 'locked');
+    /* 切換原型狀態時重置首次登入改密碼流程，回到一般登入卡（REQ-AUTH-007） */
+    loginCard.hidden = false;
+    pwdchangeCard.hidden = true;
   }
   document.getElementById('proto-state').addEventListener('change', function (e) { setState(e.target.value); });
 
-  /* 密碼顯示／隱藏 */
+  /* 密碼顯示／隱藏（共用：登入密碼欄＋首次登入改密碼卡的新密碼／確認密碼欄） */
+  function wirePwdToggle(toggleEl, inputEl) {
+    toggleEl.addEventListener('click', function () {
+      var showing = inputEl.type === 'text';
+      inputEl.type = showing ? 'password' : 'text';
+      toggleEl.setAttribute('aria-label', showing ? '顯示密碼' : '隱藏密碼');
+      toggleEl.innerHTML = showing ? ICON_EYE : ICON_EYE_OFF;
+    });
+  }
   var pwdInput = document.getElementById('f-pwd');
   var pwdToggle = document.getElementById('pwd-toggle');
-  pwdToggle.addEventListener('click', function () {
-    var showing = pwdInput.type === 'text';
-    pwdInput.type = showing ? 'password' : 'text';
-    pwdToggle.setAttribute('aria-label', showing ? '顯示密碼' : '隱藏密碼');
-    pwdToggle.innerHTML = showing ? ICON_EYE : ICON_EYE_OFF;
-  });
+  wirePwdToggle(pwdToggle, pwdInput);
+
+  /* 首次登入強制改密碼（REQ-AUTH-007，使用者拍板預設密碼模式）：
+     deterministic 示範新帳號＝帳號含「new」或等於示範帳號 newuser@55688.com.tw；
+     一般帳號登入行為不變（仍直接導向總覽）。 */
+  var DEMO_NEW_ACCOUNT = 'newuser@55688.com.tw';
+  var accInput = document.getElementById('f-acc');
+  function isFirstLoginAccount(acc) {
+    acc = String(acc || '').trim().toLowerCase();
+    if (!acc) return false;
+    return acc === DEMO_NEW_ACCOUNT || acc.indexOf('new') !== -1;
+  }
+  function showFirstLoginCard() {
+    loginCard.hidden = true;
+    pwdchangeCard.hidden = false;
+    pcNew.focus();
+  }
 
   /* 送出（Enter 或按鈕皆觸發 submit；原型直接放行，REQ-E2E-001） */
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (loginBtn.disabled) return;
     if (currentState === 'default' || currentState === 'idle') {
+      if (isFirstLoginAccount(accInput.value)) {
+        showFirstLoginCard();
+        return;
+      }
       location.href = 'overview.html';
     } else {
       CRM.toast('原型示意：目前為「' + STATE_LABEL[currentState] + '」狀態演示，不會真的登入');
     }
   });
 
+  /* 首次登入改密碼表單：新密碼／確認密碼驗證＋完成（REQ-AUTH-007） */
+  var pcForm = document.getElementById('pwdchange-form');
+  var pcNew = document.getElementById('pc-new');
+  var pcConfirm = document.getElementById('pc-confirm');
+  var pcError = document.getElementById('pc-error');
+  var pcErrorText = document.getElementById('pc-error-text');
+  wirePwdToggle(document.getElementById('pc-new-toggle'), pcNew);
+  wirePwdToggle(document.getElementById('pc-confirm-toggle'), pcConfirm);
+
+  pcForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (pcNew.value.length < 8) {
+      pcErrorText.textContent = '新密碼至少需 8 碼';
+      pcError.hidden = false;
+      pcNew.focus();
+      return;
+    }
+    if (pcNew.value !== pcConfirm.value) {
+      pcErrorText.textContent = '兩次輸入的密碼不一致，請重新輸入';
+      pcError.hidden = false;
+      pcConfirm.focus();
+      return;
+    }
+    pcError.hidden = true;
+    CRM.toast('密碼已變更（寫入審計）——正式版導向總覽');
+  });
+
   /* 忘記密碼（頁內展開，不跳頁；REQ-AUTH-004／REQ-RBAC-003） */
   var forgotBtn = document.getElementById('btn-forgot');
   var forgotPanel = document.getElementById('forgot-panel');
-  var forgotText = document.getElementById('forgot-text');
-  var ROLE_TEXT = {
-    user: '請聯繫管理員於後台重設（admin.users）；登入後可於個人選單自行變更密碼。',
-    admin: 'break-glass 自助重設：以綁定 email 收取重設連結；完成後寫入審計（動作／時間／來源 IP）並即時通知其他啟用中 super admin（REQ-RBAC-003）。'
-  };
+  var forgotTextUser = document.getElementById('forgot-text-user');
+  var forgotAdmin = document.getElementById('forgot-admin');
+  var forgotAdminForm = document.getElementById('forgot-admin-form');
+  var resetEmailInput = document.getElementById('f-reset-email');
+  var btnSendReset = document.getElementById('btn-send-reset');
+  var forgotAdminSent = document.getElementById('forgot-admin-sent');
+  var forgotSentText = document.getElementById('forgot-sent-text');
+  var btnBackLogin = document.getElementById('btn-back-login');
+  forgotTextUser.textContent = '請聯繫管理員於後台重設（admin.users）；登入後可於個人選單自行變更密碼。';
+
+  /* email 去識別化：沿用 CRM.maskName 遮罩規則，分別套用於帳號段與網域主段（示意，非真寄送） */
+  function maskEmailDisplay(email) {
+    var parts = String(email || '').split('@');
+    if (parts.length !== 2 || !parts[0] || !parts[1]) return '○○@○○';
+    var domainParts = parts[1].split('.');
+    var domainRest = domainParts.slice(1).join('.');
+    return CRM.maskName(parts[0]) + '@' + CRM.maskName(domainParts[0]) + (domainRest ? '.' + domainRest : '');
+  }
+
+  /* break-glass 表單重置：回到「輸入 email」步驟（切換角色分頁／關閉面板／返回登入時呼叫） */
+  function resetAdminFlow() {
+    resetEmailInput.value = '';
+    forgotAdminForm.hidden = false;
+    btnSendReset.hidden = false;
+    forgotAdminSent.hidden = true;
+  }
+
   function paintRole(role) {
     forgotPanel.querySelectorAll('.role-toggle button').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.role === role));
     });
-    forgotText.textContent = ROLE_TEXT[role];
+    forgotTextUser.hidden = (role !== 'user');
+    forgotAdmin.hidden = (role !== 'admin');
+    if (role === 'admin') resetAdminFlow();
   }
   forgotBtn.addEventListener('click', function () {
     var show = forgotPanel.hidden;
@@ -295,6 +436,28 @@
   });
   forgotPanel.querySelectorAll('.role-toggle button').forEach(function (b) {
     b.addEventListener('click', function () { paintRole(b.dataset.role); });
+  });
+
+  /* super admin break-glass：寄送重設信 → 切換為確認畫面（REQ-RBAC-003，示意無真寄送，deterministic） */
+  btnSendReset.addEventListener('click', function () {
+    var val = resetEmailInput.value.trim();
+    if (!val || !resetEmailInput.checkValidity()) {
+      CRM.toast('請輸入有效的 super admin 綁定 email');
+      resetEmailInput.focus();
+      return;
+    }
+    forgotSentText.textContent = '重設信已寄出至 ' + maskEmailDisplay(val) + '（示意）——連結 30 分鐘內有效；完成重設後寫入審計（REQ-SET-004）';
+    forgotAdminForm.hidden = true;
+    btnSendReset.hidden = true;
+    forgotAdminSent.hidden = false;
+    btnBackLogin.focus();
+  });
+
+  btnBackLogin.addEventListener('click', function () {
+    forgotPanel.hidden = true;
+    forgotBtn.setAttribute('aria-expanded', 'false');
+    resetAdminFlow();
+    forgotBtn.focus();
   });
 
   setState('default');

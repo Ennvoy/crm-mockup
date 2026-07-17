@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>隊員活動｜55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=29">
+<link rel="stylesheet" href="../tokens.css?v=35">
 <link rel="icon" href="data:,">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -384,7 +384,7 @@
             <select id="f-month" aria-label="選擇月份"><option value="all">全年</option></select>
             <select id="f-type" aria-label="選擇活動類型"><option value="all">全部類型</option></select>
             <label class="checkbox-line" style="padding:0 6px"><input type="checkbox" id="f-ongoing">僅進行中</label>
-            <button class="btn" id="btn-export-all" type="button">匯出</button>
+            <button class="btn" id="btn-export-all" type="button" title="需 report.export 權限（REQ-GEN-006）">匯出</button>
             <button class="btn btn-primary" id="btn-create-act" type="button" title="需 activity.manage 權限（原型以已授權管理者視角預覽）">＋建立活動</button>
           </div>
         </div>
@@ -400,10 +400,11 @@
         <div class="act-picker">
           <div class="filters" role="group" aria-label="單一活動選擇">
             <select id="o-year" aria-label="選擇年度"></select>
+            <select id="o-type" aria-label="選擇活動類型"></select>
             <select id="o-act" aria-label="選擇活動"></select>
           </div>
           <div style="display:flex;gap:8px">
-            <button class="btn" id="btn-export-dash" type="button">匯出</button>
+            <button class="btn" id="btn-export-dash" type="button" title="需 report.export 權限（REQ-GEN-006）">匯出</button>
             <button class="btn btn-primary" id="btn-edit-master" type="button">編輯主檔</button>
           </div>
         </div>
@@ -451,6 +452,7 @@
     <div class="state-icon" aria-hidden="true">⚠️</div>
     <div class="state-title">資料載入失敗</div>
     <div class="state-desc">連線發生問題（HTTP 500），請稍後再試。</div>
+    <button class="btn" id="btn-error-retry" type="button" style="margin-top:14px">重試</button>
   </div>
   <div class="state-layer" id="st-forbidden">
     <div class="state-icon" aria-hidden="true">🔒</div>
@@ -477,8 +479,8 @@
       <div class="field"><label for="m-type">活動類型</label><select id="m-type"></select></div>
     </div>
     <div class="field-row">
-      <div class="field"><label for="m-start">活動起始日</label><input id="m-start" type="date"></div>
-      <div class="field"><label for="m-end">活動迄止日</label><input id="m-end" type="date"></div>
+      <div class="field"><label for="m-start">活動起始日</label><input id="m-start" type="date" min="2020-01-01" max="2035-12-31"></div>
+      <div class="field"><label for="m-end">活動迄止日</label><input id="m-end" type="date" min="2020-01-01" max="2035-12-31"></div>
     </div>
 
     <div class="field">
@@ -499,18 +501,18 @@
       <div class="readonly-box" id="m-period-box"></div>
       <div class="checkbox-line" style="margin-top:8px"><input type="checkbox" id="m-baseline-toggle"><label for="m-baseline-toggle">自訂前期起訖（預設為與活動天數等長之鏡像區間）</label></div>
       <div class="field-row" id="m-baseline-custom-wrap" hidden style="margin-top:8px">
-        <div class="field"><label for="m-baseline-start">前期起始日</label><input id="m-baseline-start" type="date"></div>
-        <div class="field"><label for="m-baseline-end">前期迄止日</label><input id="m-baseline-end" type="date"></div>
+        <div class="field"><label for="m-baseline-start">前期起始日</label><input id="m-baseline-start" type="date" min="2020-01-01" max="2035-12-31"></div>
+        <div class="field"><label for="m-baseline-end">前期迄止日</label><input id="m-baseline-end" type="date" min="2020-01-01" max="2035-12-31"></div>
       </div>
     </div>
     <div class="field-row">
       <div class="field"><label>排除日期・前期 <span class="crm-info" id="m-excl-base-info"></span></label>
         <div class="excl-row" id="m-excl-base-chips"></div>
-        <div class="excl-add"><input type="date" id="m-excl-base-date"><button class="btn btn-sm" type="button" id="m-excl-base-add">＋新增</button></div>
+        <div class="excl-add"><input type="date" id="m-excl-base-date" min="2020-01-01" max="2035-12-31"><button class="btn btn-sm" type="button" id="m-excl-base-add">＋新增</button></div>
       </div>
       <div class="field"><label>排除日期・活動期間 <span class="crm-info" id="m-excl-cur-info"></span></label>
         <div class="excl-row" id="m-excl-cur-chips"></div>
-        <div class="excl-add"><input type="date" id="m-excl-cur-date"><button class="btn btn-sm" type="button" id="m-excl-cur-add">＋新增</button></div>
+        <div class="excl-add"><input type="date" id="m-excl-cur-date" min="2020-01-01" max="2035-12-31"><button class="btn btn-sm" type="button" id="m-excl-cur-add">＋新增</button></div>
       </div>
     </div>
 
@@ -572,12 +574,35 @@
   </div>
 </div>
 
-<script src="../app.js?v=29"></script>
+<script src="../app.js?v=35"></script>
 <script>
 (function () {
   'use strict';
   var DB = CRM.load();
   CRM.mountNav('activity', DB.meta.dataAsOf);
+
+  /* ── 接收分群篩選帶入活動 TA（REQ-ACT-015①／REQ-SEG-006：localStorage['crm-act-ta']={codes,cond}，讀取後即清 key，避免重整頁面重複套用） ── */
+  function handoffCondText(c) {
+    if (!c) return '';
+    var parts = [];
+    if (c.region && c.region.length) parts.push(c.region.join('/'));
+    if (c.identity && c.identity.length) parts.push(c.identity.join('/'));
+    if (c.tier) parts.push(c.tier);
+    return parts.length ? '（條件：' + parts.join('・') + '）' : '';
+  }
+  var TA_HANDOFF = null;
+  (function receiveSegTA() {
+    try {
+      var raw = localStorage.getItem('crm-act-ta');
+      if (!raw) return;
+      var parsed = JSON.parse(raw);
+      localStorage.removeItem('crm-act-ta');
+      if (parsed && Array.isArray(parsed.codes) && parsed.codes.length) {
+        TA_HANDOFF = parsed;
+        CRM.toast('已接收分群名單 ' + CRM.fmt(parsed.codes.length) + ' 筆' + handoffCondText(parsed.cond) + '（可於建立活動 TA 帶入）');
+      }
+    } catch (e) { /* 壞資料忽略 */ }
+  })();
 
   /* ── 決定性亂數（禁 Math.random/Date.now） ── */
   function rnd(s, k) { var x = Math.sin(s * 12.9898 + (k || 1) * 78.233) * 43758.5453; return x - Math.floor(x); }
@@ -643,6 +668,13 @@
     'ACT-2026-06B|多元': [[0,1,1],[3,4,3],[5,6,5],[3,4,4]]
   };
 
+  /* ── 結算檔缺日示範（REQ-ACT-023③：中間缺日不以 0 計入該週達標與獎勵，對應週標示「資料未完整」，沿 REQ-ACT-007 樣式） ── */
+  var MISSING_SETTLE_DAYS = { 'ACT-2026-06A|小黃': { 1: 2 } };
+  function missingDaysOf(a, idn, w) {
+    var m = MISSING_SETTLE_DAYS[a.id + '|' + idn];
+    return (m && m[w]) || 0;
+  }
+
   /* ══════════════ 活動主檔（決定性；含新欄位：tierDim/taSplit/對象條件/描述性欄位；純觀察型概念 2026-07-15 使用者拍板移除） ══════════════ */
   function mkAct(o) {
     var a = {
@@ -655,20 +687,22 @@
       metrics: { task: true, online: true, revenue: true, accept: true },
       cond: o.cond || { region: [o.region], identity: ['小黃', '多元'], tier: '' },
       descGoal: o.descGoal || '', descReward: o.descReward || '',
-      taSeg: o.taSeg || 0, taImport: o.taImport || o.taTotal, note: o.note || '',
-      customNote: o.note || null, _dash: null
+      taSeg: o.taSeg || 0, taImport: o.taImport || o.taTotal, taSettle: o.taSettle || 0, note: o.note || '',
+      customNote: o.note || null, noSettleData: !!o.noSettleData, _dash: null
     };
     return a;
   }
   var ALL_ACTS = [
     mkAct({ id: 'ACT-2026-06A', name: '雙北地區進步獎', type: '晚尖峰', start: '2026-06-01', end: '2026-07-31',
       region: '雙北', tierDim: 'accept', taTotal: 1264, taSplit: { '小黃': 831, '多元': 330, '多元試跑': 103 },
-      scopeMode: 'pm', taSeg: 980, taImport: 284,
+      scopeMode: 'pm', taSeg: 980, taImport: 284, taSettle: 47,
+      cond: { region: ['雙北'], identity: ['小黃'], tier: '承接率 40% 以上' },
+      exclBase: ['2026-05-20'], exclCurrent: ['2026-06-12', '2026-07-02'],
       descGoal: '單週承接率較前期提升並維持晚尖峰上線時數。', descReward: '達標當週依承接率級距發放 300～500 元獎勵金。',
       note: '雙北晚尖峰（17:00–18:59）承接率進步獎，成效以晚尖峰時段計，達標依每日結算獎勵金額。' }),
     mkAct({ id: 'ACT-2026-06B', name: '桃園早尖峰衝刺獎', type: '早尖峰', start: '2026-06-15', end: '2026-07-31',
       region: '桃園', tierDim: 'tasks', taTotal: 386, taSplit: { '小黃': 300, '多元': 86, '多元試跑': 0 }, emptyIdentities: ['多元試跑'],
-      scopeMode: 'am', taSeg: 300, taImport: 86,
+      scopeMode: 'am', taSeg: 300, taImport: 86, taSettle: 12,
       descGoal: '單週早尖峰完成任務數達 4 趟以上。', descReward: '依當週完成任務數級距發放 200～400 元。',
       note: '桃園早尖峰（07:00–08:59）任務衝刺獎，示範任務數四級距（0／1–3／4–6／7+ 趟）；本活動無多元試跑參加者。' }),
     mkAct({ id: 'ACT-2026-06C', name: '夏季通勤加碼獎', type: '早尖峰', start: '2026-06-08', end: '2026-07-04',
@@ -679,11 +713,12 @@
       region: '雙北', tierDim: 'online', taTotal: 642, scopeMode: 'all',
       note: '新進隊員上線天數獎勵，示範上線天數級距；統計已凍結。' }),
     mkAct({ id: 'ACT-2026-04E', name: '4月早尖峰達人賽', type: '早尖峰', start: '2026-04-01', end: '2026-04-30',
-      region: '桃園', tierDim: 'tasks', taTotal: 508, scopeMode: 'am',
-      note: '早尖峰任務達人賽，統計已凍結。' }),
+      region: '桃園', tierDim: 'tasks', taTotal: 508, scopeMode: 'am', noSettleData: true,
+      note: '早尖峰任務達人賽；結算檔案缺漏、查無任何結算資料，示範達標/獎勵區空狀態（REQ-ACT-023①）。' }),
     mkAct({ id: 'ACT-2026-02F', name: '春節加碼獎勵', type: '節慶關懷', start: '2026-02-10', end: '2026-02-20',
       region: '雙北', tierDim: 'online', taTotal: 1830, scopeMode: 'all',
-      note: '春節期間關懷加碼，統計已凍結。' })
+      cond: { region: [], identity: [], tier: '' },
+      note: '春節期間關懷加碼，統計已凍結；本活動無指定對象條件，示範「全體」呈現（REQ-ACT-001）。' })
   ];
   var ACT_BY_ID = {};
   ALL_ACTS.forEach(function (a) { ACT_BY_ID[a.id] = a; });
@@ -697,6 +732,28 @@
     if (a.end > TODAY) return { key: 'ongoing', label: '進行中', badge: 'ongoing', desc: '每日匯入後 T+1 更新' };
     if (TODAY <= addDays(a.end, 3)) return { key: 'grace', label: '已結束・結算收件中', badge: 'grace', desc: '迄日後 T+3 結算收件寬限窗內' };
     return { key: 'frozen', label: '已結束（統計凍結）', badge: 'frozen', desc: '逾寬限窗、統計凍結' };
+  }
+  /* 活動對象條件摘要（REQ-ACT-001：地區／身份別／級距區間；無條件顯示「全體」） */
+  function condSummaryOf(a) {
+    var c = a.cond;
+    if (!c) return '全體';
+    var parts = [];
+    if (c.region && c.region.length) parts.push(c.region.join('/'));
+    if (c.identity && c.identity.length) parts.push(c.identity.join('/'));
+    if (c.tier) parts.push(c.tier);
+    return parts.length ? parts.join('・') : '全體';
+  }
+  /* 前期視窗（活動層，REQ-ACT-011：無自訂前期時＝與活動天數等長之鏡像區間，回填邏輯同 newFormState/formBaseWindow） */
+  function baselineWindowOf(a) {
+    if (a.baselineOverride) return { start: a.baselineOverride.start, end: a.baselineOverride.end };
+    var n = daysBetween(a.start, a.end), end = addDays(a.start, -1);
+    return { start: addDays(end, -(n - 1)), end: end };
+  }
+  /* 前期視窗×跨活動日期比對（REQ-ACT-013：前期視窗與前一檔活動期間重疊時報表應標註提示） */
+  function overlapActs(a) {
+    var bw = baselineWindowOf(a);
+    return ALL_ACTS.filter(function (b) { return b.id !== a.id && bw.start <= b.end && bw.end >= b.start; })
+      .sort(function (x, y) { return x.start < y.start ? -1 : 1; });
   }
   function boundsEqual(x, y) {
     if (x.length !== y.length) return false;
@@ -804,6 +861,9 @@
       if (a.emptyIdentities.indexOf(idn) >= 0) { per[idn] = null; return; }
       var taFinal = a.taSplit ? a.taSplit[idn] : Math.round(a.taTotal * [0.66, 0.26, 0.08][ix]);
       var taWeekly = growing(taFinal, nW);
+      // 起算日人工調整回溯重算（REQ-ACT-016）：依已調整之參加隊員清單重算受影響各週分母（結算事實／達標人次不變，僅分母）
+      var taAdj = taAdjustmentDeltas(a, idn, weeks);
+      for (var wai = 0; wai < nW; wai++) taWeekly[wai] = Math.max(0, taWeekly[wai] + taAdj[wai]);
       // 硬編碼矩陣（PPT 轉錄）只在邊界＝預設時使用；邊界被編輯過＝派生 dim，一律改走生成（桶數/語意已變）
       var matrix = (dim === DIMS[a.tierDim] && MATRIX_DATA[a.id + '|' + idn]) || genMatrix(a, idn, dim, nW, taWeekly);
       var nT = matrix.length;
@@ -876,7 +936,7 @@
         '</div>';
     }).join('');
     host.querySelectorAll('.sum-card').forEach(function (card) {
-      function go() { switchTab('one'); openActivity(card.dataset.go); }
+      function go() { switchTab('one'); openActivity(card.dataset.go); navCommit && navCommit(); }
       card.addEventListener('click', go);
       card.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
     });
@@ -905,6 +965,7 @@
     return a.start.slice(0, 7) <= target && a.end.slice(0, 7) >= target;
   }
   var justCreated = [];
+  var lastAllRows = [];
   function drawAllTable() {
     var year = document.getElementById('f-year').value;
     var month = document.getElementById('f-month').value === 'all' ? 'all' : Number(document.getElementById('f-month').value);
@@ -922,6 +983,7 @@
       rows.forEach(function (a) { (justCreated.indexOf(a.id) >= 0 ? pin : rest).push(a); });
       rows = pin.concat(rest);
     }
+    lastAllRows = rows;
     var tbl = '<thead><tr><th>活動名稱</th><th>類型</th><th>狀態</th><th>參加隊員數</th><th>活動前 → 迄今日均</th><th>因活動增加任務總數</th></tr></thead><tbody>';
     rows.forEach(function (a) {
       var st = statusOf(a), tc = taskChange(a);
@@ -939,36 +1001,97 @@
     document.getElementById('all-table').innerHTML = tbl;
     document.getElementById('all-empty').hidden = rows.length > 0;
     document.querySelectorAll('#all-table .mrow').forEach(function (tr) {
-      function go() { switchTab('one'); openActivity(tr.dataset.act); }
+      function go() { switchTab('one'); openActivity(tr.dataset.act); navCommit && navCommit(); }
       tr.addEventListener('click', go);
       tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
     });
   }
   ['f-year', 'f-month', 'f-type', 'f-ongoing'].forEach(function (id) { document.getElementById(id).addEventListener('change', drawAllTable); });
-  document.getElementById('btn-export-all').addEventListener('click', function () { CRM.toast('原型示意：正式版將依當前檢視匯出 Excel/CSV（REQ-ACT-006）'); });
+  document.getElementById('btn-export-all').addEventListener('click', function () {
+    var year = document.getElementById('f-year').value;
+    var month = document.getElementById('f-month').value;
+    var csvRows = [['活動名稱', '類型', '狀態', '參加隊員數', '活動前均（趟/日）', '迄今日均（趟/日）', '因活動增加任務總數（趟）']];
+    lastAllRows.forEach(function (a) {
+      var st = statusOf(a), tc = taskChange(a);
+      csvRows.push([a.name, a.type, (st.key === 'ongoing' ? '● ' : '') + st.label, a.taTotal, tc.before, tc.after, tc.extra]);
+    });
+    CRM.downloadCsv('隊員活動_所有活動_' + year + (month === 'all' ? '' : '-' + month) + '.csv', csvRows);
+    CRM.toast('已下載（匯出寫入審計——原型示意）');
+  });
   document.getElementById('btn-create-act').addEventListener('click', function () { openModal('create', null); });
   document.getElementById('btn-create-empty').addEventListener('click', function () { openModal('create', null); });
 
   /* ══════════════ Tab② 單一活動：身份別儀表板（REQ-ACT-013/019/020） ══════════════ */
-  var oneState = { actId: null, identity: '小黃', drill: null, q: '', page: 1, pageSize: 10, showList: false };
+  var oneState = { actId: null, identity: '小黃', drill: null, q: '', page: 1, pageSize: 10, showList: false, psort: null };
 
   document.getElementById('o-year').innerHTML = YEAR_LIST.map(function (y) { return '<option value="' + y + '"' + (y === curYear ? ' selected' : '') + '>' + y + ' 年</option>'; }).join('');
-  function fillActSelect(year) {
-    var opts = ALL_ACTS.filter(function (a) { return a.start.slice(0, 4) === year || a.end.slice(0, 4) === year; }).sort(function (a, b) { return b.start < a.start ? -1 : 1; });
+  /* 活動類型篩選（REQ-ACT-003）：選項限本頁種子資料實際涵蓋之類型，連動過濾活動下拉選項 */
+  var O_TYPES = ['全部', '晚尖峰', '早尖峰', '車組招募', '節慶關懷'];
+  document.getElementById('o-type').innerHTML = O_TYPES.map(function (t) { return '<option value="' + (t === '全部' ? 'all' : t) + '">' + t + '</option>'; }).join('');
+  function fillActSelect(year, type) {
+    var ty = type || 'all';
+    var opts = ALL_ACTS.filter(function (a) { return (a.start.slice(0, 4) === year || a.end.slice(0, 4) === year) && (ty === 'all' || a.type === ty); }).sort(function (a, b) { return b.start < a.start ? -1 : 1; });
     document.getElementById('o-act').innerHTML = opts.map(function (a) { return '<option value="' + a.id + '">' + a.name + '（' + a.type + '）</option>'; }).join('');
     return opts;
+  }
+  function selectActivity(actId) {
+    oneState.actId = actId; oneState.identity = '小黃'; oneState.drill = null; oneState.q = ''; oneState.page = 1; oneState.showList = false; oneState.psort = null;
+    renderOne();
   }
   function openActivity(actId) {
     var a = ACT_BY_ID[actId];
     document.getElementById('o-year').value = a.start.slice(0, 4);
-    fillActSelect(a.start.slice(0, 4));
+    document.getElementById('o-type').value = 'all';
+    fillActSelect(a.start.slice(0, 4), 'all');
     document.getElementById('o-act').value = actId;
-    oneState.actId = actId; oneState.identity = '小黃'; oneState.drill = null; oneState.q = ''; oneState.page = 1; oneState.showList = false;
-    renderOne();
+    selectActivity(actId);
   }
-  document.getElementById('o-year').addEventListener('change', function () { var opts = fillActSelect(this.value); if (opts.length) openActivity(opts[0].id); });
-  document.getElementById('o-act').addEventListener('change', function () { openActivity(this.value); });
-  document.getElementById('btn-export-dash').addEventListener('click', function () { CRM.toast('原型示意：儀表板匯出＝KPI＋矩陣＋週貢獻度對照表（REQ-ACT-006）'); });
+  function onYearOrTypeChange() {
+    var opts = fillActSelect(document.getElementById('o-year').value, document.getElementById('o-type').value);
+    if (opts.length) { document.getElementById('o-act').value = opts[0].id; selectActivity(opts[0].id); }
+    else {
+      document.getElementById('dash-body').innerHTML = '<div class="empty-box">此年度／活動類型組合尚無活動資料。</div>';
+      document.getElementById('act-status').innerHTML = ''; document.getElementById('id-subtabs').innerHTML = '';
+    }
+    navCommit && navCommit();
+  }
+  document.getElementById('o-year').addEventListener('change', onYearOrTypeChange);
+  document.getElementById('o-type').addEventListener('change', onYearOrTypeChange);
+  document.getElementById('o-act').addEventListener('change', function () { selectActivity(this.value); navCommit && navCommit(); });
+  document.getElementById('btn-export-dash').addEventListener('click', function () {
+    var a = ACT_BY_ID[oneState.actId];
+    if (!a) { CRM.toast('請先選擇活動'); return; }
+    if (a.noSettleData) { CRM.toast('此活動尚無結算資料，無可匯出'); return; }
+    var d = buildDash(a), idn = oneState.identity, p = d.per[idn], dim = d.dim;
+    if (!p) { CRM.toast('此身份別無參加者，無可匯出資料'); return; }
+    var csvRows = [
+      ['活動名稱', a.name],
+      ['身份別', idn],
+      ['級距維度', dim.name],
+      [],
+      ['KPI', '數值'],
+      ['參加者數（人）', p.taFinal],
+      ['累計達標人次', p.cumHit],
+      ['週達標平均（人/週）', p.weekAvg],
+      ['週達標率平均（%）', Math.round(p.rateAvg * 10) / 10],
+      ['整體判斷', p.judge.t],
+      [],
+      ['級距×週達標矩陣']
+    ];
+    var header = ['級距'];
+    d.weeks.forEach(function (w) { header.push(w.label + ' 達標（人）', w.label + ' 參加（人）', w.label + ' 達標率（%）'); });
+    csvRows.push(header);
+    for (var t = 0; t < p.nT; t++) {
+      var row = [dim.labels[t]];
+      for (var w = 0; w < d.weeks.length; w++) {
+        var hit = p.matrix[t][w], tta = p.tierTAweek[w][t];
+        row.push(hit, tta, tta > 0 ? Math.round(hit / tta * 1000) / 10 : '');
+      }
+      csvRows.push(row);
+    }
+    CRM.downloadCsv('隊員活動_' + a.name + '_' + idn + '.csv', csvRows);
+    CRM.toast('已下載（匯出寫入審計——原型示意）');
+  });
 
   function renderOne() {
     var a = ACT_BY_ID[oneState.actId];
@@ -978,25 +1101,36 @@
     document.getElementById('btn-edit-master').onclick = function () { openModal('edit', a); };
     // 狀態列
     var asof = a.end > ACT_DATA_CUTOFF ? ACT_DATA_CUTOFF : a.end;
+    var overlaps = overlapActs(a), bw = baselineWindowOf(a);
     document.getElementById('act-status').innerHTML =
       '<span class="act-badge ' + st.badge + '">' + (st.key === 'ongoing' ? '● ' : '') + st.label + '</span>' +
       '<span>' + a.type + '・' + a.region + '・' + a.start + ' ~ ' + a.end + '</span>' +
       '<span>成效計算時段：<span class="scope-chip">' + scopeLabel(a) + '</span></span>' +
+      '<span>對象：' + condSummaryOf(a) + CRM.infoIcon('活動對象條件（地區／身份別／級距區間），供顯示與頁內篩選；TA 名單實際來源見 REQ-ACT-015（REQ-ACT-001）') + '</span>' +
       '<span>資料截至 ' + asof + '</span>' +
-      (st.key === 'grace' ? '<span>' + CRM.infoIcon('迄日 ' + a.end + ' 後 T+3 寬限窗內到達之結算仍納入並觸發重算，寬限窗結束後統計凍結（SR-RT-130）') + '</span>' : '');
+      (st.key === 'ongoing' ? '<span class="act-badge warn">資料截至 ' + TODAY + '——活動進行中、資料未完整' + CRM.infoIcon('活動期間之任務統計資料（task_stats_member）尚未涵蓋至活動迄日（資料截至早於迄日），REQ-ACT-007；結算資料缺日之處置依 REQ-ACT-023③') + '</span>' : '') +
+      (st.key === 'grace' ? '<span>' + CRM.infoIcon('迄日 ' + a.end + ' 後 T+3 寬限窗內到達之結算仍納入並觸發重算，寬限窗結束後統計凍結（SR-RT-130）') + '</span>' : '') +
+      '<span>前期已排除 ' + a.exclBase.length + ' 日／活動期間已排除 ' + a.exclCurrent.length + ' 日' + CRM.infoIcon('前期與活動期間皆可設定排除日期（颱風日／連假等）；被排除日不計入統計、日均以有效天數計，新增／修改寫入審計日誌（REQ-ACT-011）') + '</span>' +
+      (overlaps.length ? '<span class="act-badge warn">⚠ 前期視窗與『' + overlaps.map(function (b) { return b.name; }).join('、') + '』期間重疊' + CRM.infoIcon('本活動前期視窗 ' + bw.start + ' ~ ' + bw.end + ' 與上述活動之活動期間有重疊日；前期快照定桶取自此視窗，可能受重疊活動影響（REQ-ACT-013）') + '</span>' : '');
     // 身份別 sub-tab
     document.getElementById('id-subtabs').innerHTML = WK_IDENTITIES.map(function (idn) {
       var empty = a.emptyIdentities.indexOf(idn) >= 0;
       return '<button class="sub-tab" role="tab" data-id="' + idn + '" aria-selected="' + (idn === oneState.identity) + '"' + (empty ? ' title="此活動無此身份別參加者"' : '') + ' type="button">' + idn + (empty ? '（無）' : '') + '</button>';
     }).join('');
     document.querySelectorAll('#id-subtabs .sub-tab').forEach(function (b) {
-      b.addEventListener('click', function () { oneState.identity = b.dataset.id; oneState.drill = null; oneState.q = ''; oneState.page = 1; oneState.showList = false; renderOne(); });
+      b.addEventListener('click', function () { oneState.identity = b.dataset.id; oneState.drill = null; oneState.q = ''; oneState.page = 1; oneState.showList = false; oneState.psort = null; renderOne(); navCommit && navCommit(); });
     });
     renderDash(a, d);
   }
 
   function renderDash(a, d) {
     var idn = oneState.identity, host = document.getElementById('dash-body');
+    // 空狀態：活動查無任何結算資料（結算來源為空，REQ-ACT-023①）
+    if (a.noSettleData) {
+      host.innerHTML = '<div class="dash-head"><span class="dh-icon">' + ID_ICON[idn] + '</span><div><div class="dh-title">' + a.name + '活動分析 — ' + idn + '</div></div></div>' +
+        '<div class="empty-box">尚無結算資料——結算檔匯入後自動生成</div>';
+      return;
+    }
     var p = d.per[idn];
     // 空狀態：無此身份別 TA（REQ-ACT-023②）
     if (!p) {
@@ -1023,7 +1157,7 @@
     html += '<div class="dash-cols">' +
       '<div class="dash-panel"><div class="dp-title">各' + dim.name + '級距單週達標情況 <span class="soft-label">（達標數 / 參加人數・達標率，格或級距列可點下鑽）</span></div>' +
       '<div class="panel-note" style="margin:2px 0 10px">級距軸＝主檔設定（本活動：' + dim.name + '）；級距歸屬＝前期快照定桶；格內達標率分母＝該週該級距已起算 TA　' + CRM.infoIcon('前期快照（2026-07-15 拍板，取代逐週歸屬）：每位參加者以「活動層前期視窗」（活動起始日往前等長鏡像）的' + dim.name + '一次定桶、整檔固定——每一列都是固定同一群人，呈現被活動逐週帶動的軌跡；活動期間的級距移動見下方「級距移動分析」。歷史週數字不因事後查看變動；僅結算寬限窗補件、名單補正、起算日調整會回溯重算（皆寫審計），寬限窗結束＝統計凍結（REQ-ACT-013／016／017）') + '</div>' +
-      '<div class="chart-wrap">' + matrixHtml(a, d, p) + '</div>' +
+      '<div class="chart-wrap">' + matrixHtml(a, d, p, idn) + '</div>' +
       matrixNote(dim, p) + '</div>' +
       '<div class="dash-panel"><div class="dp-title">週貢獻度表現 <span class="soft-label">' + idn + '單週達標人數</span></div>' +
       barChartHtml(p.weekHit, d.weeks) +
@@ -1052,10 +1186,13 @@
   }
 
   /* ── 矩陣 ── */
-  function matrixHtml(a, d, p) {
+  function matrixHtml(a, d, p, idn) {
     var dim = d.dim, weeks = d.weeks;
     var html = '<table class="wk-matrix" aria-label="級距×週達標矩陣"><thead><tr><th>級距</th>' +
-      weeks.map(function (w) { return '<th>' + w.label + '</th>'; }).join('') + '</tr></thead><tbody>';
+      weeks.map(function (w, wi) {
+        var md = missingDaysOf(a, idn, wi);
+        return '<th>' + w.label + (md ? '<br><span class="act-badge warn" style="font-size:10px;padding:2px 7px;margin-top:2px">資料未完整' + CRM.infoIcon('本週結算檔缺 ' + md + ' 日：缺日不以 0 計，該週達標與分母（已起算 TA 人數）已排除缺日對應天數（REQ-ACT-023③，沿 REQ-ACT-007 樣式）') + '</span>' : '') + '</th>';
+      }).join('') + '</tr></thead><tbody>';
     var hiIdx = p.nT - 1;
     for (var t = 0; t < p.nT; t++) {
       var isHi = (t === hiIdx);
@@ -1238,6 +1375,24 @@
   var GIVEN = ['志明', '淑惠', '建宏', '雅婷', '俊傑', '美玲', '文雄', '麗華', '家豪', '怡君'];
   var PART_CACHE = {};
   function nextMonday(dateStr) { var m = mondayOf(dateStr); return m <= dateStr ? addDays(m, 7) : m; }
+  /* 起算日回溯重算（REQ-ACT-016）：週索引比對＋各週分母調整量（±1／人），供 buildDash 依已調整之參加隊員起算日重算各週 TA 分母 */
+  function weekIndexOf(weeks, dateStr) {
+    for (var i = 0; i < weeks.length; i++) if (dateStr <= weeks[i].end) return i;
+    return weeks.length;
+  }
+  function taAdjustmentDeltas(a, idn, weeks) {
+    var nW = weeks.length, arr = []; for (var i = 0; i < nW; i++) arr.push(0);
+    var list = PART_CACHE[a.id + '|' + idn];
+    if (!list) return arr; // 尚未生成參加隊員清單快取＝尚無人工調整
+    list.forEach(function (p) {
+      if (!p.startAdjusted) return;
+      var oldIdx = weekIndexOf(weeks, p.startDateOrig), newIdx = weekIndexOf(weeks, p.startDate);
+      if (oldIdx === newIdx) return;
+      var lo = Math.min(oldIdx, newIdx), hi = Math.max(oldIdx, newIdx), sign = newIdx > oldIdx ? -1 : 1;
+      for (var w = lo; w < hi; w++) if (w >= 0 && w < nW) arr[w] += sign;
+    });
+    return arr;
+  }
   function genParticipants(a, idn) {
     var key = a.id + '|' + idn;
     if (PART_CACHE[key]) return PART_CACHE[key];
@@ -1262,7 +1417,7 @@
       list.push({
         code: String(100000 + Math.floor(r(10) * 899999)).slice(0, 6),
         name: SURNAMES[Math.floor(r(11) * 10)] + GIVEN[Math.floor(r(12) * 10)],
-        identity: idn, enroll: enroll, startDate: startDate, source: source,
+        identity: idn, enroll: enroll, startDate: startDate, startDateOrig: startDate, source: source,
         before: before, after: after, delta: Math.round((after - before) * 10) / 10,
         tier: tier, tierLabel: dim.labels[tier], wholeHit: wholeHit, cumReward: cumReward, lateExcluded: lateExcluded
       });
@@ -1281,16 +1436,23 @@
     var list = genParticipants(a, idn).slice();
     if (oneState.drill) list = list.filter(function (p) { return p.tier === oneState.drill.t; });
     if (oneState.q.trim()) { var q = oneState.q.trim(); list = list.filter(function (p) { return p.code.indexOf(q) >= 0 || p.name.indexOf(q) >= 0; }); }
+    // 「變化」欄可點擊排序（升/降切換，REQ-ACT-003）
+    if (oneState.psort && oneState.psort.key === 'delta') {
+      var sdir = oneState.psort.dir === 'asc' ? 1 : -1;
+      list.sort(function (x, y) { return (x.delta - y.delta) * sdir; });
+    }
     var totalPages = Math.max(1, Math.ceil(list.length / oneState.pageSize));
     if (oneState.page > totalPages) oneState.page = totalPages;
     var rows = list.slice((oneState.page - 1) * oneState.pageSize, oneState.page * oneState.pageSize);
     var chip = oneState.drill ? '<span class="filter-chip">下鑽篩選：' + dim.labels[oneState.drill.t] + (oneState.drill.w == null ? '（不限週）' : ' × ' + d.weeks[oneState.drill.w].label) + '<button type="button" id="drill-clear" aria-label="清除下鑽篩選">✕</button></span>' : '';
     var handoffBtn = '<button class="btn btn-sm" type="button" id="btn-seg-handoff" title="需 profile.view 權限（原型以已授權管理者視角預覽）">帶入分群篩選 →</button>';
     var thHit = '<th>整檔達標</th><th>累計獲獎</th>';
+    var deltaDir = oneState.psort && oneState.psort.key === 'delta' ? oneState.psort.dir : null;
+    var deltaTh = '<th class="sortable" id="th-p-delta" tabindex="0" aria-sort="' + (deltaDir === 'asc' ? 'ascending' : deltaDir === 'desc' ? 'descending' : 'none') + '" aria-label="依變化排序，目前' + (deltaDir === 'asc' ? '升冪' : deltaDir === 'desc' ? '降冪' : '未排序') + '">變化<span class="arrow" aria-hidden="true">' + (deltaDir === 'asc' ? '▲' : deltaDir === 'desc' ? '▼' : '⇅') + '</span></th>';
     var tbl = '<div class="ptable-controls"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + chip +
       '<div class="search-input" style="min-width:180px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input id="p-search" type="search" placeholder="搜尋隊編或姓名" aria-label="搜尋參加隊員"></div></div>' +
       '<div style="display:flex;gap:8px;align-items:center">' + handoffBtn + '<div class="pagination" id="p-pager"></div></div></div>' +
-      '<div class="chart-wrap"><table aria-label="參加隊員清單"><thead><tr><th>隊編</th><th>姓名</th><th>起算日</th><th>來源</th><th>前期日均</th><th>迄今日均</th><th>變化</th><th>前期級距</th>' + thHit + '<th>Profile</th></tr></thead><tbody>';
+      '<div class="chart-wrap"><table aria-label="參加隊員清單"><thead><tr><th>隊編</th><th>姓名</th><th>起算日</th><th>來源</th><th>前期日均</th><th>迄今日均</th>' + deltaTh + '<th>前期級距</th>' + thHit + '<th>Profile</th></tr></thead><tbody>';
     if (!rows.length) tbl += '<tr><td colspan="11" style="text-align:center;color:var(--meta)">查無符合條件之隊員</td></tr>';
     rows.forEach(function (pp) {
       var dcls = pp.delta > 0 ? 'delta-pos' : (pp.delta < 0 ? 'delta-neg' : 'delta-zero');
@@ -1312,6 +1474,17 @@
     var pv = document.getElementById('p-prev'), nx = document.getElementById('p-next');
     if (pv) pv.addEventListener('click', function () { oneState.page--; renderParticipantList(a, d); });
     if (nx) nx.addEventListener('click', function () { oneState.page++; renderParticipantList(a, d); });
+    // 「變化」欄排序（升/降切換，REQ-ACT-003）
+    var thDelta = document.getElementById('th-p-delta');
+    if (thDelta) {
+      var toggleDeltaSort = function () {
+        oneState.psort = (oneState.psort && oneState.psort.key === 'delta' && oneState.psort.dir === 'desc') ? { key: 'delta', dir: 'asc' } : { key: 'delta', dir: 'desc' };
+        oneState.page = 1;
+        renderParticipantList(a, d);
+      };
+      thDelta.addEventListener('click', toggleDeltaSort);
+      thDelta.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleDeltaSort(); } });
+    }
     // 起算日手動調整（REQ-ACT-016，2026-07-15 拍板）：✎ → 行內日期編輯，夾制活動起迄、寫審計、回溯重算（原型示意）
     host.querySelectorAll('.sd-edit').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -1330,8 +1503,9 @@
           var list0 = genParticipants(a, oneState.identity);
           var p0 = list0.filter(function (x) { return x.code === code; })[0];
           if (p0) { p0.startDate = v; p0.startAdjusted = true; }
-          CRM.toast('已調整 ' + code + ' 起算日為 ' + v + '（夾制於活動起迄內；已寫入審計、觸發回溯重算——原型示意，儀表板數字不即時連動）');
-          renderParticipantList(a, d);
+          a._dash = null; // 觸發回溯重算：清儀表板快取，依調整後起算日重算受影響各週分母（REQ-ACT-016）
+          CRM.toast('已調整 ' + code + ' 起算日為 ' + v + '（夾制於活動起迄內；已寫入審計、觸發回溯重算，各週分母已更新）');
+          renderOne(); // 重繪整段儀表板鏈（狀態列／KPI／矩陣／週貢獻度／獎勵…）
         });
       });
     });
@@ -1392,13 +1566,13 @@
         cond: { region: a.cond.region.slice(), identity: a.cond.identity.slice(), tier: a.cond.tier },
         descGoal: a.descGoal, descReward: a.descReward,
         metrics: { online: a.metrics.online, revenue: a.metrics.revenue, accept: a.metrics.accept },
-        taSeg: a.taSeg, taImport: a.taImport, note: a.customNote || a.note };
+        taSeg: a.taSeg, taImport: a.taImport, taSettle: a.taSettle, note: a.customNote || a.note };
     }
     var t = TYPES[0];
     return { mode: 'create', target: null, name: '', type: t, start: '', end: '', scopeMode: scopeDefaultOf(t), scopeSegs: [],
       baseCustom: false, bstart: '', bend: '', exclBase: [], exclCur: [], tierDim: 'accept', bounds: DIMS.accept.bounds.slice(),
       cond: { region: [], identity: ['小黃', '多元'], tier: '' }, descGoal: '', descReward: '',
-      metrics: { online: true, revenue: true, accept: true }, taSeg: 0, taImport: 0, note: '' };
+      metrics: { online: true, revenue: true, accept: true }, taSeg: 0, taImport: 0, taSettle: 0, note: '' };
   }
   function formBaseWindow() {
     if (fs.baseCustom && fs.bstart && fs.bend) return { start: fs.bstart, end: fs.bend, days: daysBetween(fs.bstart, fs.bend), custom: true };
@@ -1494,7 +1668,10 @@
     document.getElementById('m-metric-online').checked = fs.metrics.online;
     document.getElementById('m-metric-revenue').checked = fs.metrics.revenue;
     document.getElementById('m-metric-accept').checked = fs.metrics.accept;
-    document.getElementById('m-ta-summary').textContent = '目前 TA：分群圈選 ' + CRM.fmt(fs.taSeg) + ' 人・報名匯入 ' + CRM.fmt(fs.taImport) + ' 人（去重合計 ' + CRM.fmt(Math.max(fs.taSeg, fs.taImport, fs.taSeg + fs.taImport - Math.round(Math.min(fs.taSeg, fs.taImport) * 0.15))) + ' 人）';
+    var mergedBase = Math.max(fs.taSeg, fs.taImport, fs.taSeg + fs.taImport - Math.round(Math.min(fs.taSeg, fs.taImport) * 0.15));
+    var mergedTotal = mergedBase + (fs.taSettle || 0);
+    var handoffNote = (TA_HANDOFF && TA_HANDOFF.codes && TA_HANDOFF.codes.length) ? '<div style="color:var(--accent);font-weight:500;margin-bottom:4px">📥 自分群帶入 ' + CRM.fmt(TA_HANDOFF.codes.length) + ' 筆' + handoffCondText(TA_HANDOFF.cond) + ' <span class="soft-label">（點下方「自分群篩選帶入」套用為分群圈選來源）</span></div>' : '';
+    document.getElementById('m-ta-summary').innerHTML = handoffNote + '目前 TA：分群圈選 ' + CRM.fmt(fs.taSeg) + ' 人・報名匯入 ' + CRM.fmt(fs.taImport) + ' 人・結算補入 ' + CRM.fmt(fs.taSettle || 0) + ' 人（去重合計 ' + CRM.fmt(mergedTotal) + ' 人）';
     document.getElementById('m-note').value = fs.note;
   }
   function openModal(mode, a) { fs = newFormState(mode === 'edit' ? a : null); paintModal(); modal.hidden = false; document.getElementById('m-name').focus(); }
@@ -1519,7 +1696,16 @@
   document.getElementById('m-metric-online').addEventListener('change', function () { fs.metrics.online = this.checked; });
   document.getElementById('m-metric-revenue').addEventListener('change', function () { fs.metrics.revenue = this.checked; });
   document.getElementById('m-metric-accept').addEventListener('change', function () { fs.metrics.accept = this.checked; });
-  document.getElementById('m-ta-import').addEventListener('click', function () { CRM.toast('請至 隊員 Profile → 分群篩選 圈選後點「帶入活動 TA」（示意）'); });
+  document.getElementById('m-ta-import').addEventListener('click', function () {
+    if (TA_HANDOFF && TA_HANDOFF.codes && TA_HANDOFF.codes.length) {
+      fs.taSeg += TA_HANDOFF.codes.length;
+      CRM.toast('已帶入分群篩選名單 ' + CRM.fmt(TA_HANDOFF.codes.length) + ' 筆（來源標記「分群圈選」，REQ-ACT-015①）');
+      TA_HANDOFF = null;
+      paintModal();
+    } else {
+      CRM.toast('請至 隊員 Profile → 分群篩選 圈選後點「帶入活動 TA」（示意）');
+    }
+  });
   document.getElementById('m-note').addEventListener('input', function () { fs.note = this.value; });
 
   function commitModal() {
@@ -1653,7 +1839,7 @@
     Object.keys(PANES).forEach(function (k) { document.getElementById(PANES[k]).hidden = (k !== key); });
     if (key === 'one' && !oneInited) { oneInited = true; if (!oneState.actId) { var opts = fillActSelect(curYear); if (opts.length) openActivity(opts[0].id); } }
   }
-  document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { switchTab(t.dataset.tab); }); });
+  document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { switchTab(t.dataset.tab); navCommit && navCommit(); }); });
 
   /* ══════════════ 初始渲染＋狀態切換器 ══════════════ */
   renderOngoingCards();
@@ -1661,6 +1847,10 @@
   CRM.mountStateSwitcher(function (state) {
     document.getElementById('content-normal').style.display = (state === 'normal') ? '' : 'none';
     ['empty', 'loading', 'error', 'forbidden'].forEach(function (k) { document.getElementById('st-' + k).classList.toggle('show', state === k); });
+  });
+  document.getElementById('btn-error-retry').addEventListener('click', function () {
+    document.querySelector('[data-state="normal"]').click();
+    CRM.toast('已重新載入');
   });
 
   /* ══ hash 深連結：#act=<URI encoded 活動名稱> → 切「單一活動」並選中該活動（觸發既有 change 流程）；找不到則忽略 ══ */
@@ -1672,6 +1862,24 @@
     if (!target) return;
     switchTab('one'); openActivity(target.id);
   })();
+
+  /* 頁內歷史（2026-07-16） */
+  function getViewState() {
+    var cur = document.querySelector('.tab[aria-selected="true"]');
+    return { tab: cur ? cur.dataset.tab : 'all', actId: oneState.actId, identity: oneState.identity };
+  }
+  function applyViewState(st) {
+    var tab = (st && (st.tab === 'all' || st.tab === 'one' || st.tab === 'driver')) ? st.tab : 'all';
+    if (st && st.actId && ACT_BY_ID[st.actId] && st.actId !== oneState.actId) {
+      openActivity(st.actId);
+    }
+    if (st && st.identity && WK_IDENTITIES.indexOf(st.identity) >= 0 && st.identity !== oneState.identity) {
+      oneState.identity = st.identity; oneState.drill = null; oneState.q = ''; oneState.page = 1; oneState.showList = false; oneState.psort = null;
+      renderOne();
+    }
+    switchTab(tab);
+  }
+  var navCommit = CRM.initPageHistory(getViewState, applyViewState);
 })();
 </script>
 </body>

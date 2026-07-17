@@ -10,7 +10,7 @@
   /* ── 假資料池：2,000 名隊員，deterministic 生成（含 3 名完整假資料隊員） ── */
   var SURNAMES = ['王', '林', '張', '李', '陳', '黃', '吳', '劉', '蔡', '楊'];
   var GIVEN = ['志明', '淑惠', '建宏', '雅婷', '俊傑', '美玲', '文雄', '麗華', '家豪', '怡君'];
-  var IDS = ['小黃', '小黃', '小黃', '多元', '多元', '試跑'];
+  var IDS = ['小黃', '小黃', '小黃', '多元', '多元', '多元試跑'];
   var TAGS = ['預設', '一般預約', '提供刷卡付款', '提供悠遊卡付款', '提供綁定付款', '敬老愛心_台北', '敬老愛心_新北', '敬老愛心_雙北', '好孕車組', '開行李箱', '攜帶輪椅', '手機充電', '低底盤車', '送餐車組', '短程預約', '專派任務', '乘車券', '國旅卡車組'];
   var CARS = ['RAV4', 'Tesla', 'Altis', '豪華型', '商務型'];
   var ACT_TYPES = ['獎勵活動', '培訓課程', '車組招募'];
@@ -36,14 +36,25 @@
     Object.keys(DB.branchRegions).forEach(function (rg) {
       DB.branchRegions[rg].forEach(function (b) { branches.push({ name: b, region: rg }); });
     });
+    /* 行政區字典（REQ-SEG-001：縣市＝依近 90 天完成任務上車行政區換算）：取自 DB.distribution（承接任務分布圖同一字典），
+       原型示範資料僅雙北（台北市／新北市）具行政區細節；桃園／宜蘭無對應資料，district 留空、縣市維持車隊地區直接對應 */
+    var DIST_LIST = [];
+    Object.keys(DB.distribution || {}).forEach(function (city) {
+      (DB.distribution[city] || []).forEach(function (o) { DIST_LIST.push({ d: o.d, city: city }); });
+    });
+    function cityOfDistrict(d) {
+      var hit = DIST_LIST.filter(function (x) { return x.d === d; })[0];
+      return hit ? hit.city : null;
+    }
     var list = [];
-    // 3 名完整假資料隊員（與 Profile 頁一致）
+    // 3 名完整假資料隊員（與 Profile 頁一致；行政區取其 topDistricts 首名，縣市由此換算，與 Profile 常跑區域口徑一致）
     Object.keys(DB.members).forEach(function (code) {
       var m = DB.members[code];
       var cs = 0; for (var ci = 0; ci < m.code.length; ci++) cs = cs * 31 + m.code.charCodeAt(ci);
       var st = actStats(cs % 100000);
+      var district0 = (m.topDistricts && m.topDistricts[0]) || '';
       list.push({
-        code: m.code, name: m.name, identity: m.identity, region: m.region,
+        code: m.code, name: m.name, identity: m.identity, region: cityOfDistrict(district0) || m.region, district: district0,
         branch: m.branch, branchRegion: '台北',
         carModel: m.carModel, fleetGroups: m.fleetGroups,
         monthOnline: m.onlineDays.month, mornPeak: m.mornPeakDays, evePeak: m.evePeakDays,
@@ -63,10 +74,19 @@
       var joined = rnd(s, 5) > 0.55;
       var nRs = Math.floor(rnd(s, 6) * 3.4);
       var st = actStats(s);
+      // 行政區＋縣市（REQ-SEG-001）：車隊地區＝台北（雙北）者由行政區字典指派、縣市依行政區換算；
+      // 其餘車隊地區（桃園／宜蘭）無行政區字典資料，維持縣市直接指派、district 留空
+      var district = '', region;
+      if (br.region === '台北' && DIST_LIST.length) {
+        var distObj = DIST_LIST[Math.floor(rnd(s, 20) * DIST_LIST.length)];
+        district = distObj.d; region = distObj.city;
+      } else {
+        region = regions[Math.floor(rnd(s, 10) * regions.length)];
+      }
       list.push({
         code: String(10000 + i), name: SURNAMES[Math.floor(rnd(s, 7) * 10)] + GIVEN[Math.floor(rnd(s, 8) * 10)],
         identity: IDS[Math.floor(rnd(s, 9) * IDS.length)],
-        region: regions[Math.floor(rnd(s, 10) * regions.length)],
+        region: region, district: district,
         branch: br.name, branchRegion: br.region,
         carModel: CARS[Math.floor(rnd(s, 12) * CARS.length)],
         fleetGroups: tags,
@@ -87,7 +107,7 @@
   /* ── 篩選條件狀態與判定（AND 跨欄位、OR 同欄位多值，REQ-SEG-001） ── */
   function emptyCond() {
     // 名單池僅含正式隊員（退隊者不進池，REQ-SEG-001；正式／退隊由名冊全量比對推導，REQ-IMP-015）
-    return { identity: [], region: [], branchRegion: [], branch: [], tags: [], car: [],
+    return { identity: [], region: [], branchRegion: [], branch: [], district: [], tags: [], car: [],
       bucket: [], mornMin: '', eveMin: '', arMin: '', arMax: '', joined: '', actTypes: [], mtMin: '', mtMax: '', reasons: [],
       // 活動成效維度（REQ-SEG-006）：①參加活動次數 ②跨活動達標率 ③指定活動任務增長比例
       actCountMin: '', actGoalMin: '', actActivity: '', actGrowthMin: '', actGrowthMax: '', actIncludeNew: false };
@@ -102,6 +122,7 @@
   function match(m, c) {
     if (c.identity.length && c.identity.indexOf(m.identity) < 0) return false;
     if (c.region.length && c.region.indexOf(m.region) < 0) return false;
+    if (c.district.length && c.district.indexOf(m.district) < 0) return false;
     if (c.branchRegion.length && c.branchRegion.indexOf(m.branchRegion) < 0) return false;
     if (c.branch.length && c.branch.indexOf(m.branch) < 0) return false;
     if (c.tags.length && !c.tags.some(function (t) { return m.fleetGroups.indexOf(t) >= 0; })) return false;
@@ -135,6 +156,7 @@
     if (c.branchRegion.length) p.push('車隊地區 ' + c.branchRegion.map(function (r) { return r === '台北' ? '台北（雙北）' : r; }).join('/'));
     if (c.branch.length) p.push('車隊 ' + c.branch.join('/'));
     if (c.region.length) p.push(c.region.join('/'));
+    if (c.district.length) p.push('行政區 ' + c.district.join('/'));
     if (c.tags.length) p.push('車組 ' + c.tags.join('/'));
     if (c.car.length) p.push('車款 ' + c.car.join('/'));
     if (c.bucket.length) p.push('上線級距 ' + c.bucket.join('/'));
@@ -182,6 +204,7 @@
       '.seg-count{font-size:34px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.5px}' +
       '.seg-count small{font-size:13px;color:var(--meta);font-weight:400;margin-left:4px}' +
       '.seg-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}' +
+      '.seg-save-inline{display:inline-flex;align-items:center;gap:6px}' +
       '.seg-btn{display:inline-flex;align-items:center;gap:6px;border:none;cursor:pointer;border-radius:8px;font-size:13.5px;padding:8px 14px;min-height:38px;background:var(--surface-warm);color:var(--fg-2);box-shadow:0 0 0 1px #d1cfc5;font-family:inherit}' +
       '.seg-btn:hover{background:#e0ddd1}' +
       '.seg-btn.primary{background:var(--accent);color:var(--accent-on);box-shadow:0 0 0 1px var(--accent)}' +
@@ -237,6 +260,11 @@
     Object.keys(DB.branchRegions).forEach(function (rg) {
       DB.branchRegions[rg].forEach(function (b) { branches.push({ name: b, region: rg }); });
     });
+    /* 行政區選項（REQ-SEG-001）：取自 DB.distribution（承接任務分布圖同一字典），原型示範資料僅涵蓋雙北 */
+    var allDistricts = [];
+    Object.keys(DB.distribution || {}).forEach(function (city) {
+      (DB.distribution[city] || []).forEach(function (o) { allDistricts.push(o.d); });
+    });
 
     function chips(key, values, labels) {
       return '<div class="seg-chips">' + values.map(function (v, i) {
@@ -271,26 +299,27 @@
         '<div>' +
           '<div class="seg-panel" id="seg-panel">' +
             '<div class="seg-title">篩選條件</div>' +
-            '<div class="seg-g"><div class="gl">身份別</div>' + chips('identity', ['小黃', '多元', '試跑']) + '</div>' +
+            '<div class="seg-g"><div class="gl">身份別</div>' + chips('identity', ['小黃', '多元', '多元試跑']) + '</div>' +
             '<div class="seg-g"><div class="gl">車隊地區 ' + CRM.infoIcon('雙北＝車隊地區「台北」（依車隊→地區對照表，REQ-SET-007）') + '</div>' + chips('branchRegion', ['台北', '桃園', '宜蘭'], ['台北（雙北）', '桃園', '宜蘭']) + '</div>' +
             '<div class="seg-g"><div class="gl">車隊（可複選）</div><div class="seg-row"><select id="seg-branch" class="seg-num" style="width:auto;min-width:180px"><option value="">＋ 加入車隊…</option>' +
               Object.keys(DB.branchRegions).map(function (rg) {
                 return '<optgroup label="' + rg + '">' + DB.branchRegions[rg].map(function (b) { return '<option>' + b + '</option>'; }).join('') + '</optgroup>';
               }).join('') + '</select></div><div class="seg-chips" id="seg-branch-chips" style="margin-top:6px"></div></div>' +
-            '<div class="seg-g"><div class="gl">縣市</div>' + chips('region', ['台北市', '新北市', '桃園市', '宜蘭縣']) + '</div>' +
+            '<div class="seg-g"><div class="gl">縣市 ' + CRM.infoIcon('縣市值依近 90 天完成任務上車行政區換算（資料源 task_stats_member，REQ-SEG-001）；原型示範資料僅雙北隊員具行政區細節，桃園／宜蘭隊員縣市維持車隊地區直接對應') + '</div>' + chips('region', ['台北市', '新北市', '桃園市', '宜蘭縣']) + '</div>' +
+            '<div class="seg-g"><div class="gl">行政區 ' + CRM.infoIcon('行政區選項對齊承接任務分布圖字典（目前僅涵蓋雙北）；與縣市為 AND 條件，可疊加篩選') + '</div>' + chips('district', allDistricts) + '</div>' +
             '<div class="seg-g"><div class="gl">車組（多值標籤）</div>' + chips('tags', TAGS) + '</div>' +
             '<div class="seg-g"><div class="gl">車款</div>' + chips('car', CARS) + '</div>' +
             '<div class="seg-g"><div class="gl">上線天數（上個月，級距）</div>' + chips('bucket', ['0', '1-10', '11-20', '21+'], ['0 天', '1~10 天', '11~20 天', '21 天以上']) + '</div>' +
             '<div class="seg-g"><div class="gl">早／晚尖峰上線天數（最近 30 天）</div><div class="seg-row">早 ≥ <input type="number" min="0" max="31" class="seg-num" id="seg-morn">　晚 ≥ <input type="number" min="0" max="31" class="seg-num" id="seg-eve"> 天</div></div>' +
-            '<div class="seg-g"><div class="gl">歷史承接率區間（最近 90 天）</div><div class="seg-row"><input type="number" min="0" max="100" class="seg-num" id="seg-armin"> % ~ <input type="number" min="0" max="100" class="seg-num" id="seg-armax"> %</div></div>' +
+            '<div class="seg-g"><div class="gl">歷史承接率區間（最近 90 天）' + CRM.infoIcon('承接率（統一口徑）＝Σ承接任務 ÷ Σ任務數（排除別人已承接）；資料源 driver_inquiry_stats（司機任務詢問統計），取最近 90 天') + '</div><div class="seg-row"><input type="number" min="0" max="100" class="seg-num" id="seg-armin"> % ~ <input type="number" min="0" max="100" class="seg-num" id="seg-armax"> %</div></div>' +
             '<div class="seg-g"><div class="gl">是否曾參與活動</div>' +
               '<div class="seg-chips">' +
               [['', '不限'], ['yes', '是'], ['no', '否']].map(function (o) {
                 return '<button type="button" class="seg-chip" data-joined="' + o[0] + '" aria-pressed="' + (cond.joined === o[0]) + '">' + o[1] + '</button>';
               }).join('') + '</div></div>' +
             '<div class="seg-g"><div class="gl">參與活動類型</div>' + chips('actTypes', ACT_TYPES) + '</div>' +
-            '<div class="seg-g"><div class="gl">歷史每月承接任務數（趟）</div><div class="seg-row"><input type="number" min="0" class="seg-num" id="seg-mtmin"> ~ <input type="number" min="0" class="seg-num" id="seg-mtmax"></div></div>' +
-            '<div class="seg-g"><div class="gl">不願承接任務的原因 <span class="seg-lock">需 callrecord.view_all</span> ' + CRM.infoIcon('客服回覆值條件需 callrecord.view_all 權限（REQ-SEG-005，防繞過客服紀錄 scope）；原型以已授權視角展示') + '</div>' + chips('reasons', REASONS) + '</div>' +
+            '<div class="seg-g"><div class="gl">歷史每月承接任務數（趟）' + CRM.infoIcon('最近 12 個月承接任務總數 ÷ 12（例：156 趟/月）；承接任務取自 driver_inquiry_stats「承接任務」欄（accepted_count），與承接率分子同源') + '</div><div class="seg-row"><input type="number" min="0" class="seg-num" id="seg-mtmin"> ~ <input type="number" min="0" class="seg-num" id="seg-mtmax"></div></div>' +
+            '<div class="seg-g"><div class="gl">不願承接任務的原因 <span class="seg-lock">需 callrecord.view_all</span> ' + CRM.infoIcon('客服回覆值條件需 callrecord.view_all 權限（REQ-SEG-005，防繞過客服外撥 scope）；原型以已授權視角展示') + '</div>' + chips('reasons', REASONS) + '</div>' +
             '<div class="seg-g"><div class="gl">活動成效 ' + CRM.infoIcon('與「是否曾參與活動」為 AND 各自獨立生效，口徑差異：曾參與＝TA 名單命中（含分群圈選僅入名單、未必實際參加）；參加＝實際參加該活動（REQ-SEG-006）') + '</div>' +
               '<div class="seg-chips" id="seg-handoff-chip" style="margin-bottom:8px"></div>' +
               '<div class="seg-row" style="margin-bottom:8px">參加活動次數 ≥ <input type="number" min="0" class="seg-num" id="seg-actcount" value="' + cond.actCountMin + '"> 次 ' + CRM.infoIcon('參加＝實際參加該活動（合併後 TA：報名匯入＋結算補入，SR-RT-140）；僅被分群圈選、未實際參加者不計') + '</div>' +
@@ -310,27 +339,30 @@
             '<button type="button" class="seg-btn primary" id="seg-to-call">帶入外撥專案</button>' +
             '<button type="button" class="seg-btn primary" id="seg-to-act">帶入活動 TA</button>' +
             '<button type="button" class="seg-btn" id="seg-save">儲存為名單條件</button>' +
+            '<span class="seg-save-inline" id="seg-save-inline" style="display:none">' +
+              '<input type="text" id="seg-save-name" class="seg-num" style="width:220px" aria-label="名單條件名稱">' +
+              '<button type="button" class="seg-btn primary" id="seg-save-confirm">確認</button>' +
+              '<button type="button" class="seg-btn" id="seg-save-cancel">取消</button>' +
+            '</span>' +
             '<button type="button" class="seg-btn" id="seg-export">匯出名單（活動報名用）</button>' +
           '</div>' +
-          '<div class="chart-wrap" style="overflow-x:auto"><table class="seg-table"><thead><tr>' +
-            '<th>隊編</th><th>姓名（去識別化）</th><th>身份別</th><th>車隊</th><th>縣市</th><th>上月上線</th><th>晚尖峰</th><th>承接率</th><th>曾參與</th>' +
-          '</tr></thead><tbody id="seg-rows"></tbody></table></div>' +
+          '<div class="chart-wrap" style="overflow-x:auto"><table class="seg-table"><thead><tr id="seg-thead"></tr></thead><tbody id="seg-rows"></tbody></table></div>' +
           '<p class="seg-hint" id="seg-more" style="margin-top:8px"></p>' +
         '</div>' +
       '</div>' +
       '<div class="seg-modal" id="seg-modal" role="dialog" aria-modal="true" aria-label="帶入外撥專案">' +
         '<div class="box"><h3>帶入外撥專案</h3>' +
-        '<p class="seg-hint">篩選結果將整批帶入新外撥專案之名單——僅帶隊編＋姓名；行動電話非批次可得資訊，為外撥專案之保留欄位、由客服撥打作業時填寫（REQ-SEG-004）。</p>' +
+        '<p class="seg-hint">篩選結果將整批帶入新外撥專案之名單——僅帶隊編＋姓名；行動電話非批次可得資訊，為外撥專案之保留欄位、由客服撥打作業時填寫（REQ-SEG-004）。確認後將直接前往客服外撥頁面。</p>' +
         '<label for="seg-pname">專案名稱</label><input type="text" id="seg-pname">' +
         '<label>名單筆數</label><div style="font-size:22px;font-weight:600" id="seg-pcount"></div>' +
         '<label>名單預覽（前 5 筆）</label><div class="chart-wrap" style="overflow-x:auto"><table class="seg-table"><thead><tr><th>隊編</th><th>姓名</th><th>行動電話（保留欄位）</th></tr></thead><tbody id="seg-preview"></tbody></table></div>' +
-        '<div class="seg-actions" style="margin-top:16px"><button type="button" class="seg-btn primary" id="seg-pok">建立專案（示意）</button><button type="button" class="seg-btn" id="seg-pcancel">取消</button></div>' +
+        '<div class="seg-actions" style="margin-top:16px"><button type="button" class="seg-btn primary" id="seg-pok">建立專案並前往客服外撥</button><button type="button" class="seg-btn" id="seg-pcancel">取消</button></div>' +
         '</div></div>' +
       '<div class="seg-modal" id="seg-act-modal" role="dialog" aria-modal="true" aria-label="帶入活動 TA 名單">' +
         '<div class="box">' +
         '<button type="button" class="seg-modal-close" id="seg-act-x" aria-label="關閉">✕</button>' +
         '<h3>帶入活動 TA 名單</h3>' +
-        '<p class="seg-hint">將帶入 <strong id="seg-act-count">0</strong> 人（僅隊編＋姓名，來源標記：分群圈選）</p>' +
+        '<p class="seg-hint">將帶入 <strong id="seg-act-count">0</strong> 人（僅隊編＋姓名，來源標記：分群圈選）。確認後將直接前往隊員活動頁。</p>' +
         '<label for="seg-act-select">選擇活動</label><select id="seg-act-select">' + activityOptions() + '</select>' +
         '<p class="seg-hint" style="margin-top:12px">正式報名名冊匯入後將以隊編自動合併（來源標記：報名匯入）</p>' +
         '<div class="seg-actions" style="margin-top:16px"><button type="button" class="seg-btn primary" id="seg-act-confirm">確認帶入</button><button type="button" class="seg-btn" id="seg-act-cancel">取消</button></div>' +
@@ -346,15 +378,42 @@
         '<span class="seg-hint">已套用對應預設值（活動／身份別，如適用）</span>';
     }
 
+    /* 結果欄位動態附加（REQ-SEG-002）：基礎欄固定（隊編/姓名/身份別/車隊/縣市），
+       其餘欄視對應篩選條件是否勾選才附加顯示——條件相關欄位才進表，避免固定一堆用不到的欄位 */
+    var RESULT_COLS = [
+      { label: '隊編', base: true, get: function (m) { return m.code; } },
+      { label: '姓名（去識別化）', base: true, get: function (m) { return CRM.maskName(m.name); } },
+      { label: '身份別', base: true, get: function (m) { return m.identity; } },
+      { label: '車隊', base: true, get: function (m) { return m.branch; } },
+      { label: '縣市', base: true, get: function (m) { return m.region; } },
+      { label: '行政區', active: function (c) { return c.district.length > 0; }, get: function (m) { return m.district || '—'; } },
+      { label: '車組', active: function (c) { return c.tags.length > 0; }, get: function (m) { return m.fleetGroups.join('、'); } },
+      { label: '車款', active: function (c) { return c.car.length > 0; }, get: function (m) { return m.carModel; } },
+      { label: '上月上線', active: function (c) { return c.bucket.length > 0; }, get: function (m) { return m.monthOnline + ' 天'; } },
+      { label: '早尖峰', active: function (c) { return c.mornMin !== ''; }, get: function (m) { return m.mornPeak + ' 天'; } },
+      { label: '晚尖峰', active: function (c) { return c.eveMin !== ''; }, get: function (m) { return m.evePeak + ' 天'; } },
+      { label: '承接率', active: function (c) { return c.arMin !== '' || c.arMax !== ''; }, get: function (m) { return m.acceptRate + '%'; } },
+      { label: '曾參與', active: function (c) { return c.joined !== ''; }, get: function (m) { return m.joined ? '是' : '否'; } },
+      { label: '活動類型', active: function (c) { return c.actTypes.length > 0; }, get: function (m) { return m.actTypes.length ? m.actTypes.join('、') : '—'; } },
+      { label: '月承接', active: function (c) { return c.mtMin !== '' || c.mtMax !== ''; }, get: function (m) { return m.monthlyTasks + ' 趟'; } },
+      { label: '不願承接原因', active: function (c) { return c.reasons.length > 0; }, get: function (m) { return m.refuseReasons.length ? m.refuseReasons.join('、') : '—'; } },
+      { label: '參加次數', active: function (c) { return c.actCountMin !== ''; }, get: function (m) { return m.actCount + ' 次'; } },
+      { label: '跨活動達標率', active: function (c) { return c.actGoalMin !== ''; }, get: function (m) { return m.actGoalRate === null ? '—' : m.actGoalRate + '%'; } },
+      { label: '任務增長', active: function (c) { return c.actActivity !== ''; }, get: function (m) { return m.actIsNewOrRestart ? '新增/重啟' : (m.actGrowth + '%'); } }
+    ];
+
     var result = [];
     function recompute() {
       result = pool.filter(function (m) { return match(m, cond); });
       document.getElementById('seg-count').textContent = CRM.fmt(result.length);
       document.getElementById('seg-cond-sum').textContent = condSummary(cond, DB);
+      var activeCols = RESULT_COLS.filter(function (col) { return col.base || col.active(cond); });
+      document.getElementById('seg-thead').innerHTML = activeCols.map(function (col) { return '<th>' + col.label + '</th>'; }).join('');
       var rows = result.slice(0, 50).map(function (m) {
-        return '<tr class="mrow" data-code="' + m.code + '" tabindex="0" aria-label="檢視隊編 ' + m.code + ' 的 Profile"><td>' + m.code + '</td><td>' + CRM.maskName(m.name) + '</td><td>' + m.identity + '</td><td>' + m.branch + '</td><td>' + m.region + '</td><td>' + m.monthOnline + ' 天</td><td>' + m.evePeak + ' 天</td><td>' + m.acceptRate + '%</td><td>' + (m.joined ? '是' : '否') + '</td></tr>';
+        return '<tr class="mrow" data-code="' + m.code + '" tabindex="0" aria-label="檢視隊編 ' + m.code + ' 的 Profile">' +
+          activeCols.map(function (col) { return '<td>' + col.get(m) + '</td>'; }).join('') + '</tr>';
       }).join('');
-      document.getElementById('seg-rows').innerHTML = rows || '<tr><td colspan="9" style="color:var(--meta)">無符合條件之隊員（調整條件試試）</td></tr>';
+      document.getElementById('seg-rows').innerHTML = rows || ('<tr><td colspan="' + activeCols.length + '" style="color:var(--meta)">無符合條件之隊員（調整條件試試）</td></tr>');
       document.getElementById('seg-more').textContent = result.length > 50 ? '共 ' + CRM.fmt(result.length) + ' 人，清單示意前 50 筆；正式版為分頁完整清單。點任一列可進入該隊員 Profile。' : (result.length ? '點任一列可進入該隊員 Profile。' : '');
       host.querySelectorAll('.mrow').forEach(function (tr) {
         tr.addEventListener('click', function () { location.href = 'profile.html?m=' + encodeURIComponent(tr.dataset.code); });
@@ -450,20 +509,41 @@
         });
       });
     }
-    document.getElementById('seg-save').addEventListener('click', function () {
-      // 原型不用 window.prompt 取名（阻塞式對話框擋走查自動化）；給預設名、正式版做命名欄
+
+    /* 儲存為名單條件：行內命名輸入（REQ-SEG-002）——不用 window.prompt（阻塞式對話框擋走查自動化），
+       改在按鈕旁顯示行內輸入框＋確認/取消，預設值＝自動產生名，使用者可改 */
+    var saveBtn = document.getElementById('seg-save');
+    var saveInline = document.getElementById('seg-save-inline');
+    var saveNameInput = document.getElementById('seg-save-name');
+    function autoSegName() { return '名單條件 ' + (loadSegs().length + 1) + '（' + CRM.fmt(result.length) + ' 人）'; }
+    function closeSaveInline() { saveInline.style.display = 'none'; saveBtn.style.display = ''; }
+    saveBtn.addEventListener('click', function () {
+      saveNameInput.value = autoSegName();
+      saveBtn.style.display = 'none';
+      saveInline.style.display = 'inline-flex';
+      saveNameInput.focus();
+      saveNameInput.select();
+    });
+    document.getElementById('seg-save-cancel').addEventListener('click', closeSaveInline);
+    document.getElementById('seg-save-confirm').addEventListener('click', function () {
       var segs = loadSegs();
-      var auto = '名單條件 ' + (segs.length + 1) + '（' + CRM.fmt(result.length) + ' 人）';
-      segs.push({ name: auto, summary: condSummary(cond, DB), cond: JSON.parse(JSON.stringify(cond)) });
+      var name = saveNameInput.value.trim() || autoSegName();
+      segs.push({ name: name, summary: condSummary(cond, DB), cond: JSON.parse(JSON.stringify(cond)) });
       saveSegs(segs); renderSegs();
-      CRM.toast('已儲存「' + auto + '」（正式版可自訂名稱）');
+      closeSaveInline();
+      CRM.toast('已儲存「' + name + '」');
+    });
+    saveNameInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); document.getElementById('seg-save-confirm').click(); }
+      else if (e.key === 'Escape') { e.stopPropagation(); closeSaveInline(); }
     });
 
-    /* 帶入外撥專案（REQ-SEG-004、REQ-E2E-012 步驟 3） */
+    /* 帶入外撥專案（REQ-SEG-004、REQ-E2E-012 步驟 3）：真動作——寫 localStorage["crm-cs-bringin"]＝{name, rows:[{code,name}]}＋導頁 callcenter.html */
+    function defaultBringinName() { return '分群名單 ' + ((DB.meta && DB.meta.dataAsOf) ? DB.meta.dataAsOf.slice(0, 7) : ''); }
     var modal = document.getElementById('seg-modal');
     document.getElementById('seg-to-call').addEventListener('click', function () {
       if (!result.length) { CRM.toast('目前 0 人符合，請先設定條件'); return; }
-      document.getElementById('seg-pname').value = '外撥專案：' + condSummary(cond, DB).slice(0, 24);
+      document.getElementById('seg-pname').value = defaultBringinName();
       document.getElementById('seg-pcount').textContent = CRM.fmt(result.length) + ' 筆（＝篩選結果數）';
       document.getElementById('seg-preview').innerHTML = result.slice(0, 5).map(function (m) {
         return '<tr><td>' + m.code + '</td><td>' + CRM.maskName(m.name) + '</td><td style="color:var(--meta)">—（由客服填寫）</td></tr>';
@@ -473,11 +553,17 @@
     document.getElementById('seg-pcancel').addEventListener('click', function () { modal.classList.remove('show'); });
     modal.addEventListener('click', function (e) { if (e.target === modal) modal.classList.remove('show'); });
     document.getElementById('seg-pok').addEventListener('click', function () {
+      var name = document.getElementById('seg-pname').value.trim() || defaultBringinName();
+      var rows = result.map(function (m) { return { code: m.code, name: m.name }; });
+      try { localStorage.setItem('crm-cs-bringin', JSON.stringify({ name: name, rows: rows })); } catch (e) { /* storage 不可用時忽略，仍導頁；客服外撥頁面可重新帶入 */ }
       modal.classList.remove('show');
-      CRM.toast('已建立外撥專案（示意）：名單 ' + CRM.fmt(result.length) + ' 筆已帶入（隊編＋姓名；電話由客服撥打時填寫）');
+      location.href = 'callcenter.html';
     });
     document.getElementById('seg-export').addEventListener('click', function () {
-      CRM.toast('已匯出名單（示意）：' + CRM.fmt(result.length) + ' 筆，可作活動報名名單（匯出依 REQ-GEN-006 寫入審計）');
+      var rows = [['隊編', '姓名', '身份別', '車隊', '縣市']];
+      result.forEach(function (m) { rows.push([m.code, m.name, m.identity, m.branch, m.city || '']); });
+      CRM.downloadCsv('分群名單_' + (CRM.load().meta.dataAsOf || '') + '.csv', rows);
+      CRM.toast('已下載名單 ' + CRM.fmt(result.length) + ' 筆（匯出依 REQ-GEN-006 寫入審計——原型示意）');
     });
 
     /* 帶入活動 TA（REQ-ACT-015／REQ-SEG-004：分群篩選帶入活動 TA 名單，來源標記「分群圈選」） */
@@ -505,8 +591,13 @@
         var found = (DB.activities || []).filter(function (a) { return a.id === actId; });
         actName = found.length ? found[0].name : sel.options[sel.selectedIndex].text;
       }
+      /* seg→activity 真動作（沿用 crm-seg-handoff 之反向補件，另立 key 避免與既有 activity→seg 方向混用）：
+         寫 localStorage["crm-act-ta"]＝{codes:[...], cond:摘要字串}＋導頁 activity.html；activity 端讀取後接手（另一 worker 實作） */
+      var codes = result.map(function (m) { return m.code; });
+      var condText = '目標活動：' + actName + '｜篩選條件：' + condSummary(cond, DB);
+      try { localStorage.setItem('crm-act-ta', JSON.stringify({ codes: codes, cond: condText })); } catch (e) { /* storage 不可用時忽略，仍導頁 */ }
       closeActModal();
-      CRM.toast('已帶入「' + actName + '」TA 名單 ' + CRM.fmt(result.length) + ' 人（來源：分群圈選）——原型示意');
+      location.href = 'activity.html';
     });
 
     paintChips(); recompute(); renderSegs();

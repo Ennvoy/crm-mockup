@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>系統設定｜55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=29">
+<link rel="stylesheet" href="../tokens.css?v=35">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -120,6 +120,16 @@
   .cut-inputs input { width: 64px; min-height: 34px; padding: 5px 8px; font-size: 13px; }
   .cut-preview { display: flex; flex-wrap: wrap; gap: 5px; }
   .cut-preview span { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 9999px; padding: 3px 10px; font-size: 12px; color: var(--fg-2); }
+
+  /* 質性門檻卡＋右側套用範例面板 */
+  .judge-layout { display: grid; grid-template-columns: minmax(260px, 400px) 1fr; gap: 16px; align-items: start; }
+  .judge-layout > * { min-width: 0; }
+  @media (max-width: 780px) { .judge-layout { grid-template-columns: 1fr; } }
+  .judge-label-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  input.jl-input { width: 92px; min-height: 32px; padding: 5px 8px; font-size: 12.5px; }
+  .judge-example-list { display: grid; gap: 8px; }
+  .judge-example-list div { font-size: 13px; color: var(--fg-2); }
+  .judge-example-list b { color: var(--fg); font-variant-numeric: tabular-nums; }
   .stale-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .stale-row input { width: 90px; }
   .save-bar { display: flex; justify-content: flex-end; }
@@ -140,6 +150,10 @@
   .perm-cell label { cursor: pointer; }
   .perm-cell input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
   .module-row td:first-child { color: var(--fg-2); font-weight: 500; white-space: nowrap; }
+
+  /* 表格內緊湊下拉（指派角色／行政區修正） */
+  td select.tbl-select { min-height: 34px; padding: 6px 28px 6px 10px; font-size: 13px; }
+  td .lock-badge { display: block; margin-bottom: 4px; }
 
   /* Modal */
   .modal-backdrop { position: fixed; inset: 0; background: rgba(20, 20, 19, .45); z-index: 8000; display: none; align-items: center; justify-content: center; padding: 16px; }
@@ -223,6 +237,12 @@
       </div>
 
       <div class="panel">
+        <div class="panel-title">活動整體判斷（質性評語）門檻 <span id="judge-info"></span></div>
+        <div class="panel-note">「隊員活動」單一活動儀表板整體判斷卡，依週達標率平均分四檔顯示質性評語（REQ-ACT-019）；門檻與評語文字皆可由後台調整，儲存後套用於後續判讀，不回溯重算歷史快照。</div>
+        <div class="judge-layout" id="judge-grid"></div>
+      </div>
+
+      <div class="panel">
         <div class="panel-title">資料新鮮度</div>
         <div class="panel-note">超過設定天數未有新匯入批次時，全站頂部顯示資料過期警示。</div>
         <div class="stale-row">
@@ -266,22 +286,13 @@
       <div class="panel">
         <div class="panel-title">活動類型字典</div>
         <div class="panel-note">維護「隊員活動」建立時可選用之活動類型；停用不刪除既有引用資料。</div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn btn-sm" id="btn-type-add" type="button">＋新增類型</button>
+        </div>
         <div class="chart-wrap"><table id="type-table" aria-label="活動類型字典表"></table></div>
       </div>
 
-      <!-- (b) 行政區→縣市（REQ-SET-006） -->
-      <div class="panel">
-        <div class="panel-title">行政區 → 縣市對照 <span id="district-info"></span></div>
-        <div class="panel-note">用於任務／上線類歷史依行政區歸屬縣市（不排除退隊者歷史）；匯入時查無對照者列入警告清單。</div>
-        <div class="search-input">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input id="district-q" type="search" placeholder="搜尋行政區" aria-label="搜尋行政區">
-        </div>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-          <button class="btn btn-sm" id="btn-district-add" type="button">新增對照</button>
-        </div>
-        <div class="chart-wrap"><table id="district-table" aria-label="行政區與縣市對照表"></table></div>
-      </div>
+      <!-- 原 (b) 行政區→縣市對照已移除（REQ-SET-006 廢止，2026-07-17 使用者拍板：online_records 源端補縣市欄後，全部含行政區之資料源均自帶縣市，字典無存在必要） -->
     </section>
 
     <!-- ③ 帳號與角色（RBAC） -->
@@ -293,13 +304,19 @@
 
       <div class="panel">
         <div class="panel-title">使用者</div>
-        <div class="panel-note">狀態切換為「停用即除役」，不提供硬刪除；停用後之登入請求一律回 403（REQ-AUTH-005）。</div>
+        <div class="panel-note">狀態切換為「停用即除役」，不提供硬刪除；停用後之登入請求一律回 403（REQ-AUTH-005）。連續登入失敗 5 次帳號將鎖定 15 分鐘（429，REQ-AUTH-002）；管理員可於本表直接解鎖或代為重設密碼（REQ-AUTH-004）。</div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn btn-sm" id="btn-user-add" type="button">＋新增帳號</button>
+        </div>
         <div class="chart-wrap"><table id="user-table" aria-label="使用者帳號表"></table></div>
       </div>
 
       <div class="panel">
         <div class="panel-title">角色 <span id="role-info"></span></div>
-        <div class="panel-note">點列展開「模組 × 權限」matrix；權限變更於使用者下次請求生效，並寫入審計（REQ-RBAC-007/009）。</div>
+        <div class="panel-note">點列展開「模組 × 權限」matrix；權限變更於使用者下次請求生效，並寫入審計（REQ-RBAC-007/009）。停用角色不可再指派給帳號；已持有者依 REQ-RBAC-008 於下次請求起失去該角色權限（其他角色不受影響）。內建 super admin 角色不可停用。</div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn btn-sm" id="btn-role-add" type="button">＋新增角色</button>
+        </div>
         <div class="chart-wrap"><table id="role-table" aria-label="角色與權限表"></table></div>
       </div>
 
@@ -322,7 +339,11 @@
 
       <div class="panel">
         <div class="panel-title">API Token</div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn btn-sm" id="btn-token-add" type="button">＋建立 Token</button>
+        </div>
         <div class="chart-wrap"><table id="token-table" aria-label="API Token 表"></table></div>
+        <div id="token-revoked-wrap"></div>
         <div class="fixed-note" style="margin-top:14px">
           token 綁最小 scope、可設效期、可即時撤銷；憑證讀取 scope 另綁 IP 白名單（限排程主機）＋限流＋每次讀取寫審計，白名單外拒絕並告警（REQ-IMP-013）。
         </div>
@@ -338,8 +359,8 @@
           <select id="a-action" aria-label="篩選動作類型"></select>
           <select id="a-who" aria-label="篩選操作者"></select>
           <span class="drange">
-            <label for="a-from">起</label><input type="date" id="a-from" aria-label="起始日期">
-            <label for="a-to">迄</label><input type="date" id="a-to" aria-label="結束日期">
+            <label for="a-from">起</label><input type="date" id="a-from" aria-label="起始日期" min="2020-01-01" max="2035-12-31">
+            <label for="a-to">迄</label><input type="date" id="a-to" aria-label="結束日期" min="2020-01-01" max="2035-12-31">
           </span>
           <button class="btn btn-sm" id="btn-audit-reset" type="button">清除篩選</button>
           <button class="btn btn-sm" id="btn-audit-export" type="button" style="margin-left:auto">匯出</button>
@@ -365,6 +386,7 @@
     <div class="state-icon" aria-hidden="true">⚠️</div>
     <div class="state-title">資料載入失敗</div>
     <div class="state-desc">連線發生問題（HTTP 500），請稍後再試。</div>
+    <button class="btn" type="button" id="btn-error-retry">重試</button>
   </div>
   <div class="state-layer" id="st-forbidden">
     <div class="state-icon" aria-hidden="true">🔒</div>
@@ -395,7 +417,90 @@
   </div>
 </div>
 
-<script src="../app.js?v=29"></script>
+<!-- modal：新增角色 -->
+<div class="modal-backdrop" id="modal-role" role="dialog" aria-modal="true" aria-labelledby="mr-title">
+  <div class="modal">
+    <h3 id="mr-title">新增角色</h3>
+    <p class="desc">新角色預設不具任何權限；建立後請於角色列表點列展開，逐一勾選模組權限。</p>
+    <div class="field"><label for="mr-name">角色名稱</label><input type="text" id="mr-name" placeholder="例：客服兼稽核" maxlength="20"></div>
+    <div class="modal-foot">
+      <button class="btn" type="button" id="mr-cancel">取消</button>
+      <button class="btn btn-primary" type="button" id="mr-ok">建立角色</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal：新增活動類型（REQ-SET-002） -->
+<div class="modal-backdrop" id="modal-acttype" role="dialog" aria-modal="true" aria-labelledby="mat-title">
+  <div class="modal">
+    <h3 id="mat-title">新增活動類型</h3>
+    <p class="desc">新類型預設啟用，立即出現於「隊員活動」建立時之類型選單。</p>
+    <div class="field"><label for="mat-name">類型名稱</label><input type="text" id="mat-name" placeholder="例：季節性招募" maxlength="20"></div>
+    <div class="modal-foot">
+      <button class="btn" type="button" id="mat-cancel">取消</button>
+      <button class="btn btn-primary" type="button" id="mat-ok">建立類型</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal：新增帳號 -->
+<div class="modal-backdrop" id="modal-user" role="dialog" aria-modal="true" aria-labelledby="mu-title">
+  <div class="modal">
+    <h3 id="mu-title">新增帳號</h3>
+    <p class="desc">帳號由 Supabase Auth 以 email＋password 管理；建立後系統將寄送設定密碼邀請信（原型示意寄送動作）。</p>
+    <div class="field"><label for="mu-email">Email</label><input type="text" id="mu-email" placeholder="name@55688.com.tw" autocomplete="off"></div>
+    <div class="field"><label for="mu-name">姓名</label><input type="text" id="mu-name" placeholder="真實姓名（全站顯示將自動遮罩）" autocomplete="off"></div>
+    <div class="field"><label for="mu-role">角色</label><select id="mu-role"></select></div>
+    <div class="modal-foot">
+      <button class="btn" type="button" id="mu-cancel">取消</button>
+      <button class="btn btn-primary" type="button" id="mu-ok">建立帳號</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal：重設密碼確認（管理員代重設，REQ-AUTH-004） -->
+<div class="modal-backdrop" id="modal-reset" role="dialog" aria-modal="true" aria-labelledby="mrs-title">
+  <div class="modal">
+    <h3 id="mrs-title">重設密碼確認</h3>
+    <p class="desc">將寄送密碼重設信至該帳號綁定信箱，原密碼即刻失效；此動作將寫入審計日誌。</p>
+    <div class="field"><label for="mrs-acct">帳號</label><input type="text" id="mrs-acct" disabled></div>
+    <div class="banner-warn" id="mrs-super-note" style="display:none;margin-bottom:16px">
+      <div>此帳號具 super admin 角色：正式版依 REQ-AUTH-004，代為重設密碼僅限「其他 super admin」執行；本原型不模擬登入身分，不擋此操作。</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" type="button" id="mrs-cancel">取消</button>
+      <button class="btn btn-primary" type="button" id="mrs-ok">確認寄送重設信</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal：建立 Token（REQ-IMP-013） -->
+<div class="modal-backdrop" id="modal-token" role="dialog" aria-modal="true" aria-labelledby="mtk-title">
+  <div class="modal">
+    <h3 id="mtk-title">建立 Token</h3>
+    <p class="desc">token 綁最小 scope、可設效期、可即時撤銷；scope 值域沿用 RBAC 權限 key（正式版專屬 scope 定義待訂）。</p>
+    <div class="field"><label for="mtk-name">名稱</label><input type="text" id="mtk-name" placeholder="例：夜間批次匯入排程" maxlength="30"></div>
+    <div class="field">
+      <label>Scope（可複選，至少一項）</label>
+      <div id="mtk-scopes" style="display:grid;gap:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border-soft);border-radius:10px;padding:10px 12px"></div>
+    </div>
+    <div class="field">
+      <label for="mtk-expire">效期</label>
+      <select id="mtk-expire">
+        <option value="30">30 天</option>
+        <option value="90" selected>90 天</option>
+        <option value="365">365 天</option>
+        <option value="forever">永久</option>
+      </select>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" type="button" id="mtk-cancel">取消</button>
+      <button class="btn btn-primary" type="button" id="mtk-ok">建立 Token</button>
+    </div>
+  </div>
+</div>
+
+<script src="../app.js?v=35"></script>
 <script>
 (function () {
   'use strict';
@@ -439,14 +544,85 @@
     });
   }
   renderCutGrid();
+
+  var JUDGE_DEF = { c1: 3, c2: 10, c3: 25 };
+  var JUDGE_LABELS = ['偏弱', '吸引力有限', '中等', '良好'];  // 顯示文字可編輯（REQ-SET-001 補訂，2026-07-17）
+  function judgePreview(def) {
+    return [
+      '<' + def.c1 + '% ' + JUDGE_LABELS[0],
+      def.c1 + '–' + def.c2 + '% ' + JUDGE_LABELS[1],
+      def.c2 + '–' + def.c3 + '% ' + JUDGE_LABELS[2],
+      '>' + def.c3 + '% ' + JUDGE_LABELS[3]
+    ];
+  }
+  function judgeRound1(n) { return Math.round(n * 10) / 10; }
+  function judgeExampleValues(def) {
+    // 每檔各取一個代表性數值：偏弱／良好取單門檻外推，中間兩檔取「進入區間 1/3 處」較貼近真實分佈
+    return [
+      judgeRound1(def.c1 * 0.7),
+      judgeRound1(def.c1 + (def.c2 - def.c1) / 3),
+      judgeRound1(def.c2 + (def.c3 - def.c2) / 3),
+      judgeRound1(def.c3 * 1.3)
+    ];
+  }
+  function renderJudgeExamples() {
+    var host = document.getElementById('judge-example-list');
+    if (!host) return;
+    var vals = judgeExampleValues(JUDGE_DEF);
+    host.innerHTML = vals.map(function (v, i) {
+      return '<div>週達標率平均 <b>' + v + '%</b> → ' + (JUDGE_LABELS[i] || '（未填評語）') + '</div>';
+    }).join('');
+  }
+  function renderJudgeGrid() {
+    var wrap = document.getElementById('judge-grid');
+    wrap.innerHTML = '<div class="cut-card">' +
+      '<div class="ck-label">週達標率平均門檻</div>' +
+      '<div class="ck-note">依此門檻對「整體判斷」質性評語分四檔</div>' +
+      '<div class="cut-inputs">切點 1 <input type="number" min="1" max="97" class="jc1" value="' + JUDGE_DEF.c1 + '" aria-label="整體判斷門檻切點一（%）">％ ／ 切點 2 <input type="number" min="2" max="98" class="jc2" value="' + JUDGE_DEF.c2 + '" aria-label="整體判斷門檻切點二（%）">％ ／ 切點 3 <input type="number" min="3" max="99" class="jc3" value="' + JUDGE_DEF.c3 + '" aria-label="整體判斷門檻切點三（%）">％</div>' +
+      '<div class="cut-preview">' + judgePreview(JUDGE_DEF).map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>' +
+      '<div class="judge-label-row">評語文字 ' + JUDGE_LABELS.map(function (l, i) {
+        return '<input type="text" class="jl-input jl' + i + '" maxlength="10" value="' + l + '" aria-label="第 ' + (i + 1) + ' 檔評語顯示文字">';
+      }).join('') + '</div>' +
+      '</div>' +
+      '<div class="cut-card">' +
+      '<div class="ck-label">套用範例</div>' +
+      '<div class="ck-note">依目前切點與評語文字即時試算，供調整時對照參考</div>' +
+      '<div class="judge-example-list" id="judge-example-list"></div>' +
+      '</div>';
+    var card = wrap.querySelector('.cut-card');
+    var i1 = card.querySelector('.jc1'), i2 = card.querySelector('.jc2'), i3 = card.querySelector('.jc3');
+    function sync() {
+      var v1 = Math.max(1, Math.round(Number(i1.value) || JUDGE_DEF.c1));
+      var v2 = Math.max(v1 + 1, Math.round(Number(i2.value) || JUDGE_DEF.c2));
+      var v3 = Math.max(v2 + 1, Math.round(Number(i3.value) || JUDGE_DEF.c3));
+      JUDGE_DEF.c1 = v1; JUDGE_DEF.c2 = v2; JUDGE_DEF.c3 = v3;
+      i1.value = v1; i2.value = v2; i3.value = v3;
+      card.querySelector('.cut-preview').innerHTML = judgePreview(JUDGE_DEF).map(function (t) { return '<span>' + t + '</span>'; }).join('');
+      renderJudgeExamples();
+    }
+    i1.addEventListener('input', sync);
+    i2.addEventListener('input', sync);
+    i3.addEventListener('input', sync);
+    JUDGE_LABELS.forEach(function (_, idx) {
+      var inp = card.querySelector('.jl' + idx);
+      inp.addEventListener('input', function () {
+        JUDGE_LABELS[idx] = inp.value;
+        card.querySelector('.cut-preview').innerHTML = judgePreview(JUDGE_DEF).map(function (t) { return '<span>' + t + '</span>'; }).join('');
+        renderJudgeExamples();
+      });
+    });
+    renderJudgeExamples();
+  }
+  renderJudgeGrid();
+  document.getElementById('judge-info').innerHTML = CRM.infoIcon('依週達標率平均分四檔：<3% 偏弱／3–10% 吸引力有限／10–25% 中等／>25% 良好（AI 建議預設值，實際檔位待營運以真實活動資料校正）；右側「套用範例」依當前切點與評語文字即時試算');
+
   document.getElementById('btn-save-params').addEventListener('click', function () {
-    CRM.toast('已儲存：變更即時反映後續統計');
+    CRM.toast('已儲存：變更即時反映後續統計（已寫入審計）');
   });
 
   /* ══════════════════════════ ② 字典維護 ══════════════════════════ */
   var dictRendered = false;
   document.getElementById('branch-info').innerHTML = CRM.infoIcon('所屬車隊之車隊地區＝台北者計入雙北口徑；本字典唯一來源為車隊對照表匯入，後台不提供人工維護');
-  document.getElementById('district-info').innerHTML = CRM.infoIcon('district（行政區）→縣市對照；任務/上線類歷史依此字典歸屬縣市、不排除退隊者歷史資料');
 
   var ACT_TYPES = [
     { name: '早尖峰', status: 'on' },
@@ -454,15 +630,23 @@
     { name: '車組招募', status: 'on' },
     { name: '獎勵活動', status: 'on' },
     { name: '培訓課程', status: 'on' },
-    { name: '通用意願調查', status: 'off' }
+    { name: '通用意願調查', status: 'on' }
   ];
+  var typeEditIdx = -1;
   function renderTypeTable() {
     var html = '<thead><tr><th>類型名稱</th><th>狀態</th><th>操作</th></tr></thead><tbody>';
     ACT_TYPES.forEach(function (t, i) {
-      html += '<tr><td>' + t.name + '</td>' +
-        '<td><span class="badge ' + (t.status === 'on' ? 'badge-on">啟用' : 'badge-off">已停用') + '</span></td>' +
-        '<td style="display:flex;gap:6px"><button class="btn btn-sm" type="button" data-rename="' + i + '">改名</button>' +
-        '<button class="btn btn-sm" type="button" data-toggle-type="' + i + '">' + (t.status === 'on' ? '停用' : '啟用') + '</button></td></tr>';
+      if (i === typeEditIdx) {
+        html += '<tr><td><input type="text" class="tbl-select" id="type-edit-name" value="' + t.name + '" maxlength="20" aria-label="' + t.name + ' 新名稱" style="min-height:34px;padding:6px 10px;font-size:13px;width:100%"></td>' +
+          '<td><span class="badge ' + (t.status === 'on' ? 'badge-on">啟用' : 'badge-off">已停用') + '</span></td>' +
+          '<td style="display:flex;gap:6px"><button class="btn btn-sm btn-primary" type="button" data-type-save="' + i + '">確認</button>' +
+          '<button class="btn btn-sm" type="button" data-type-cancel="1">取消</button></td></tr>';
+      } else {
+        html += '<tr><td>' + t.name + '</td>' +
+          '<td><span class="badge ' + (t.status === 'on' ? 'badge-on">啟用' : 'badge-off">已停用') + '</span></td>' +
+          '<td style="display:flex;gap:6px"><button class="btn btn-sm" type="button" data-rename="' + i + '">改名</button>' +
+          '<button class="btn btn-sm" type="button" data-toggle-type="' + i + '">' + (t.status === 'on' ? '停用' : '啟用') + '</button></td></tr>';
+      }
       if (t.status === 'off') {
         html += '<tr><td colspan="3" style="color:var(--meta);font-size:12px;padding-top:0">不出現於新建活動選單；既有引用活動保留原類型顯示（選單標「已停用」）</td></tr>';
       }
@@ -470,7 +654,28 @@
     html += '</tbody>';
     document.getElementById('type-table').innerHTML = html;
     document.querySelectorAll('[data-rename]').forEach(function (b) {
-      b.addEventListener('click', function () { CRM.toast('原型示意：類型「' + ACT_TYPES[b.dataset.rename].name + '」改名（已寫入審計）'); });
+      b.addEventListener('click', function () {
+        typeEditIdx = Number(b.dataset.rename);
+        renderTypeTable();
+        var inp = document.getElementById('type-edit-name');
+        if (inp) { inp.focus(); inp.select(); }
+      });
+    });
+    document.querySelectorAll('[data-type-cancel]').forEach(function (b) {
+      b.addEventListener('click', function () { typeEditIdx = -1; renderTypeTable(); });
+    });
+    document.querySelectorAll('[data-type-save]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var idx = Number(b.dataset.typeSave);
+        var nm = (document.getElementById('type-edit-name').value || '').trim();
+        if (!nm) { CRM.toast('請輸入類型名稱'); return; }
+        if (ACT_TYPES.some(function (t, j) { return j !== idx && t.name === nm; })) { CRM.toast('類型「' + nm + '」已存在，請換名稱'); return; }
+        var old = ACT_TYPES[idx].name;
+        ACT_TYPES[idx].name = nm;
+        typeEditIdx = -1;
+        renderTypeTable();
+        CRM.toast('類型「' + old + '」已改名為「' + nm + '」（已寫入審計）');
+      });
     });
     document.querySelectorAll('[data-toggle-type]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -481,28 +686,28 @@
       });
     });
   }
-
-  function districtRows() {
-    var rows = [];
-    Object.keys(DB.distribution).forEach(function (city) {
-      DB.distribution[city].forEach(function (item) { rows.push({ district: item.d, city: city }); });
-    });
-    return rows.slice(0, 10);
+  var mActType = document.getElementById('modal-acttype');
+  function openActTypeModal() {
+    document.getElementById('mat-name').value = '';
+    mActType.classList.add('show');
+    document.getElementById('mat-name').focus();
   }
-  var DISTRICT_ROWS = districtRows();
-  function renderDistrictTable() {
-    var q = (document.getElementById('district-q').value || '').trim();
-    var rows = q ? DISTRICT_ROWS.filter(function (r) { return r.district.indexOf(q) !== -1; }) : DISTRICT_ROWS;
-    var html = '<thead><tr><th>district（行政區）</th><th>縣市</th></tr></thead><tbody>';
-    if (!rows.length) html += '<tr><td colspan="2" style="color:var(--meta)">查無符合「' + q + '」的行政區</td></tr>';
-    rows.forEach(function (r) { html += '<tr><td>' + r.district + '</td><td>' + r.city + '</td></tr>'; });
-    html += '</tbody>';
-    document.getElementById('district-table').innerHTML = html;
-  }
-  document.getElementById('district-q').addEventListener('input', renderDistrictTable);
-  document.getElementById('btn-district-add').addEventListener('click', function () {
-    CRM.toast('原型示意：新增行政區→縣市對照（已寫入審計）');
+  function closeActTypeModal() { mActType.classList.remove('show'); }
+  document.getElementById('btn-type-add').addEventListener('click', openActTypeModal);
+  document.getElementById('mat-cancel').addEventListener('click', closeActTypeModal);
+  mActType.addEventListener('click', function (e) { if (e.target === mActType) closeActTypeModal(); });
+  document.getElementById('mat-ok').addEventListener('click', function () {
+    var nm = document.getElementById('mat-name').value.trim();
+    if (!nm) { CRM.toast('請輸入類型名稱'); return; }
+    if (ACT_TYPES.some(function (t) { return t.name === nm; })) { CRM.toast('類型「' + nm + '」已存在，請換名稱'); return; }
+    ACT_TYPES.push({ name: nm, status: 'on' });
+    closeActTypeModal();
+    renderTypeTable();
+    CRM.toast('已新增類型「' + nm + '」（已寫入審計）');
   });
+
+  /* 原行政區→縣市對照（districtRows/renderDistrictTable）已移除——REQ-SET-006 廢止（2026-07-17）：
+     online_records 源端補縣市欄後，全部含行政區之資料源均自帶（縣市,行政區）配對，字典無存在必要 */
 
   /* 車隊 → 車隊地區對照：唯一來源＝fleet_dictionary 匯入快照，後台純唯讀檢視（REQ-SET-007，2026-07-09 拍板） */
   var FLEET_REGIONS = ['台北', '台中', '台南', '高雄', '桃園', '新竹', '花蓮', '嘉義', '宜蘭', '離島'];
@@ -549,7 +754,6 @@
     if (dictRendered) return;
     dictRendered = true;
     renderTypeTable();
-    renderDistrictTable();
     renderBranchTable();
   }
 
@@ -560,7 +764,7 @@
     { acct: 'ops01', name: '陳雅婷', roles: ['營管'], on: true },
     { acct: 'ops02', name: '林建宏', roles: ['營管', '稽核'], on: true },
     { acct: 'cs01', name: '張淑芬', roles: ['客服主管'], on: true },
-    { acct: 'cs02', name: '李美玲', roles: ['客服人員'], on: true },
+    { acct: 'cs02', name: '李美玲', roles: ['客服人員'], on: true, locked: true },  // 種子：連續登入失敗鎖定示範（REQ-AUTH-002/006 之後台解鎖）
     { acct: 'cs03', name: '黃文雄', roles: ['客服人員'], on: false },
     { acct: 'audit01', name: '吳麗華', roles: ['稽核'], on: true },
     { acct: 'view01', name: '蔡家豪', roles: ['唯讀報表'], on: true }
@@ -569,12 +773,20 @@
     return USERS.filter(function (u) { return u.roles.indexOf('super admin') !== -1 && u.on; }).length;
   }
   function renderUserTable() {
-    var html = '<thead><tr><th>帳號</th><th>姓名</th><th>角色</th><th>狀態</th></tr></thead><tbody>';
+    var activeRoles = activeRoleNames();
+    var html = '<thead><tr><th>帳號</th><th>姓名</th><th>角色</th><th>指派角色</th><th>狀態</th><th>操作</th></tr></thead><tbody>';
     USERS.forEach(function (u, i) {
       var isOnlySuper = u.roles.indexOf('super admin') !== -1 && superAdminOnCount() <= 1 && u.on;
+      var current = u.roles[0] || '';
+      var opts = activeRoles.indexOf(current) === -1 && current ? activeRoles.concat([current]) : activeRoles;
+      var selHtml = '<select class="tbl-select" data-assign="' + i + '" aria-label="' + u.acct + ' 指派角色"' + (isOnlySuper ? ' disabled title="唯一 super admin 不可變更角色"' : '') + '>' +
+        opts.map(function (r) { return '<option value="' + r + '"' + (r === current ? ' selected' : '') + '>' + r + (activeRoles.indexOf(r) === -1 ? '（已停用）' : '') + '</option>'; }).join('') + '</select>';
+      var lockHtml = u.locked ? '<span class="badge badge-warn lock-badge" title="因連續登入失敗 5 次遭鎖定 15 分鐘（429，REQ-AUTH-002）">🔒 已鎖定</span><button class="btn btn-sm" type="button" data-unlock="' + i + '">解鎖</button>' : '';
       html += '<tr><td>' + u.acct + '</td><td>' + CRM.maskName(u.name) + '</td>' +
         '<td><span class="chips-wrap">' + u.roles.map(function (r) { return '<span class="chip">' + r + '</span>'; }).join('') + '</span></td>' +
-        '<td><button class="status-toggle" type="button" data-user="' + i + '" aria-pressed="' + u.on + '"' + (isOnlySuper ? ' title="唯一 super admin 不可停用/降級"' : '') + '>' + (u.on ? '啟用中' : '已停用') + '</button></td></tr>';
+        '<td>' + selHtml + '</td>' +
+        '<td>' + lockHtml + '<button class="status-toggle" type="button" data-user="' + i + '" aria-pressed="' + u.on + '"' + (isOnlySuper ? ' title="唯一 super admin 不可停用/降級"' : '') + '>' + (u.on ? '啟用中' : '已停用') + '</button></td>' +
+        '<td><button class="btn btn-sm" type="button" data-reset="' + i + '">重設密碼</button></td></tr>';
     });
     html += '</tbody>';
     document.getElementById('user-table').innerHTML = html;
@@ -588,37 +800,62 @@
         CRM.toast('帳號「' + u.acct + '」已' + (u.on ? '啟用' : '停用（停用即除役，不提供硬刪除；停用登入回 403）'));
       });
     });
+    document.querySelectorAll('[data-assign]').forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        var u = USERS[sel.dataset.assign];
+        var old = u.roles.slice();
+        u.roles = [sel.value];
+        renderUserTable();
+        CRM.toast('帳號「' + u.acct + '」角色已由「' + old.join('、') + '」改指派為「' + sel.value + '」（取代原角色；下次請求生效，已寫入審計）');
+      });
+    });
+    document.querySelectorAll('[data-unlock]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var u = USERS[b.dataset.unlock];
+        u.locked = false;
+        renderUserTable();
+        CRM.toast('帳號「' + u.acct + '」已解鎖（已寫入審計）');
+      });
+    });
+    document.querySelectorAll('[data-reset]').forEach(function (b) {
+      b.addEventListener('click', function () { openResetModal(USERS[b.dataset.reset]); });
+    });
   }
 
   var MODULES = [
     { label: '總覽', perms: ['overview.view'] },
     { label: '運力分析', perms: ['capacity.view'] },
     { label: '隊員 Profile', perms: ['profile.view', 'profile.view_sensitive'] },
-    { label: '隊員活動', perms: ['activity.manage'] },
-    { label: '客服紀錄', perms: ['callproject.manage', 'callrecord.view_all', 'callrecord.edit_assigned'] },
-    { label: '資料匯入', perms: ['import.run'] },
+    { label: '隊員活動', perms: ['activity.view', 'activity.manage'] },
+    { label: '客服外撥', perms: ['callproject.manage', 'callrecord.view_all', 'callrecord.edit_assigned'] },
+    { label: '資料匯入', perms: ['import.view', 'import.execute'] },
+    { label: '通用／報表匯出', perms: ['report.export'] },
     { label: '系統設定', perms: ['admin.settings', 'admin.users', 'admin.tokens', 'admin.credentials', 'admin.delete'] },
     { label: '審計', perms: ['audit.view'] }
   ];
   var PERM_LABELS = {
     'overview.view': '檢視', 'capacity.view': '檢視運力', 'fleet.view': '檢視車組車款',
     'profile.view': '檢視', 'profile.view_sensitive': '檢視敏感欄位（收入）',
-    'activity.manage': '管理活動', 'callproject.manage': '管理外撥專案',
+    'activity.view': '檢視', 'activity.manage': '管理活動', 'callproject.manage': '管理外撥專案',
     'callrecord.view_all': '檢視全量紀錄', 'callrecord.edit_assigned': '編輯本人作業範圍',
-    'import.run': '執行匯入', 'admin.settings': '參數與字典', 'admin.users': '帳號管理',
+    'import.view': '匯入頁唯讀', 'import.execute': '執行匯入', 'report.export': '報表匯出',
+    'admin.settings': '參數與字典', 'admin.users': '帳號管理',
     'admin.tokens': 'Token 管理', 'admin.credentials': '憑證管理', 'admin.delete': '刪除操作',
     'audit.view': '查詢審計'
   };
   var ALL_PERMS = [].concat.apply([], MODULES.map(function (m) { return m.perms; }));
   var ROLES = [
-    { name: 'super admin', perms: ALL_PERMS.slice() },
-    { name: '系統管理員', perms: ['overview.view', 'admin.settings', 'admin.users', 'admin.tokens', 'admin.credentials', 'audit.view'] },
-    { name: '營管', perms: ['overview.view', 'capacity.view', 'fleet.view', 'profile.view', 'activity.manage', 'import.run'] },
-    { name: '客服主管', perms: ['overview.view', 'profile.view', 'profile.view_sensitive', 'callproject.manage', 'callrecord.view_all', 'callrecord.edit_assigned'] },
-    { name: '客服人員', perms: ['profile.view', 'callrecord.edit_assigned'] },
-    { name: '稽核', perms: ['overview.view', 'audit.view'] },
-    { name: '唯讀報表', perms: ['overview.view', 'capacity.view', 'fleet.view'] }
+    { name: 'super admin', perms: ALL_PERMS.slice(), status: 'on' },
+    { name: '系統管理員', perms: ['overview.view', 'activity.view', 'admin.settings', 'admin.users', 'admin.tokens', 'admin.credentials', 'audit.view'], status: 'on' },
+    { name: '營管', perms: ['overview.view', 'capacity.view', 'profile.view', 'activity.view', 'activity.manage', 'import.view', 'import.execute', 'report.export'], status: 'on' },
+    { name: '客服主管', perms: ['overview.view', 'profile.view', 'profile.view_sensitive', 'activity.view', 'callproject.manage', 'callrecord.view_all', 'callrecord.edit_assigned', 'report.export'], status: 'on' },
+    { name: '客服人員', perms: ['profile.view', 'activity.view', 'callrecord.edit_assigned'], status: 'on' },
+    { name: '稽核', perms: ['overview.view', 'activity.view', 'audit.view'], status: 'on' },
+    { name: '唯讀報表', perms: ['overview.view', 'capacity.view', 'activity.view'], status: 'on' }
   ];
+  function activeRoleNames() {
+    return ROLES.filter(function (r) { return r.status !== 'off'; }).map(function (r) { return r.name; });
+  }
   document.getElementById('role-info').innerHTML = CRM.infoIcon('模組 × 權限 matrix；每角色權限獨立，使用者可持多角色（權限聯集）');
 
   function matrixHtml(role) {
@@ -636,10 +873,16 @@
     return html;
   }
   function renderRoleTable() {
-    var html = '<thead><tr><th></th><th>角色</th><th>持有權限數</th></tr></thead><tbody>';
+    var html = '<thead><tr><th></th><th>角色</th><th>持有權限數</th><th>狀態</th><th>操作</th></tr></thead><tbody>';
     ROLES.forEach(function (r, i) {
-      html += '<tr class="mrow" tabindex="0" data-role-idx="' + i + '" aria-expanded="false"><td class="chev">▸</td><td>' + r.name + '</td><td class="num">' + r.perms.length + ' / ' + ALL_PERMS.length + '</td></tr>' +
-        '<tr class="detail-row" id="role-detail-' + i + '" style="display:none"><td colspan="3">' + matrixHtml(r) + '</td></tr>';
+      var built = r.name === 'super admin';
+      var on = r.status !== 'off';
+      html += '<tr class="mrow" tabindex="0" data-role-idx="' + i + '" aria-expanded="false"><td class="chev">▸</td>' +
+        '<td>' + r.name + (built ? ' <span class="chip" title="內建角色，不可停用">內建</span>' : '') + '</td>' +
+        '<td class="num">' + r.perms.length + ' / ' + ALL_PERMS.length + '</td>' +
+        '<td><span class="badge ' + (on ? 'badge-on">啟用中' : 'badge-off">已停用') + '</span></td>' +
+        '<td>' + (built ? '<span style="color:var(--meta);font-size:12.5px">—</span>' : '<button class="btn btn-sm" type="button" data-role-toggle="' + i + '">' + (on ? '停用' : '啟用') + '</button>') + '</td></tr>' +
+        '<tr class="detail-row" id="role-detail-' + i + '" style="display:none"><td colspan="5">' + matrixHtml(r) + '</td></tr>';
     });
     html += '</tbody>';
     document.getElementById('role-table').innerHTML = html;
@@ -654,6 +897,16 @@
       tr.addEventListener('click', toggle);
       tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') toggle(); });
     });
+    document.querySelectorAll('[data-role-toggle]').forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var r = ROLES[b.dataset.roleToggle];
+        r.status = (r.status === 'off') ? 'on' : 'off';
+        renderRoleTable();
+        renderUserTable();
+        CRM.toast('角色「' + r.name + '」已' + (r.status === 'off' ? '停用（不可再指派；已持有者下次請求起失去該角色權限，其他角色不受影響，已寫入審計）' : '啟用（可再指派，已寫入審計）'));
+      });
+    });
     document.querySelectorAll('.matrix-table input[type="checkbox"]').forEach(function (cb) {
       cb.addEventListener('click', function (e) { e.stopPropagation(); });
       cb.addEventListener('change', function () {
@@ -665,6 +918,69 @@
       });
     });
   }
+  var mRole = document.getElementById('modal-role');
+  function openRoleModal() {
+    document.getElementById('mr-name').value = '';
+    mRole.classList.add('show');
+    document.getElementById('mr-name').focus();
+  }
+  function closeRoleModal() { mRole.classList.remove('show'); }
+  document.getElementById('btn-role-add').addEventListener('click', openRoleModal);
+  document.getElementById('mr-cancel').addEventListener('click', closeRoleModal);
+  mRole.addEventListener('click', function (e) { if (e.target === mRole) closeRoleModal(); });
+  document.getElementById('mr-ok').addEventListener('click', function () {
+    var nm = document.getElementById('mr-name').value.trim();
+    if (!nm) { CRM.toast('請輸入角色名稱'); return; }
+    if (ROLES.some(function (r) { return r.name === nm; })) { CRM.toast('角色「' + nm + '」已存在，請換名稱'); return; }
+    ROLES.push({ name: nm, perms: [], status: 'on' });
+    closeRoleModal();
+    renderRoleTable();
+    renderUserTable();
+    CRM.toast('已新增角色「' + nm + '」（初始無任何權限，請展開設定；已寫入審計）');
+  });
+
+  var mUser = document.getElementById('modal-user');
+  function openUserModal() {
+    document.getElementById('mu-email').value = '';
+    document.getElementById('mu-name').value = '';
+    document.getElementById('mu-role').innerHTML = activeRoleNames().map(function (r) { return '<option value="' + r + '">' + r + '</option>'; }).join('');
+    mUser.classList.add('show');
+    document.getElementById('mu-email').focus();
+  }
+  function closeUserModal() { mUser.classList.remove('show'); }
+  document.getElementById('btn-user-add').addEventListener('click', openUserModal);
+  document.getElementById('mu-cancel').addEventListener('click', closeUserModal);
+  mUser.addEventListener('click', function (e) { if (e.target === mUser) closeUserModal(); });
+  document.getElementById('mu-ok').addEventListener('click', function () {
+    var email = document.getElementById('mu-email').value.trim();
+    var nm = document.getElementById('mu-name').value.trim();
+    var role = document.getElementById('mu-role').value;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { CRM.toast('請輸入正確格式的 email'); return; }
+    if (!nm) { CRM.toast('請輸入姓名'); return; }
+    if (USERS.some(function (u) { return u.acct === email; })) { CRM.toast('此 email 已建有帳號'); return; }
+    USERS.push({ acct: email, name: nm, roles: role ? [role] : [], on: true });
+    closeUserModal();
+    renderUserTable();
+    CRM.toast('已建立帳號「' + email + '」（已寄送設定密碼邀請信，已寫入審計）');
+  });
+
+  var mReset = document.getElementById('modal-reset');
+  var resetTarget = null;
+  function openResetModal(u) {
+    resetTarget = u;
+    document.getElementById('mrs-acct').value = u.acct;
+    document.getElementById('mrs-super-note').style.display = (u.roles.indexOf('super admin') !== -1) ? '' : 'none';
+    mReset.classList.add('show');
+  }
+  function closeResetModal() { mReset.classList.remove('show'); resetTarget = null; }
+  document.getElementById('mrs-cancel').addEventListener('click', closeResetModal);
+  mReset.addEventListener('click', function (e) { if (e.target === mReset) closeResetModal(); });
+  document.getElementById('mrs-ok').addEventListener('click', function () {
+    var acct = resetTarget && resetTarget.acct;
+    closeResetModal();
+    CRM.toast('已寄送密碼重設信至「' + acct + '」（原密碼即刻失效，已寫入審計）');
+  });
+
   function renderRbac() {
     if (rbacRendered) return;
     rbacRendered = true;
@@ -715,18 +1031,22 @@
   });
 
   var TOKENS = [
-    { name: '夜間批次匯入排程', scope: 'import.run', expire: '2026-12-31', status: '使用中' },
+    { name: '夜間批次匯入排程', scope: 'import.execute', expire: '2026-12-31', status: '使用中' },
     { name: 'Tableau 唯讀同步', scope: 'capacity.view', expire: '2026-09-30', status: '使用中' },
     { name: '隊管系統回寫憑證讀取', scope: 'admin.credentials', expire: '2026-08-15', status: '使用中' },
     { name: '舊版報表匯出', scope: 'audit.view', expire: '2026-03-01', status: '已撤銷' }
   ];
+  var tokenRevokedOpen = false;
   function renderTokenTable() {
-    var html = '<thead><tr><th>名稱</th><th>Scope</th><th>效期</th><th>狀態</th><th>操作</th></tr></thead><tbody>';
-    TOKENS.forEach(function (t, i) {
-      var revoked = t.status === '已撤銷';
+    var active = TOKENS.filter(function (t) { return t.status !== '已撤銷'; });
+    var revoked = TOKENS.filter(function (t) { return t.status === '已撤銷'; });
+    var html = '<thead><tr><th>名稱</th><th>Scope ' + CRM.infoIcon('scope 值域沿用 RBAC 權限 key（正式版專屬 scope 定義待訂）') + '</th><th>效期</th><th>狀態</th><th>操作</th></tr></thead><tbody>';
+    if (!active.length) html += '<tr><td colspan="5" style="color:var(--meta)">目前無使用中 Token</td></tr>';
+    active.forEach(function (t) {
+      var idx = TOKENS.indexOf(t);
       html += '<tr><td>' + t.name + '</td><td>' + t.scope + '</td><td class="num">' + t.expire + '</td>' +
-        '<td><span class="badge ' + (revoked ? 'badge-off' : 'badge-on') + '">' + t.status + '</span></td>' +
-        '<td>' + (revoked ? '<span style="color:var(--meta);font-size:12.5px">—</span>' : '<button class="btn btn-sm btn-danger-o" type="button" data-token="' + i + '">撤銷</button>') + '</td></tr>';
+        '<td><span class="badge badge-on">' + t.status + '</span></td>' +
+        '<td><button class="btn btn-sm btn-danger-o" type="button" data-token="' + idx + '">撤銷</button></td></tr>';
     });
     html += '</tbody>';
     document.getElementById('token-table').innerHTML = html;
@@ -738,7 +1058,64 @@
         CRM.toast('Token「' + t.name + '」已撤銷（原型示意；正式版即時失效並寫入審計）');
       });
     });
+    renderTokenRevoked(revoked);
   }
+  function renderTokenRevoked(revoked) {
+    var wrap = document.getElementById('token-revoked-wrap');
+    if (!revoked.length) { wrap.innerHTML = ''; return; }
+    var html = '<button type="button" class="btn btn-sm" id="token-revoked-toggle" aria-expanded="' + tokenRevokedOpen + '" style="margin-top:2px">已撤銷（' + revoked.length + '） ' + (tokenRevokedOpen ? '▲' : '▼') + '</button>';
+    if (tokenRevokedOpen) {
+      html += '<div style="margin-top:8px;display:grid;gap:4px">' + revoked.map(function (t) {
+        return '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--meta);padding:4px 0;border-bottom:1px dashed var(--border-soft)"><span>' + t.name + '（' + t.scope + '）</span><span>失效於 ' + t.expire + '</span></div>';
+      }).join('') + '</div>';
+    }
+    wrap.innerHTML = html;
+    var toggleBtn = document.getElementById('token-revoked-toggle');
+    if (toggleBtn) toggleBtn.addEventListener('click', function () { tokenRevokedOpen = !tokenRevokedOpen; renderTokenRevoked(revoked); });
+  }
+  function tokenPad2(n) { return (n < 10 ? '0' : '') + n; }
+  function tokenAddDays(dateStr, days) {
+    var d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    return d.getFullYear() + '-' + tokenPad2(d.getMonth() + 1) + '-' + tokenPad2(d.getDate());
+  }
+  function tokenFakePreview(name, scopes, seedN) {
+    var seed = name + '|' + scopes.join(',') + '|' + seedN;
+    var h = 0;
+    for (var i = 0; i < seed.length; i++) { h = (h * 31 + seed.charCodeAt(i)) >>> 0; }
+    var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    var out = '';
+    for (var k = 0; k < 6; k++) { out += chars[h % chars.length]; h = Math.floor(h / chars.length); }
+    return 'tk_' + out + '****';
+  }
+  var mToken = document.getElementById('modal-token');
+  function openTokenModal() {
+    document.getElementById('mtk-name').value = '';
+    document.getElementById('mtk-scopes').innerHTML = ALL_PERMS.map(function (p) {
+      return '<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-2);cursor:pointer"><input type="checkbox" class="mtk-scope-cb" value="' + p + '"> ' + p + '（' + PERM_LABELS[p] + '）</label>';
+    }).join('');
+    document.getElementById('mtk-expire').value = '90';
+    mToken.classList.add('show');
+    document.getElementById('mtk-name').focus();
+  }
+  function closeTokenModal() { mToken.classList.remove('show'); }
+  document.getElementById('btn-token-add').addEventListener('click', openTokenModal);
+  document.getElementById('mtk-cancel').addEventListener('click', closeTokenModal);
+  mToken.addEventListener('click', function (e) { if (e.target === mToken) closeTokenModal(); });
+  document.getElementById('mtk-ok').addEventListener('click', function () {
+    var nm = document.getElementById('mtk-name').value.trim();
+    var scopes = Array.prototype.slice.call(document.querySelectorAll('.mtk-scope-cb:checked')).map(function (cb) { return cb.value; });
+    var expireSel = document.getElementById('mtk-expire').value;
+    if (!nm) { CRM.toast('請輸入 Token 名稱'); return; }
+    if (TOKENS.some(function (t) { return t.name === nm && t.status !== '已撤銷'; })) { CRM.toast('Token「' + nm + '」已存在，請換名稱'); return; }
+    if (!scopes.length) { CRM.toast('請至少勾選一項 scope'); return; }
+    var expireLabel = expireSel === 'forever' ? '永久' : tokenAddDays(DB.meta.dataAsOf, Number(expireSel));
+    TOKENS.push({ name: nm, scope: scopes.join('、'), expire: expireLabel, status: '使用中' });
+    var preview = tokenFakePreview(nm, scopes, TOKENS.length);
+    closeTokenModal();
+    renderTokenTable();
+    CRM.toast('已建立 Token「' + nm + '」：' + preview + '（僅顯示一次，請妥善保存；已寫入審計）');
+  });
   function renderCreds() {
     if (credsRendered) return;
     credsRendered = true;
@@ -822,6 +1199,11 @@
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     if (mCred.classList.contains('show')) closeCredModal();
+    if (mRole.classList.contains('show')) closeRoleModal();
+    if (mActType.classList.contains('show')) closeActTypeModal();
+    if (mUser.classList.contains('show')) closeUserModal();
+    if (mReset.classList.contains('show')) closeResetModal();
+    if (mToken.classList.contains('show')) closeTokenModal();
   });
 
   /* ══════════════════════════ tabs ══════════════════════════ */
@@ -835,7 +1217,25 @@
         document.getElementById(PANES[k]).style.display = (k === t.dataset.tab) ? '' : 'none';
       });
       if (LAZY[t.dataset.tab]) LAZY[t.dataset.tab]();
+      navCommit && navCommit();
     });
+  });
+
+  /* 頁內歷史（2026-07-16） */
+  function getViewState() {
+    var active = document.querySelector('.tab[aria-selected="true"]');
+    return { tab: (active && PANES[active.dataset.tab]) ? active.dataset.tab : 'params' };
+  }
+  function applyViewState(st) {
+    var tab = (st && PANES[st.tab]) ? st.tab : 'params';
+    var el = document.querySelector('.tab[data-tab="' + tab + '"]');
+    if (el) el.click();
+  }
+
+  document.getElementById('btn-error-retry').addEventListener('click', function () {
+    var normalBtn = document.querySelector('[data-state="normal"]');
+    if (normalBtn) normalBtn.click();
+    CRM.toast('已重新載入');
   });
 
   /* ══════════════════════════ 異常狀態切換器 ══════════════════════════ */
@@ -845,6 +1245,8 @@
       document.getElementById('st-' + k).classList.toggle('show', state === k);
     });
   });
+
+  var navCommit = CRM.initPageHistory(getViewState, applyViewState);
 })();
 </script>
 

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>客服紀錄｜55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=29">
+<title>客服外撥｜55688 隊員 CRM</title>
+<link rel="stylesheet" href="../tokens.css?v=35">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -83,8 +83,42 @@
   .agent-progress { display: grid; gap: 9px; }
   .agent-row { display: grid; grid-template-columns: 96px 1fr 64px; gap: 10px; align-items: center; font-size: 13px; }
   .agent-row .bar-track { background: var(--surface-warm); border-radius: 9999px; height: 9px; overflow: hidden; }
-  .agent-row .bar-fill { background: var(--accent); height: 100%; border-radius: 9999px; }
+  .agent-row .bar-fill { display: block; background: var(--accent); height: 100%; border-radius: 9999px; }
   .agent-row .cnt { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* 進行中摘要卡 mini 指標＋總表數字欄（REQ-CS-020） */
+  .mini-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .mini-stats b { color: var(--fg); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .pbar { display: block; background: var(--surface-warm); border-radius: 9999px; height: 7px; overflow: hidden; margin-top: 10px; }
+  .pbar > span { display: block; background: var(--accent); height: 100%; border-radius: 9999px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 數據分析（REQ-CS-019） */
+  .ana-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+  @media (max-width: 900px) { .ana-cols { grid-template-columns: 1fr; } }
+  .ana-cols > * { min-width: 0; }
+  .ana-box { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .ana-box .bt { font-size: 13px; font-weight: 500; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
+  .hbar-row { display: grid; grid-template-columns: minmax(90px, 150px) 1fr 76px; gap: 8px; align-items: center; font-size: 12.5px; margin-bottom: 6px; }
+  .hbar-row > * { min-width: 0; }
+  .hbar-row .lbl { color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbar-row .trk { background: var(--surface-warm); border-radius: 6px; height: 14px; overflow: hidden; }
+  .hbar-row .fil { display: block; height: 100%; background: var(--chart-2); border-radius: 6px; }
+  .hbar-row.top .fil { background: var(--accent); }
+  .hbar-row .cnt { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .rank-n { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); color: var(--accent-on); font-size: 10.5px; align-items: center; justify-content: center; margin-right: 4px; flex-shrink: 0; }
+  .donut-wrap { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .donut { width: 110px; height: 110px; border-radius: 50%; position: relative; flex-shrink: 0; }
+  .donut::after { content: attr(data-c); position: absolute; inset: 24px; background: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+  .dleg { font-size: 12.5px; color: var(--fg-2); display: grid; gap: 4px; }
+  .dleg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+  .concl { border-left: 3px solid var(--accent); background: var(--surface-warm); border-radius: 0 12px 12px 0; padding: 12px 16px; font-size: 13px; line-height: 1.8; color: var(--fg-2); margin-top: 14px; }
+
+  /* 電訪紀錄多次制（REQ-CS-002） */
+  .call-row { display: flex; gap: 10px; align-items: center; font-size: 13px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 7px 12px; flex-wrap: wrap; }
+  .call-row .call-n { color: var(--muted); font-size: 12px; min-width: 44px; }
+  .call-row .call-t { font-variant-numeric: tabular-nums; }
+  .call-edit-box { background: var(--bg); border: 1px dashed var(--border-soft); border-radius: 10px; padding: 10px 12px; }
 
   /* 欄位設定 chips */
   .field-chips-wrap { display: grid; gap: 10px; }
@@ -168,7 +202,9 @@
   .modal-close:hover { background: var(--surface-warm); color: var(--fg); }
   .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
   .assign-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; cursor: pointer; }
-  .assign-row input { width: 17px; height: 17px; }
+  .assign-row input[type="checkbox"] { width: 17px; height: 17px; }
+  .assign-row input[type="number"] { min-height: 32px; }
+  .assign-row input[type="number"]:disabled { opacity: .5; }
   .assign-preview { margin-top: 12px; padding: 12px; background: var(--surface-warm); border-radius: 10px; font-size: 13px; color: var(--fg-2); line-height: 1.7; }
 
   .state-layer { display: none; padding: 72px 24px; text-align: center; }
@@ -190,7 +226,7 @@
 <main class="page">
   <div class="page-head">
     <div>
-      <h1>客服紀錄</h1>
+      <h1>客服外撥</h1>
       <div class="page-sub">外撥專案管理・逐筆撥打作業・跨專案回覆篩選・司機溝通歷程<span id="scope-info-host"></span></div>
     </div>
     <div class="role-bar">
@@ -202,7 +238,7 @@
     </div>
   </div>
 
-  <div class="tabs" role="tablist" aria-label="客服紀錄功能切換">
+  <div class="tabs" role="tablist" aria-label="客服外撥功能切換">
     <button class="tab" role="tab" id="tab-1" aria-selected="true" data-tab="dial" type="button">外撥專案</button>
     <button class="tab" role="tab" id="tab-2" aria-selected="false" data-tab="work" type="button">逐筆撥打</button>
     <button class="tab" role="tab" id="tab-3" aria-selected="false" data-tab="reply" type="button">回覆篩選</button>
@@ -211,12 +247,18 @@
 
   <div id="content-normal">
 
-    <!-- Tab①：外撥專案 -->
+    <!-- Tab①：外撥專案（REQ-CS-020 雙區：上進行中摘要卡＋下全部專案總表；下鑽單一專案檢視） -->
     <section id="pane-dial" role="tabpanel" aria-labelledby="tab-1">
-      <div class="panel">
-        <div class="panel-title">外撥專案<span style="font-weight:400;font-size:12px;color:var(--meta)">點選卡片展開詳情</span></div>
-        <p class="panel-note" style="margin-bottom:14px">狀態僅能單向前進：草稿 → 進行中 → 已結案；已結案唯讀封存（統計保留、不可再編輯）；任何狀態變更寫入審計日誌（REQ-CS-001）</p>
-        <div class="proj-grid" id="proj-grid"></div>
+      <div id="proj-list-view">
+        <div class="panel">
+          <div class="panel-title">進行中專案<span style="display:flex;gap:12px;align-items:center;font-weight:400"><span style="font-size:12px;color:var(--meta)">點卡片進入單一專案檢視</span><button class="btn btn-primary" id="btn-create-proj" type="button" title="需 callproject.manage 權限（原型以主管視角預覽，REQ-CS-001）">＋建立外撥專案</button></span></div>
+          <p class="panel-note" style="margin-bottom:14px">狀態僅能單向前進：草稿 → 進行中 → 已結案；已結案唯讀封存（統計保留、不可再編輯）；任何狀態變更寫入審計日誌（REQ-CS-001）</p>
+          <div class="proj-grid" id="ongoing-cards"></div>
+        </div>
+        <div class="panel" style="margin-top:16px">
+          <div class="panel-title">全部專案<span style="font-weight:400"><select id="proj-status-filter" aria-label="依狀態篩選專案"><option value="all">全部狀態</option><option value="草稿">草稿</option><option value="進行中">進行中</option><option value="已結案">已結案</option></select></span></div>
+          <div class="chart-wrap"><table id="proj-table" aria-label="全部外撥專案總表，點列進入單一專案檢視"></table></div>
+        </div>
       </div>
       <div id="proj-detail-host" style="margin-top: 16px"></div>
     </section>
@@ -280,19 +322,20 @@
     <div class="state-icon" aria-hidden="true">⚠️</div>
     <div class="state-title">資料載入失敗</div>
     <div class="state-desc">連線發生問題（HTTP 500），請稍後再試。</div>
+    <button class="btn" type="button" onclick="document.querySelector('[data-state=&quot;normal&quot;]').click(); CRM.toast('已重新載入')">重試</button>
   </div>
   <div class="state-layer" id="st-forbidden">
     <div class="state-icon" aria-hidden="true">🔒</div>
     <div class="state-title">無權限檢視此頁</div>
-    <div class="state-desc">你的帳號沒有「客服紀錄」相關權限，請聯絡系統管理員。</div>
+    <div class="state-desc">你的帳號沒有「客服外撥」相關權限，請聯絡系統管理員。</div>
   </div>
 </main>
 
 <footer class="proto-note">
-  原型說明：本頁是全站唯一顯示隊員全名與行動電話的頁面（外撥作業範圍例外，其餘頁面依個資口徑遮罩姓名、不顯示電話）。名單／統計／溝通歷程皆為 deterministic 假資料即時生成（客服 3 人：王雅婷、李思穎、陳柏宇）；「分配名單」「儲存並帶下一筆」為前端記憶體內示意操作，重新整理頁面將重置。含電話之檢視與匯出，正式版將逐次寫入審計日誌（REQ-GEN-006／REQ-SET-004）。
+  原型說明：逐筆撥打表單為全站唯一顯示隊員全名與完整行動電話之區塊（REQ-PROF-007 收窄，外撥作業必要）；本頁其餘名單清單（外撥專案名單、我的被分配名單、一鍵帶入預覽）依個資口徑遮罩姓名／電話，其餘頁面比照辦理。名單／統計／數據分析／溝通歷程皆為 deterministic 假資料即時生成（客服 3 人：王雅婷、李思穎、陳柏宇）；「建立外撥專案」「分群篩選帶入建立草稿專案」「啟動／結案」「編輯欄位／選項（含自訂欄位隱藏／移除、另存為模板）」「上傳／追加名單（示意檔模擬匯入）」「回覆篩選帶入建專案」「分配名單」「電訪紀錄新增／修改／刪除」「其他建議選項新增（全專案共用）」「儲存並帶下一筆」皆為前端記憶體內真互動，重新整理頁面將重置（點接聽自動帶入之時間為使用者操作當下時間，屬唯一非 deterministic 來源）；正式版建立與狀態轉移限 callproject.manage 權限並寫入審計（REQ-CS-001），自訂欄位「移除」限 admin.delete 權限（REQ-CS-006）。含電話之檢視與匯出，正式版將逐次寫入審計日誌（REQ-GEN-006／REQ-SET-004）；溝通歷程與報表下載之 edit_assigned 範圍收斂依 REQ-CS-013／018／021（原型以「客服・王雅婷」角色示意）。
 </footer>
 
-<script src="../app.js?v=29"></script>
+<script src="../app.js?v=35"></script>
 <script>
 (function () {
   'use strict';
@@ -317,13 +360,68 @@
   var REASONS = ['低價', '距離遠', '目的地不符', '時段不合', '車輛保養中'];
   var SURNAMES = ['王', '林', '張', '李', '陳', '黃', '吳', '劉', '蔡', '楊'];
   var GIVEN = ['志明', '淑惠', '建宏', '雅婷', '俊傑', '美玲', '文雄', '麗華', '家豪', '怡君'];
-  var FIXED_FIELDS = ['隊編', '行動電話', '第一次電訪時間', '是否接聽'];
-  var DEFAULT_FIELDS = ['第二次電訪時間', '第二次電訪接聽', '簡訊/LINE 通知', '意願'];
-  var CUSTOM_FIELDS = ['不願承接原因（單選）'];
+  var FIXED_FIELDS = ['隊編', '行動電話', '電訪紀錄（1~6 次）', '其他建議（多選・同仁可增選項）'];
+  var DEFAULT_FIELDS = ['簡訊/LINE 通知', '意願', '不願承接原因'];  // REQ-CS-002 改訂：不願承接原因改固定預設欄位（多選、選項可編輯，不再是欄位庫自訂欄位）
+  var MAX_CALLS = 6;  // 電訪次數上限（REQ-CS-002 多次制，2026-07-16 拍板）
+  var FIELD_TYPES = ['文字', '數字', '單選', '多選', '日期'];  // REQ-CS-003 五型別
+  /* 全域欄位庫（REQ-CS-004；名稱/型別入庫後鎖定——要改＝停用舊欄＋建新欄）。
+     單/多選帶「庫層預設選項」，專案挑用時複製為專案層選項、調整不回寫庫（REQ-CS-003 兩層制） */
+  var FIELD_LIB = [
+    { name: '外撥主題一', type: '文字' },
+    { name: '外撥主題二', type: '數字' },
+    { name: '外撥主題三', type: '單選', options: ['選項一', '選項二', '選項三'] },
+    { name: '外撥主題四', type: '多選', options: ['選項一', '選項二', '選項三'] },
+    { name: '外撥主題五', type: '日期' }
+  ];
+  function libField(name) {
+    var f = null;
+    FIELD_LIB.forEach(function (x) { if (x.name === name) f = x; });
+    return f ? { name: f.name, type: f.type, options: f.options ? f.options.slice() : null } : null;  // 專案層副本
+  }
+  function fieldLabel(f) { return f.name + '（' + f.type + '）'; }
+  var PROJ_TEMPLATES = {  // 專案模板（REQ-CS-005）
+    none: { label: '不套用（自固定＋預設欄位開始）', customs: [] },
+    survey: { label: '意願調查模板（沿用預設欄位；不願承接原因已內建可勾選使用）', customs: [] },
+    care: { label: '關懷回訪模板（自訂：外撥主題一＋外撥主題五）', customs: ['外撥主題一', '外撥主題五'] }
+  };
+  function stdFields() { return { defaults: DEFAULT_FIELDS.slice(), customs: [] }; }
 
   var ROLE = 'mgr'; // 'mgr' | 'cs'
 
-  /* ── 名單生成：進行中專案（7月晚尖峰意願調查） ── */
+  /* ── 電訪紀錄多次制 helpers（REQ-CS-002：r.calls = [{time, connected}]，上限 MAX_CALLS） ── */
+  function callCount(r) { return (r.calls || []).length; }
+  function lastCall(r) { var c = r.calls || []; return c.length ? c[c.length - 1] : null; }
+  function contacted(r) { return (r.calls || []).some(function (c) { return c.connected === '是'; }); }
+  function totalCalls(list) { var n = 0; list.forEach(function (r) { n += callCount(r); }); return n; }
+  function fmtPhone(v) {
+    var d = v.replace(/\D/g, '').slice(0, 10);
+    if (d.length > 7) return d.slice(0, 4) + '-' + d.slice(4, 7) + '-' + d.slice(7);
+    if (d.length > 4) return d.slice(0, 4) + '-' + d.slice(4);
+    return d;
+  }
+  function nowStr() { // 「現在」鍵／點接聽自動帶時間：使用者操作帶入當下，唯一允許之非決定性來源（假資料生成仍全 deterministic）
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  function toLocalInput(s) { return s ? s.replace(' ', 'T') : ''; }
+  function fromLocalInput(s) { return s ? s.replace('T', ' ') : ''; }
+  function escHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  /* ── CSV 下載（REQ-CS-021：真檔案下載，非 toast 示意；共用邏輯見 app.js CRM.downloadCsv） ── */
+  /* ── 名單生成：進行中專案（7月晚尖峰意願調查）——每筆 1~3 次電訪、時間分散供每日通次圖 ── */
+  function genCalls(s, baseDay, spanDays, maxN) {
+    var n = 1 + Math.floor(rnd(s, 20) * maxN); if (n > maxN) n = maxN;
+    var calls = [], day = Math.floor(rnd(s, 6) * spanDays);
+    for (var k = 0; k < n; k++) {
+      var connIdx = Math.floor(rnd(s, 9 + k * 7) * 6);
+      calls.push({
+        time: offsetDate(2026, baseDay.m, baseDay.d, day, 9 + Math.floor(rnd(s, 7 + k) * 9), Math.floor(rnd(s, 8 + k) * 6) * 10),
+        connected: ['是', '是', '否', '否', '拒訪', '無效'][connIdx]
+      });
+      day += 1 + Math.floor(rnd(s, 15 + k) * 3);
+    }
+    return calls;
+  }
   function buildProj2() {
     var seed = strSeed('CS-2026-07A');
     var known = [{ code: '123456', name: '陳大明' }, { code: '0103', name: '林志偉' }, { code: '0217', name: '張淑芬' }];
@@ -337,16 +435,22 @@
       var r = {
         code: code, name: name, agent: AGENTS[i % 3],
         phone: rnd(s, 4) < 0.16 ? '' : genPhone(s),
-        firstCall: '', connected: '', willing: '', sms: false, line: false, refuseReason: null, note: '', missingMaster: false
+        calls: [], willing: '', sms: false, line: false, refuseReason: [], suggest: [], custom: {}, note: '', missingMaster: false
       };
       if (i < calledCount) {
-        r.firstCall = offsetDate(2026, 6, 20, Math.floor(rnd(s, 6) * 15), 9 + Math.floor(rnd(s, 7) * 9), Math.floor(rnd(s, 8) * 6) * 10);
-        var connIdx = Math.floor(rnd(s, 9) * 5);
-        r.connected = ['是', '是', '是', '否', '無效'][connIdx];
-        if (r.connected === '是') {
+        r.calls = genCalls(s, { m: 6, d: 20 }, 12, 3);
+        if (contacted(r)) {
           r.willing = rnd(s, 10) > 0.4 ? '參加' : '不參加';
           r.sms = rnd(s, 12) > 0.5; r.line = rnd(s, 13) > 0.5;
-          if (r.willing === '不參加') r.refuseReason = REASONS[Math.floor(rnd(s, 11) * REASONS.length)];
+          if (r.willing === '不參加') {
+            r.refuseReason = [REASONS[Math.floor(rnd(s, 11) * REASONS.length)]];
+            if (rnd(s, 31) > 0.7) {  // 少數筆帶第二個原因，增加多選擬真（REQ-CS-002 改訂）
+              var rr2 = REASONS[Math.floor(rnd(s, 32) * REASONS.length)];
+              if (r.refuseReason.indexOf(rr2) < 0) r.refuseReason.push(rr2);
+            }
+          }
+          if (rnd(s, 17) > 0.45) r.suggest.push(SUGGEST_SEED[Math.floor(rnd(s, 18) * SUGGEST_SEED.length)]);
+          if (rnd(s, 19) > 0.8) { var s2 = SUGGEST_SEED[Math.floor(rnd(s, 21) * SUGGEST_SEED.length)]; if (r.suggest.indexOf(s2) < 0) r.suggest.push(s2); }
         }
       }
       list.push(r);
@@ -369,178 +473,822 @@
       var r = {
         code: code, name: name, agent: AGENTS[i % 3],
         phone: rnd(s, 4) < 0.1 ? '' : genPhone(s),
-        firstCall: offsetDate(2026, 6, 1, Math.floor(rnd(s, 6) * 18), 9 + Math.floor(rnd(s, 7) * 9), Math.floor(rnd(s, 8) * 6) * 10),
-        connected: '', willing: '', sms: rnd(s, 12) > 0.5, line: rnd(s, 13) > 0.5, refuseReason: null, note: '', missingMaster: false
+        calls: genCalls(s, { m: 6, d: 1 }, 14, 2),
+        willing: '', sms: rnd(s, 12) > 0.5, line: rnd(s, 13) > 0.5, refuseReason: [], suggest: [], custom: {}, note: '', missingMaster: false
       };
-      var connIdx = Math.floor(rnd(s, 9) * 5);
-      r.connected = ['是', '是', '是', '否', '無效'][connIdx];
-      if (r.connected === '是') {
+      if (contacted(r)) {
         r.willing = rnd(s, 10) > 0.4 ? '參加' : '不參加';
-        if (r.willing === '不參加') r.refuseReason = REASONS[Math.floor(rnd(s, 11) * REASONS.length)];
+        if (r.willing === '不參加') {
+          r.refuseReason = [REASONS[Math.floor(rnd(s, 11) * REASONS.length)]];
+          if (rnd(s, 31) > 0.7) {  // 少數筆帶第二個原因，增加多選擬真（REQ-CS-002 改訂）
+            var rr2 = REASONS[Math.floor(rnd(s, 32) * REASONS.length)];
+            if (r.refuseReason.indexOf(rr2) < 0) r.refuseReason.push(rr2);
+          }
+        }
+        if (rnd(s, 17) > 0.55) r.suggest.push(SUGGEST_SEED[Math.floor(rnd(s, 18) * SUGGEST_SEED.length)]);
       }
       list.push(r);
     }
     return list;
   }
 
+  /* 「其他建議」固定欄位（REQ-CS-002）：選項為專案層共享池、撥打同仁可即時新增 */
+  var SUGGEST_SEED = ['調高尖峰時段車資單價', '增加晚尖峰加碼獎金', '改善派單邏輯', 'App 操作再簡化'];
   var PROJ2_LIST = buildProj2();
   var PROJ3_LIST = buildProj3();
   var PROJECTS = [
-    { id: 'CS-2026-08A', name: '8月中秋節關懷外撥', status: '草稿' },
-    { id: 'CS-2026-07A', name: '7月晚尖峰意願調查', status: '進行中', start: '2026-06-20', end: '2026-07-31', list: PROJ2_LIST },
-    { id: 'CS-2026-06B', name: '6月流失預警關懷', status: '已結案', start: '2026-06-01', end: '2026-06-20', list: PROJ3_LIST }
+    { id: 'CS-2026-08A', name: '8月中秋節關懷外撥', status: '草稿', list: [], fields: stdFields(), suggestOptions: [], refuseOptions: REASONS.slice() },
+    { id: 'CS-2026-07A', name: '7月晚尖峰意願調查', status: '進行中', start: '2026-06-20', end: '2026-07-31', list: PROJ2_LIST, fields: stdFields(), suggestOptions: SUGGEST_SEED.slice(), refuseOptions: REASONS.slice(),
+      script: '您好，我是台灣大車隊客服中心的○○○，感謝您撥冗接聽。\n\n本次來電想了解您對 7 月晚尖峰時段（17:00–19:00）加碼活動的參與意願……\n1. 先確認司機大哥／大姐目前主要跑的時段\n2. 說明活動內容與獎勵條件\n3. 詢問參與意願，若不參加請溫和了解原因\n4. 感謝並提醒活動起訖日期' },
+    { id: 'CS-2026-06B', name: '6月流失預警關懷', status: '已結案', start: '2026-06-01', end: '2026-06-20', list: PROJ3_LIST, fields: stdFields(), suggestOptions: SUGGEST_SEED.slice(0, 3), refuseOptions: REASONS.slice(),
+      script: '您好，我是台灣大車隊客服中心的○○○。這通電話想關心您近期使用平台的狀況，若有不便都歡迎跟我們反映，謝謝您撥冗接聽。' }
   ];
 
   function scopeList(list) { return ROLE === 'mgr' ? list : list.filter(function (r) { return r.agent === CURRENT_AGENT; }); }
   function scopeNote(n, total) { return ROLE === 'mgr' ? ('主管檢視：全部 ' + total + ' 筆') : ('客服檢視：僅本人 ' + n + ' 筆（專案共 ' + total + ' 筆）'); }
   function statCard(k, v, sub, info) { return '<div class="stat-card"><div class="k">' + k + (info ? CRM.infoIcon(info) : '') + '</div><div class="v">' + v + '</div><div class="sub">' + sub + '</div></div>'; }
   function badgeClass(status) { return status === '草稿' ? 'badge-draft' : (status === '進行中' ? 'badge-active' : 'badge-closed'); }
-  function fieldChipsHtml() {
+  function fieldChipsHtml(p) {
+    var fd = p.fields;
     return '<div class="field-chips-wrap">' +
       '<div class="field-group"><span class="fg-label">固定欄位</span>' + FIXED_FIELDS.map(function (f) { return '<span class="field-chip fixed">' + f + '</span>'; }).join('') + '</div>' +
-      '<div class="field-group"><span class="fg-label">預設欄位</span>' + DEFAULT_FIELDS.map(function (f) { return '<span class="field-chip hideable">' + f + '</span>'; }).join('') + '</div>' +
-      '<div class="field-group"><span class="fg-label">自訂欄位</span>' + CUSTOM_FIELDS.map(function (f) { return '<span class="field-chip custom">' + f + '</span>'; }).join('') +
-        '<button type="button" class="chip-btn" id="btn-add-field">＋ 自欄位庫挑用或新增</button></div>' +
+      '<div class="field-group"><span class="fg-label">預設欄位</span>' + (fd.defaults.length ? fd.defaults.map(function (f) { return '<span class="field-chip hideable">' + f + '</span>'; }).join('') : '<span style="font-size:12px;color:var(--meta)">（全部隱藏）</span>') + '</div>' +
+      '<div class="field-group"><span class="fg-label">自訂欄位</span>' + fd.customs.map(function (f) { return '<span class="field-chip custom">' + fieldLabel(f) + (f.options ? '・' + f.options.length + ' 選項' : '') + '</span>'; }).join('') +
+        (p.status !== '已結案' && ROLE === 'mgr' ? '<button type="button" class="chip-btn" id="btn-add-field" title="需 callproject.manage 權限">✎ 編輯欄位／選項</button>' : '') + '</div>' +
       '</div>';
   }
-  function wireFieldChipsBtn() {
+  function wireFieldChipsBtn(p) {
     var b = document.getElementById('btn-add-field');
-    if (b) b.addEventListener('click', function () { CRM.toast('欄位庫：可挑用既有欄位或新增（新增將自動入庫，供跨專案彙整回覆，REQ-CS-004）'); });
+    if (b) b.addEventListener('click', function () { openFieldsModal(p); });
   }
 
-  /* ── Tab①：專案卡列表與詳情 ── */
-  var expandedIdx = -1;
-  function renderProjGrid() {
-    var html = PROJECTS.map(function (p, i) {
-      return '<button type="button" class="proj-card" data-idx="' + i + '" aria-expanded="' + (expandedIdx === i) + '">' +
-        '<span class="badge ' + badgeClass(p.status) + '">' + p.status + (p.status === '已結案' ? '・唯讀封存' : '') + '</span>' +
-        '<div class="proj-name">' + p.name + '</div>' +
-        '<div class="proj-meta">' + p.id + (p.start ? '・' + p.start + ' ~ ' + p.end : '・尚未設定期間') + '</div></button>';
+  /* ── 欄位設定共用元件（建立/編輯共用；選項兩層制 REQ-CS-003、名稱型別鎖定 REQ-CS-004） ── */
+  function fieldSetupState(p) {
+    return {
+      defaults: p ? p.fields.defaults.slice() : DEFAULT_FIELDS.slice(),
+      customs: p ? p.fields.customs.map(function (f) { return { name: f.name, type: f.type, options: f.options ? f.options.slice() : null }; }) : [],
+      refuseOptions: p ? p.refuseOptions.slice() : REASONS.slice(),
+      _proj: p || null,  // 有值＝編輯既有專案（可用專案層隱藏／移除，REQ-CS-006）；null＝建立新專案草稿
+      _open: null,
+      _openRefuse: false,
+      _confirmDel: null,
+      _confirmRemove: null
+    };
+  }
+  function fsFind(fss, name) { var m = null; fss.customs.forEach(function (c) { if (c.name === name) m = c; }); return m; }
+  function fieldRefCount(name) {  // 欄位被幾個專案引用（REQ-SET-005：零引用可刪、被引用僅能停用）
+    var n = 0;
+    PROJECTS.forEach(function (p) { if (p.fields && p.fields.customs.some(function (c) { return c.name === name; })) n++; });
+    return n;
+  }
+  function fieldAnswerCount(p, name) {  // 該欄位於本專案已填答之筆數（REQ-CS-006 移除前顯示影響筆數）
+    var n = 0;
+    (p.list || []).forEach(function (r) {
+      var v = (r.custom || {})[name];
+      if (v == null || v === '' || (Array.isArray(v) && !v.length)) return;
+      n++;
+    });
+    return n;
+  }
+  function paintFieldSetup(fss) {
+    var host = document.getElementById('fs-host');
+    var h = '<div class="field-group" style="margin-bottom:8px"><span class="fg-label">固定欄位</span>' + FIXED_FIELDS.map(function (f) { return '<span class="field-chip fixed">' + f + '</span>'; }).join('') + '<span style="font-size:11.5px;color:var(--meta)">（鎖定）</span></div>' +
+      '<div style="font-size:12px;color:var(--meta);margin-bottom:4px">預設欄位（取消勾選＝隱藏，資料保留，REQ-CS-002）</div>' +
+      '<div class="check-row" style="margin-bottom:8px;align-items:center">' + DEFAULT_FIELDS.map(function (f) {
+        var isRefuse = f === '不願承接原因';
+        var lbl = '<label><input type="checkbox" class="fs-def" value="' + f + '"' + (fss.defaults.indexOf(f) >= 0 ? ' checked' : '') + '> ' + f + (isRefuse ? '<span class="soft-label" style="font-size:11px;color:var(--meta)">（多選）</span>' : '') + '</label>';
+        if (isRefuse) lbl += '<button type="button" class="chip-btn fs-refuse-toggle" aria-expanded="' + fss._openRefuse + '">選項 ' + fss.refuseOptions.length + (fss._openRefuse ? ' ▲' : ' ▼') + '</button>';
+        return lbl;
+      }).join('') + '</div>' +
+      (fss._openRefuse ? '<div style="margin:0 0 12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px">' +
+        '<div style="font-size:11.5px;color:var(--meta);margin-bottom:6px">「不願承接原因」本專案選項（調整不回寫其他專案，REQ-CS-002）</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">' + (fss.refuseOptions.length ? fss.refuseOptions.map(function (o, i) { return '<span class="field-chip custom" style="display:inline-flex;align-items:center;gap:5px">' + o + '<button type="button" class="fs-refuse-opt-del" data-i="' + i + '" aria-label="刪除選項 ' + o + '" style="border:none;background:none;cursor:pointer;color:inherit;padding:0;font-size:11px;line-height:1">✕</button></span>'; }).join('') : '<span style="font-size:12px;color:var(--danger)">尚無選項——請至少新增一個</span>') + '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap"><input type="text" id="fs-refuse-opt-new" placeholder="新增選項" style="border:1px solid var(--border-soft);border-radius:8px;padding:5px 10px;font-size:12.5px;font-family:inherit;background:var(--surface);color:var(--fg);min-width:120px"><button type="button" class="chip-btn" id="fs-refuse-opt-add">＋加選項</button></div></div>' : '') +
+      '<div style="font-size:12px;color:var(--meta);margin-bottom:4px">自訂欄位——自全域欄位庫挑用；單/多選可調「本專案選項」（庫存預設、調整不回寫庫，REQ-CS-003）' + CRM.infoIcon('欄位名稱與型別入庫後鎖定（防跨專案彙整之歷史回答錯位）；要改＝停用舊欄位＋新增新欄位（REQ-CS-004／REQ-SET-005）') + '</div>';
+    h += FIELD_LIB.filter(function (lf) { return !lf.disabled; }).map(function (lf) {
+      var sel = fsFind(fss, lf.name);
+      var row = '<div style="padding:2px 0"><label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-2)"><input type="checkbox" class="fs-lib" value="' + lf.name + '"' + (sel ? ' checked' : '') + '> ' + fieldLabel(lf) + '</label>';
+      if (sel && sel.options) row += ' <button type="button" class="chip-btn fs-opt-toggle" data-f="' + lf.name + '" aria-expanded="' + (fss._open === lf.name) + '">選項 ' + sel.options.length + (fss._open === lf.name ? ' ▲' : ' ▼') + '</button>';
+      if (sel && fss._proj) {
+        // 專案層處置（REQ-CS-006）：隱藏＝取消勾選語義、資料保留、任何角色可用；移除＝自專案刪除連同已填資料，需 admin.delete（原型以 mgr 角色示意）、二次確認
+        if (fss._confirmRemove === lf.name) {
+          var affected = fieldAnswerCount(fss._proj, lf.name);
+          row += ' <span style="font-size:12px;color:var(--danger)">確認自「' + fss._proj.name + '」移除？將連同 ' + affected + ' 筆已填答資料一併刪除（需 admin.delete 權限）</span> <button type="button" class="chip-btn fs-remove-yes" data-f="' + lf.name + '">確認移除</button> <button type="button" class="chip-btn fs-remove-no" data-f="' + lf.name + '">取消</button>';
+        } else {
+          row += ' <button type="button" class="chip-btn fs-hide" data-f="' + lf.name + '" title="取消勾選語義、資料保留，任何角色可用（REQ-CS-006）">隱藏</button>' +
+            ' <button type="button" class="chip-btn fs-remove" data-f="' + lf.name + '"' + (ROLE !== 'mgr' ? ' disabled' : '') + ' title="自本專案移除並刪除已填資料，需 admin.delete 權限（原型以主管角色示意，REQ-CS-006）">✕ 移除</button>';
+        }
+      } else if (fss._confirmDel === lf.name) {
+        var refs = fieldRefCount(lf.name);
+        if (refs > 0) {
+          row += ' <span style="font-size:12px;color:var(--danger)">已被 ' + refs + ' 個專案引用，僅能停用（REQ-SET-005）</span> <button type="button" class="chip-btn fs-disable" data-f="' + lf.name + '">停用</button> <button type="button" class="chip-btn fs-del-no" data-f="' + lf.name + '">取消</button>';
+        } else {
+          row += ' <span style="font-size:12px;color:var(--danger)">確認自欄位庫刪除？</span> <button type="button" class="chip-btn fs-del-yes" data-f="' + lf.name + '">刪除</button> <button type="button" class="chip-btn fs-del-no" data-f="' + lf.name + '">取消</button>';
+        }
+      } else {
+        row += ' <button type="button" class="chip-btn fs-del" data-f="' + lf.name + '" aria-label="刪除或停用欄位 ' + lf.name + '" title="零引用可刪除；被專案引用僅能停用（REQ-SET-005）">✕</button>';
+      }
+      if (sel && sel.options && fss._open === lf.name) {
+        row += '<div style="margin:8px 0 6px 24px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px">' +
+          '<div style="font-size:11.5px;color:var(--meta);margin-bottom:6px">本專案選項（調整不回寫欄位庫）</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">' + (sel.options.length ? sel.options.map(function (o, i) { return '<span class="field-chip custom" style="display:inline-flex;align-items:center;gap:5px">' + o + '<button type="button" class="fs-opt-del" data-f="' + lf.name + '" data-i="' + i + '" aria-label="刪除選項 ' + o + '" style="border:none;background:none;cursor:pointer;color:inherit;padding:0;font-size:11px;line-height:1">✕</button></span>'; }).join('') : '<span style="font-size:12px;color:var(--danger)">尚無選項——請至少新增一個</span>') + '</div>' +
+          '<div style="display:flex;gap:6px;flex-wrap:wrap"><input type="text" class="fs-opt-new" data-f="' + lf.name + '" placeholder="新增選項" style="border:1px solid var(--border-soft);border-radius:8px;padding:5px 10px;font-size:12.5px;font-family:inherit;background:var(--surface);color:var(--fg);min-width:120px"><button type="button" class="chip-btn fs-opt-add" data-f="' + lf.name + '">＋加選項</button></div></div>';
+      }
+      return row + '</div>';
     }).join('');
-    document.getElementById('proj-grid').innerHTML = html;
-    document.querySelectorAll('.proj-card').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var idx = Number(b.dataset.idx);
-        expandedIdx = (expandedIdx === idx) ? -1 : idx;
-        renderProjGrid(); renderProjDetail();
-      });
+    var disabledLibs = FIELD_LIB.filter(function (lf) { return lf.disabled; });
+    h += '<div style="margin-top:10px;padding:8px 0;border-top:1px dashed var(--border-soft)"><div style="font-size:11.5px;color:var(--meta);margin-bottom:4px">🗄 已停用欄位（不出現於上方挑用清單；既有專案資料與統計不受影響，可恢復——REQ-SET-005）</div>' +
+      (disabledLibs.length ? disabledLibs.map(function (lf) { return '<div style="padding:2px 0;font-size:13px;color:var(--meta)">' + fieldLabel(lf) + '<span style="font-size:11px">（已停用）</span> <button type="button" class="chip-btn fs-restore" data-f="' + lf.name + '">↺ 恢復</button></div>'; }).join('')
+        : '<div style="font-size:12px;color:var(--meta);padding:2px 0">目前無停用欄位——被專案引用的欄位按列尾「✕」即可停用</div>') + '</div>';
+    h += '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">' +
+      '<input type="text" id="fs-nf-name" placeholder="新欄位名稱" style="border:1px solid var(--border-soft);border-radius:10px;padding:8px 12px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--fg);flex:1;min-width:140px">' +
+      '<select id="fs-nf-type" aria-label="新欄位型別（REQ-CS-003 五型別）">' + FIELD_TYPES.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join('') + '</select>' +
+      '<button type="button" class="chip-btn" id="fs-nf-add">＋ 新增（自動入庫）</button></div>';
+    host.innerHTML = h;
+    host.querySelectorAll('.fs-del').forEach(function (b) { b.addEventListener('click', function () { fss._confirmDel = b.dataset.f; paintFieldSetup(fss); }); });
+    host.querySelectorAll('.fs-del-no').forEach(function (b) { b.addEventListener('click', function () { fss._confirmDel = null; paintFieldSetup(fss); }); });
+    host.querySelectorAll('.fs-del-yes').forEach(function (b) { b.addEventListener('click', function () {
+      var nm = b.dataset.f;
+      for (var i = FIELD_LIB.length - 1; i >= 0; i--) if (FIELD_LIB[i].name === nm) FIELD_LIB.splice(i, 1);
+      fss.customs = fss.customs.filter(function (c) { return c.name !== nm; });
+      if (fss._open === nm) fss._open = null;
+      fss._confirmDel = null;
+      paintFieldSetup(fss);
+      CRM.toast('已自欄位庫刪除「' + nm + '」（零引用方可刪除，寫入審計——REQ-SET-005，原型示意）');
+    }); });
+    host.querySelectorAll('.fs-disable').forEach(function (b) { b.addEventListener('click', function () {
+      var lf = null; FIELD_LIB.forEach(function (x) { if (x.name === b.dataset.f) lf = x; });
+      if (lf) lf.disabled = true;
+      fss._confirmDel = null;
+      paintFieldSetup(fss);
+      CRM.toast('已停用「' + b.dataset.f + '」：不再出現於挑用清單；既有專案資料與統計不受影響，可於下方「已停用欄位」區恢復（REQ-SET-005）');
+    }); });
+    host.querySelectorAll('.fs-restore').forEach(function (b) { b.addEventListener('click', function () {
+      var lf = null; FIELD_LIB.forEach(function (x) { if (x.name === b.dataset.f) lf = x; });
+      if (lf) lf.disabled = false;
+      paintFieldSetup(fss);
+      CRM.toast('已恢復「' + b.dataset.f + '」，重新出現於欄位挑用清單（寫入審計，原型示意）');
+    }); });
+    /* 專案層隱藏／移除（REQ-CS-006）：隱藏＝取消勾選語義、任何角色可用、資料保留；移除＝需 admin.delete、二次確認、連同已填資料刪除 */
+    host.querySelectorAll('.fs-hide').forEach(function (b) { b.addEventListener('click', function () {
+      var nm = b.dataset.f;
+      fss.customs = fss.customs.filter(function (c) { return c.name !== nm; });
+      if (fss._open === nm) fss._open = null;
+      paintFieldSetup(fss);
+      CRM.toast('已隱藏「' + nm + '」——取消勾選語義、資料保留、任何角色可用；請按下方「儲存欄位設定」套用（REQ-CS-006）');
+    }); });
+    host.querySelectorAll('.fs-remove').forEach(function (b) { b.addEventListener('click', function () {
+      if (ROLE !== 'mgr') { CRM.toast('需 admin.delete 權限方可自專案移除欄位（原型以主管角色示意，REQ-CS-006）'); return; }
+      fss._confirmRemove = b.dataset.f;
+      paintFieldSetup(fss);
+    }); });
+    host.querySelectorAll('.fs-remove-no').forEach(function (b) { b.addEventListener('click', function () { fss._confirmRemove = null; paintFieldSetup(fss); }); });
+    host.querySelectorAll('.fs-remove-yes').forEach(function (b) { b.addEventListener('click', function () {
+      var nm = b.dataset.f, proj = fss._proj;
+      var affected = fieldAnswerCount(proj, nm);
+      proj.fields.customs = proj.fields.customs.filter(function (c) { return c.name !== nm; });
+      (proj.list || []).forEach(function (r) { if (r.custom) delete r.custom[nm]; });
+      fss.customs = fss.customs.filter(function (c) { return c.name !== nm; });
+      if (fss._open === nm) fss._open = null;
+      fss._confirmRemove = null;
+      paintFieldSetup(fss);
+      CRM.toast('已自「' + proj.name + '」移除欄位「' + nm + '」，連同 ' + affected + ' 筆已填答資料一併刪除，已寫入審計（REQ-CS-006，需 admin.delete 權限，原型以主管角色示意）');
+    }); });
+    host.querySelectorAll('.fs-def').forEach(function (c) { c.addEventListener('change', function () {
+      var ix = fss.defaults.indexOf(c.value);
+      if (c.checked && ix < 0) fss.defaults.push(c.value);
+      if (!c.checked && ix >= 0) fss.defaults.splice(ix, 1);
+    }); });
+    var refToggle = host.querySelector('.fs-refuse-toggle');
+    if (refToggle) refToggle.addEventListener('click', function () { fss._openRefuse = !fss._openRefuse; paintFieldSetup(fss); });
+    host.querySelectorAll('.fs-refuse-opt-del').forEach(function (b) { b.addEventListener('click', function () {
+      if (fss.refuseOptions.length <= 1) { CRM.toast('至少保留一個選項（不願承接原因為多選欄位，需至少一個選項）'); return; }
+      fss.refuseOptions.splice(Number(b.dataset.i), 1); paintFieldSetup(fss);
+    }); });
+    var refAddBtn = document.getElementById('fs-refuse-opt-add');
+    if (refAddBtn) refAddBtn.addEventListener('click', function () {
+      var inp = document.getElementById('fs-refuse-opt-new'); var v = inp.value.trim();
+      if (!v) { CRM.toast('請先輸入選項文字'); return; }
+      if (fss.refuseOptions.indexOf(v) >= 0) { CRM.toast('選項已存在'); return; }
+      fss.refuseOptions.push(v); paintFieldSetup(fss);
+    });
+    host.querySelectorAll('.fs-lib').forEach(function (c) { c.addEventListener('change', function () {
+      if (c.checked) { fss.customs.push(libField(c.value)); fss._open = null; }
+      else { fss.customs = fss.customs.filter(function (x) { return x.name !== c.value; }); if (fss._open === c.value) fss._open = null; }
+      paintFieldSetup(fss);
+    }); });
+    host.querySelectorAll('.fs-opt-toggle').forEach(function (b) { b.addEventListener('click', function () { fss._open = (fss._open === b.dataset.f) ? null : b.dataset.f; paintFieldSetup(fss); }); });
+    host.querySelectorAll('.fs-opt-del').forEach(function (b) { b.addEventListener('click', function () {
+      var sel = fsFind(fss, b.dataset.f);
+      if (sel.options.length <= 1) { CRM.toast('至少保留一個選項（單/多選欄位不可零選項）'); return; }
+      sel.options.splice(Number(b.dataset.i), 1); paintFieldSetup(fss);
+    }); });
+    host.querySelectorAll('.fs-opt-add').forEach(function (b) { b.addEventListener('click', function () {
+      var inp = host.querySelector('.fs-opt-new[data-f="' + b.dataset.f + '"]'); var v = inp.value.trim();
+      if (!v) { CRM.toast('請先輸入選項文字'); return; }
+      var sel = fsFind(fss, b.dataset.f);
+      if (sel.options.indexOf(v) >= 0) { CRM.toast('選項已存在'); return; }
+      sel.options.push(v); paintFieldSetup(fss);
+    }); });
+    document.getElementById('fs-nf-add').addEventListener('click', function () {
+      var nm = document.getElementById('fs-nf-name').value.trim(), tp = document.getElementById('fs-nf-type').value;
+      if (!nm) { CRM.toast('請先輸入新欄位名稱'); return; }
+      if (nm === '不願承接原因') { CRM.toast('「不願承接原因」為固定預設欄位，請於上方勾選使用即可（REQ-CS-002）'); return; }
+      var dup = false; FIELD_LIB.forEach(function (x) { if (x.name === nm) dup = true; });
+      if (dup) { CRM.toast('欄位庫已有「' + nm + '」——名稱入庫後鎖定，請直接挑用或換名稱（REQ-CS-004）'); return; }
+      var isOpt = (tp === '單選' || tp === '多選');
+      FIELD_LIB.push({ name: nm, type: tp, options: isOpt ? [] : undefined });
+      fss.customs.push(libField(nm));
+      fss._open = isOpt ? nm : null;
+      paintFieldSetup(fss);
+      CRM.toast('已新增「' + nm + '（' + tp + '）」並自動入庫（REQ-CS-004）' + (isOpt ? '——請於展開處為本專案加入選項' : ''));
     });
   }
+  function validateFieldSetup(fss) {
+    var bad = null;
+    fss.customs.forEach(function (c) { if (c.options && !c.options.length) bad = c.name; });
+    if (!bad && !fss.refuseOptions.length) bad = '不願承接原因';
+    return bad ? { ok: false, msg: '「' + bad + '」為單/多選欄位，請至少設定一個選項（REQ-CS-003）' } : { ok: true };
+  }
+  function openFieldsModal(p) {
+    var fss = fieldSetupState(p);
+    var note = '<p style="font-size:12.5px;color:var(--muted);margin-bottom:10px">' + (p.status === '進行中' ? '進行中新增欄位：既有紀錄該欄位顯示空白；' : '') +
+      '取消勾選預設欄位＝隱藏（資料保留）；自訂欄位可「隱藏」（取消勾選語義、資料保留、任何角色可用）或「✕ 移除」（自專案移除並刪除已填答資料、需 admin.delete 權限、二次確認——REQ-CS-006）。</p>';
+    var tplHtml = '<div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--border-soft)">' +
+      '<div style="font-size:12px;color:var(--meta);margin-bottom:6px">將目前欄位設定另存為模板（REQ-CS-005）：建立新專案時可一鍵套用再微調</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><input type="text" id="fs-tpl-name" placeholder="模板名稱" style="border:1px solid var(--border-soft);border-radius:10px;padding:8px 12px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--fg);flex:1;min-width:160px">' +
+      '<button type="button" class="chip-btn" id="fs-tpl-save">另存為模板</button></div></div>';
+    openModal('編輯欄位設定——' + p.name, note + '<div id="fs-host"></div>' + tplHtml,
+      '<button type="button" class="btn" id="fs-cancel">取消</button><button type="button" class="btn btn-primary" id="fs-save">儲存欄位設定</button>');
+    paintFieldSetup(fss);
+    document.getElementById('fs-cancel').addEventListener('click', closeModal);
+    document.getElementById('fs-tpl-save').addEventListener('click', function () {
+      var nm = document.getElementById('fs-tpl-name').value.trim();
+      if (!nm) { CRM.toast('請先輸入模板名稱'); return; }
+      tplCount++;
+      PROJ_TEMPLATES['tpl-' + tplCount] = { label: nm + (fss.customs.length ? '（自訂：' + fss.customs.map(function (c) { return c.name; }).join('＋') + '）' : '（僅固定＋預設欄位）'), customs: fss.customs.map(function (c) { return c.name; }) };
+      document.getElementById('fs-tpl-name').value = '';
+      CRM.toast('已將目前欄位設定另存為模板「' + nm + '」——建立新專案時模板下拉即可套用（REQ-CS-005，原型記憶體儲存）');
+    });
+    document.getElementById('fs-save').addEventListener('click', function () {
+      var vr = validateFieldSetup(fss);
+      if (!vr.ok) { CRM.toast(vr.msg); return; }
+      p.fields = { defaults: fss.defaults, customs: fss.customs };
+      p.refuseOptions = fss.refuseOptions;
+      closeModal(); renderProjDetail();
+      if (lazy.work) { renderWork(); renderMyList(); }
+      CRM.toast('欄位設定已更新並寫入審計（原型示意）');
+    });
+  }
+
+  /* ── Tab①：雙區總覽（REQ-CS-020）＋單一專案檢視（統計＋數據分析＋欄位＋名單） ── */
+  var oneProj = null;  // null＝列表模式；否則＝單一專案 id
+  var projStatusFilter = 'all';
+  var scriptEditingId = null;  // 就地編輯「撥打話術」中的專案 id，null＝非編輯狀態（REQ-CS-022）
+  var listQuery = { code: '', willing: 'all', result: 'all', agent: 'all' };  // 單一專案名單表查詢列（純前端 filter，不動資料，REQ-CS-013）
+  function projById(id) { var m = null; PROJECTS.forEach(function (x) { if (x.id === id) m = x; }); return m; }
+  function projStats(p) {
+    var list = p.list || [];
+    var called = list.filter(function (r) { return callCount(r) > 0; }).length;
+    var reached = list.filter(contacted).length;
+    var nCalls = totalCalls(list);
+    return { total: list.length, called: called, reached: reached, nCalls: nCalls,
+      rate: list.length ? reached / list.length * 100 : 0, prog: list.length ? called / list.length * 100 : 0 };
+  }
+  function renderProjOverview() {
+    document.getElementById('proj-list-view').style.display = oneProj ? 'none' : '';
+    if (oneProj) return;
+    var ongoing = PROJECTS.filter(function (p) { return p.status === '進行中'; });
+    document.getElementById('ongoing-cards').innerHTML = ongoing.length ? ongoing.map(function (p) {
+      var st = projStats(p);
+      return '<button type="button" class="proj-card" data-go="' + p.id + '" aria-label="開啟 ' + p.name + ' 單一專案檢視">' +
+        '<span class="badge badge-active">進行中</span>' +
+        '<div class="proj-name">' + p.name + '</div>' +
+        '<div class="proj-meta">' + p.id + '・' + (p.start || '—') + ' ~ ' + (p.end || '—') + '</div>' +
+        '<div class="mini-stats"><span>名單 <b>' + CRM.fmt(st.total) + '</b></span><span>已撥 <b>' + st.called + '</b></span><span>通次 <b>' + st.nCalls + '</b></span><span>聯繫率 <b>' + CRM.pct(st.rate) + '</b></span></div>' +
+        '<span class="pbar"><span style="width:' + Math.round(st.prog) + '%"></span></span>' +
+        '</button>';
+    }).join('') : '<p class="state-desc" style="grid-column:1/-1;padding:8px 0">目前無進行中專案——可自下方總表點入草稿專案啟動，或建立新專案。</p>';
+    var rows = PROJECTS.filter(function (p) { return projStatusFilter === 'all' || p.status === projStatusFilter; });
+    var thead = '<thead><tr><th>專案名稱</th><th>狀態</th><th>期間</th><th class="num">名單數</th><th class="num">外撥通次</th><th class="num">成功接觸</th><th class="num">聯繫率</th></tr></thead>';
+    var body = rows.length ? rows.map(function (p) {
+      var st = projStats(p);
+      return '<tr class="mrow" tabindex="0" data-go="' + p.id + '"><td>' + p.name + '</td><td><span class="badge ' + badgeClass(p.status) + '">' + p.status + '</span></td>' +
+        '<td>' + (p.start ? p.start + ' ~ ' + (p.end || '—') : '尚未設定') + '</td>' +
+        '<td class="num">' + CRM.fmt(st.total) + '</td><td class="num">' + st.nCalls + '</td><td class="num">' + st.reached + '</td><td class="num">' + (st.total ? CRM.pct(st.rate) : '—') + '</td></tr>';
+    }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--meta);padding:20px">無符合狀態之專案</td></tr>';
+    document.getElementById('proj-table').innerHTML = thead + '<tbody>' + body + '</tbody>';
+    document.querySelectorAll('#ongoing-cards .proj-card, #proj-table .mrow').forEach(function (el) {
+      function go() { oneProj = el.dataset.go; renderProjOverview(); renderProjDetail(); window.scrollTo({ top: 0, behavior: 'smooth' }); navCommit && navCommit(); }
+      el.addEventListener('click', go);
+      el.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    });
+  }
+
+  /* ── 數據分析（REQ-CS-019：KPI＋外撥概況＋自訂欄位分布＋意願＋規則式結論） ── */
+  function hbarListHtml(rows, unit) {
+    var max = 1, n = 0;
+    rows.forEach(function (x) { if (x.v > max) max = x.v; n += x.v; });
+    return rows.map(function (x, i) {
+      return '<div class="hbar-row' + (i < 3 && rows.length > 3 ? ' top' : '') + '"><span class="lbl">' + (i < 3 && rows.length > 3 ? '<span class="rank-n">' + (i + 1) + '</span>' : '') + x.k + '</span>' +
+        '<span class="trk"><span class="fil" style="width:' + Math.round(x.v / max * 100) + '%"></span></span>' +
+        '<span class="cnt">' + x.v + ' ' + unit + '（' + (n ? Math.round(x.v / n * 1000) / 10 : 0) + '%）</span></div>';
+    }).join('');
+  }
+  function donutHtml(segs, center) {
+    var total = 0; segs.forEach(function (s) { total += s.v; });
+    if (!total) return '<p style="font-size:12.5px;color:var(--meta)">尚無資料</p>';
+    var acc = 0, stops = [];
+    segs.forEach(function (s) {
+      var from = acc / total * 100; acc += s.v;
+      stops.push(s.color + ' ' + from + '% ' + (acc / total * 100) + '%');
+    });
+    return '<div class="donut-wrap"><div class="donut" data-c="' + center + '" style="background:conic-gradient(' + stops.join(', ') + ')"></div>' +
+      '<div class="dleg">' + segs.map(function (s) { return '<span><i style="background:' + s.color + '"></i>' + s.k + ' ' + s.v + '（' + Math.round(s.v / total * 1000) / 10 + '%）</span>'; }).join('') + '</div></div>';
+  }
+  var PIE_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)'];
+  function lineChartHtml(rows, w, hgt) {
+    if (!rows.length) return '<p style="font-size:12.5px;color:var(--meta)">尚無資料</p>';
+    var W = w || 560, H = hgt || 150, padL = 20, padR = 16, padT = 18, padB = 24;
+    var max = 1; rows.forEach(function (x) { if (x.v > max) max = x.v; });
+    var iw = W - padL - padR, ih = H - padT - padB;
+    var pts = rows.map(function (x, i) {
+      return { x: padL + (rows.length === 1 ? iw / 2 : i * iw / (rows.length - 1)), y: padT + ih - x.v / max * ih, v: x.v, k: x.k };
+    });
+    var step = Math.ceil(rows.length / Math.max(8, Math.floor(W / 70)));  // X 軸日期標籤抽樣防重疊（寬圖可容納更多標籤）
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" role="img" aria-label="每日外撥通次折線圖">' +
+      '<line x1="' + padL + '" y1="' + (padT + ih) + '" x2="' + (W - padR) + '" y2="' + (padT + ih) + '" stroke="var(--border)" stroke-width="1"/>' +
+      '<polyline points="' + pts.map(function (p) { return p.x + ',' + p.y; }).join(' ') + '" fill="none" stroke="var(--accent)" stroke-width="2"/>' +
+      pts.map(function (p, i) {
+        return '<circle cx="' + p.x + '" cy="' + p.y + '" r="3" fill="var(--accent)"/>' +
+          '<text x="' + p.x + '" y="' + (p.y - 7) + '" text-anchor="middle" font-size="10" fill="var(--fg-2)">' + p.v + '</text>' +
+          (i % step === 0 ? '<text x="' + p.x + '" y="' + (H - 8) + '" text-anchor="middle" font-size="9.5" fill="var(--meta)">' + p.k + '</text>' : '');
+      }).join('') + '</svg>';
+  }
+  function analyticsHtml(p) {
+    var list = p.list || [];
+    var st = projStats(p);
+    var head = '<div class="panel-title" style="margin-top:20px;font-size:16px">數據分析' + CRM.infoIcon('KPI 與分布隨撥打紀錄即時更新；自訂欄位分布隨專案欄位設定自動連動；圖表型式規則＝單選且選項≤3 圓餅、其餘橫條排名（REQ-CS-019）') + '</div>';
+    if (!st.nCalls) return head + '<p class="state-desc" style="padding:10px 0 4px;text-align:left">尚無電訪資料——開始撥打後自動生成分析。</p>';
+    var h = head;
+    if (p.note) h += '<div class="assign-preview" style="margin:0 0 12px">🎯 調查目的：' + p.note + '</div>';
+    // 每日外撥通次（折線圖，2026-07-16 拍板）
+    var dayMap = {}, days = [];
+    list.forEach(function (r) { (r.calls || []).forEach(function (c) {
+      var d = (c.time || '').slice(0, 10); if (!d) return;
+      if (!(d in dayMap)) { dayMap[d] = 0; days.push(d); }
+      dayMap[d]++;
+    }); });
+    days.sort();
+    var dayRows = days.map(function (d) { return { k: d.slice(5).replace('-', '/'), v: dayMap[d] }; });
+    // 外撥結果（以通次為母體；含拒訪四分類）
+    var resCnt = { '是': 0, '否': 0, '無效': 0, '拒訪': 0 };
+    list.forEach(function (r) { (r.calls || []).forEach(function (c) { if (c.connected in resCnt) resCnt[c.connected]++; }); });
+    var recorded = resCnt['是'] + resCnt['否'] + resCnt['無效'] + resCnt['拒訪'];
+    h += '<div class="ana-box" style="margin-top:12px"><div class="bt">📞 每日外撥通次</div>' + lineChartHtml(dayRows, 1120, 190) + '</div>';
+    h += '<div class="ana-cols">' +
+      '<div class="ana-box"><div class="bt">☎️ 外撥結果（以 ' + recorded + ' 通為母體）</div>' +
+        donutHtml([
+          { k: '成功接聽', v: resCnt['是'], color: 'var(--success)' },
+          { k: '未接', v: resCnt['否'], color: '#d97706' },
+          { k: '拒訪', v: resCnt['拒訪'], color: 'var(--danger)' },
+          { k: '無效／空號', v: resCnt['無效'], color: '#9b9890' }
+        ], recorded + ' 通') + '</div>';
+    // 自訂欄位回答分布（單/多選自動連動）
+    var firstDist = null;
+    p.fields.customs.forEach(function (f) {
+      if (!f.options) return;
+      var cnt = {};
+      list.forEach(function (r) {
+        var v = (r.custom || {})[f.name];
+        if (v == null || v === '') return;
+        (Array.isArray(v) ? v : [v]).forEach(function (x) { cnt[x] = (cnt[x] || 0) + 1; });
+      });
+      var rows2 = Object.keys(cnt).map(function (k) { return { k: k, v: cnt[k] }; }).sort(function (x, y) { return y.v - x.v; });
+      var n2 = 0; rows2.forEach(function (x) { n2 += x.v; });
+      if (rows2.length && !firstDist) firstDist = { name: f.name, top: rows2[0], n: n2 };
+      var usePie = f.type === '單選' && f.options.length <= 3;  // 型式規則：單選且選項≤3 → 圓餅
+      var chart = !rows2.length ? '<p style="font-size:12.5px;color:var(--meta)">尚無回答</p>'
+        : (usePie ? donutHtml(rows2.map(function (x, i) { return { k: x.k, v: x.v, color: PIE_COLORS[i % PIE_COLORS.length] }; }), n2 + ' 件') : hbarListHtml(rows2, '件'));
+      h += '<div class="ana-box"><div class="bt">📊 ' + f.name + '（' + f.type + '・n=' + n2 + '）</div>' + chart + '</div>';
+    });
+    // 意願分布
+    var wy = list.filter(function (r) { return r.willing === '參加'; }).length;
+    var wn = list.filter(function (r) { return r.willing === '不參加'; }).length;
+    if (p.fields.defaults.indexOf('意願') >= 0) {
+      h += '<div class="ana-box"><div class="bt">🙋 意願分布（n=' + (wy + wn) + '）</div>' +
+        (wy + wn ? donutHtml([{ k: '參加', v: wy, color: 'var(--success)' }, { k: '不參加', v: wn, color: '#d97706' }], (wy + wn) + ' 名') : '<p style="font-size:12.5px;color:var(--meta)">尚無回答</p>') + '</div>';
+    }
+    // 不願承接原因分布（固定欄位、多選；REQ-CS-002 改訂：每勾一項計 1 件，橫條排名比照「其他建議」做法）
+    if (p.fields.defaults.indexOf('不願承接原因') >= 0) {
+      var rrCnt = {};
+      list.forEach(function (r) { (r.refuseReason || []).forEach(function (x) { rrCnt[x] = (rrCnt[x] || 0) + 1; }); });
+      var rrRows = Object.keys(rrCnt).map(function (k) { return { k: k, v: rrCnt[k] }; }).sort(function (x, y) { return y.v - x.v; });
+      var rrN = 0; rrRows.forEach(function (x) { rrN += x.v; });
+      h += '<div class="ana-box"><div class="bt">🚫 不願承接原因（多選・n=' + rrN + '）' + CRM.infoIcon('固定欄位「不願承接原因」之多選回答排名；每勾選一項計 1 件（REQ-CS-002）') + '</div>' +
+        (rrRows.length ? hbarListHtml(rrRows, '件') : '<p style="font-size:12.5px;color:var(--meta)">尚無回答</p>') + '</div>';
+    }
+    // 其他建議分布（固定欄位，REQ-CS-002：同仁新增之選項即時納入）
+    var sgCnt = {};
+    list.forEach(function (r) { (r.suggest || []).forEach(function (x) { sgCnt[x] = (sgCnt[x] || 0) + 1; }); });
+    var sgRows = Object.keys(sgCnt).map(function (k) { return { k: k, v: sgCnt[k] }; }).sort(function (x, y) { return y.v - x.v; });
+    var sgN = 0; sgRows.forEach(function (x) { sgN += x.v; });
+    h += '<div class="ana-box"><div class="bt">💡 司機提出的其他建議（n=' + sgN + '）' + CRM.infoIcon('固定欄位「其他建議」之回答排名；選項由撥打同仁即時新增、全專案共用（REQ-CS-002／019）') + '</div>' +
+      (sgRows.length ? hbarListHtml(sgRows, '件') : '<p style="font-size:12.5px;color:var(--meta)">尚無建議回饋</p>') + '</div>';
+    h += '</div>';
+    // 規則式結論三點
+    var judge = st.rate >= 60 ? '良好' : (st.rate >= 30 ? '中等' : '偏弱');
+    var c = ['共外撥 <b>' + st.nCalls + '</b> 通、成功接觸 <b>' + st.reached + '</b> 名，名單成功聯繫率 <b>' + CRM.pct(st.rate) + '</b>（' + judge + '）。'];
+    if (firstDist && firstDist.top) c.push('「' + firstDist.name + '」以「<b>' + firstDist.top.k + '</b>」最多（' + firstDist.top.v + ' 件、佔 ' + (firstDist.n ? Math.round(firstDist.top.v / firstDist.n * 1000) / 10 : 0) + '%），可作為後續改善切入點。');
+    if (wy + wn) c.push('已表態者中 <b>' + wy + '</b> 名願意參加（' + Math.round(wy / (wy + wn) * 1000) / 10 + '%）。');
+    h += '<div class="concl">📋 <b>結論重點</b><span style="font-size:11px;color:var(--meta)">（規則式自動產生）</span><br>' + c.map(function (x, i) { return (i + 1) + '. ' + x; }).join('<br>') + '</div>';
+    return h;
+  }
+
+  /* ── 撥打話術區塊（REQ-CS-022）：主管於草稿／進行中可就地編輯，已結案唯讀 ── */
+  function scriptSectionHtml(p) {
+    var canEdit = ROLE === 'mgr' && p.status !== '已結案';
+    var editing = canEdit && scriptEditingId === p.id;
+    var title = '<div class="panel-title" style="margin-top:20px;font-size:16px">撥打話術<span style="display:flex;gap:10px;align-items:center;font-weight:400">' +
+      CRM.infoIcon('主管設定給撥打同仁之話術，顯示於逐筆撥打畫面最上方；草稿/進行中可編輯、已結案唯讀（REQ-CS-022）') +
+      (canEdit && !editing ? '<button type="button" class="chip-btn" id="btn-edit-script">' + (p.script ? '✎ 編輯話術' : '＋設定話術') + '</button>' : '') +
+      '</span></div>';
+    var body;
+    if (editing) {
+      body = '<div><textarea id="proj-script-input" rows="6" style="border:1px solid var(--border-soft);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;background:var(--surface);color:var(--fg);resize:vertical;width:100%">' + escHtml(p.script || '') + '</textarea>' +
+        '<div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="btn btn-primary" id="btn-save-script">儲存</button><button type="button" class="btn" id="btn-cancel-script">取消</button></div></div>';
+    } else if (p.script) {
+      body = '<div style="border:1px solid var(--border);border-radius:12px;padding:14px;white-space:pre-wrap;font-size:13.5px">' + escHtml(p.script) + '</div>';
+    } else {
+      body = '<p style="color:var(--meta);font-size:13px">尚未設定話術</p>';
+    }
+    return title + body;
+  }
+  function wireScriptSection(p) {
+    var be2 = document.getElementById('btn-edit-script');
+    if (be2) be2.addEventListener('click', function () { scriptEditingId = p.id; renderProjDetail(); });
+    var bss = document.getElementById('btn-save-script');
+    if (bss) bss.addEventListener('click', function () {
+      p.script = document.getElementById('proj-script-input').value.trim();
+      scriptEditingId = null;
+      renderProjDetail();
+      CRM.toast('話術已更新（寫入審計——原型示意）');
+    });
+    var bcs = document.getElementById('btn-cancel-script');
+    if (bcs) bcs.addEventListener('click', function () { scriptEditingId = null; renderProjDetail(); });
+  }
+
   function renderProjDetail() {
     var host = document.getElementById('proj-detail-host');
-    if (expandedIdx < 0) { host.innerHTML = ''; return; }
-    var p = PROJECTS[expandedIdx];
-    if (p.status === '草稿') {
-      host.innerHTML = '<div class="panel"><div class="panel-title">' + p.name + '<span class="badge badge-draft">草稿</span></div>' +
-        '<p class="panel-note" style="margin-bottom:14px">草稿階段：可設定欄位與名單，尚未開始撥打作業；正式版於此完成設定後即可切換為「進行中」（狀態變更寫入審計）。</p>' +
-        fieldChipsHtml() +
-        '<div style="margin-top:14px"><button type="button" class="btn" id="btn-upload-draft">上傳名單</button></div></div>';
-      wireFieldChipsBtn();
-      document.getElementById('btn-upload-draft').addEventListener('click', function () { CRM.toast('上傳名單：支援 Excel/CSV（隊編＋行動電話，電話可留空由客服補填）（原型示意，REQ-CS-007）'); });
-      return;
+    if (!oneProj) { host.innerHTML = ''; return; }
+    var p = projById(oneProj);
+    if (!p) { oneProj = null; host.innerHTML = ''; renderProjOverview(); return; }
+    if (scriptEditingId && scriptEditingId !== p.id) scriptEditingId = null;  // 換到別的專案時，殘留的編輯態自動清除
+    var st = projStats(p);
+    var full = p.list || []; var list = scopeList(full);
+    var actions = ROLE === 'mgr' ? (p.status === '草稿' ? '<button type="button" class="btn btn-primary" id="btn-start-proj" title="需 callproject.manage 權限（REQ-CS-001）">啟動專案</button>' :
+      (p.status === '進行中' ? '<button type="button" class="btn" id="btn-close-proj" title="需 callproject.manage 權限；結案後唯讀封存（REQ-CS-001）">結案</button>' : '')) : '';
+    var noteTxt = p.status === '草稿' ? '草稿階段：可設定欄位與名單；完成設定後按「啟動專案」切換為進行中（狀態單向、二次確認、寫入審計，REQ-CS-001）'
+      : (p.status === '進行中' ? '狀態僅能單向前進（草稿→進行中→已結案），任何變更寫入審計日誌' : '已結案唯讀封存，統計保留供查閱、不可再編輯；個別隊員回覆可至「溝通歷程」查詢');
+    var h = '<div class="panel">' +
+      '<div style="margin-bottom:12px"><button type="button" class="chip-btn" id="btn-back-list">← 返回專案列表</button></div>' +
+      '<div class="panel-title">' + p.name + '<span style="display:flex;gap:10px;align-items:center;font-weight:400">' + actions +
+      '<span class="badge ' + badgeClass(p.status) + '">' + p.status + (p.status === '已結案' ? '・唯讀封存' : '') + '</span></span></div>' +
+      '<p class="panel-note" style="margin-bottom:14px">' + p.id + '・' + (p.start ? p.start + ' ~ ' + (p.end || '—') : '尚未設定期間') + '・' + noteTxt + (p.note ? '<br>調查目的／備註：' + p.note : '') + '</p>';
+    if (p.status !== '草稿') {
+      h += '<div class="stat-grid">' +
+        statCard('總名單數', CRM.fmt(st.total), scopeNote(list.length, st.total), '客服角色僅能檢視分配給自己之名單（REQ-CS-010）') +
+        statCard('已撥打數', CRM.fmt(st.called), '完成率 ' + CRM.pct(st.prog), '已撥打＝至少一次電訪紀錄') +
+        statCard('外撥總通次', CRM.fmt(st.nCalls), '全部名單電訪次數加總（REQ-CS-012）') +
+        statCard('成功接觸', CRM.fmt(st.reached), '名單成功聯繫率 ' + CRM.pct(st.rate), '成功接觸＝任一次接聽「是」；聯繫率＝成功接觸÷名單總數（REQ-CS-012）') +
+      '</div>';
+      h += analyticsHtml(p);
+      h += '<div class="panel-title" style="margin-top:20px;font-size:16px">各客服分配進度' + CRM.infoIcon('分配數與完成進度；客服角色僅顯示自己（REQ-CS-012）') + '</div>' +
+        '<div class="agent-progress">' + (ROLE === 'mgr' ? AGENTS : [CURRENT_AGENT]).map(function (a) {
+          var mine = full.filter(function (r) { return r.agent === a; });
+          var done = mine.filter(function (r) { return callCount(r) > 0; }).length;
+          var pv = mine.length ? Math.round(done / mine.length * 100) : 0;
+          return '<div class="agent-row"><span>' + a + '</span><span class="bar-track"><span class="bar-fill" style="width:' + pv + '%"></span></span><span class="cnt">' + done + ' / ' + mine.length + '</span></div>';
+        }).join('') + '</div>';
     }
-    if (p.status === '已結案') {
-      var clist = scopeList(p.list);
-      var ccalled = clist.filter(function (r) { return r.firstCall; });
-      var cyes = ccalled.filter(function (r) { return r.connected === '是'; }).length;
-      var cno = ccalled.filter(function (r) { return r.connected === '否'; }).length;
-      var cinv = ccalled.filter(function (r) { return r.connected === '無效'; }).length;
-      host.innerHTML = '<div class="panel"><div class="panel-title">' + p.name + '<span class="badge badge-closed">已結案・唯讀封存</span></div>' +
-        '<p class="panel-note" style="margin-bottom:14px">' + p.id + '・' + p.start + ' ~ ' + p.end + '・已結案專案唯讀封存，統計保留供查閱、不可再編輯；如需查看個別隊員回覆請至「溝通歷程」查詢。</p>' +
-        '<div class="stat-grid">' +
-          statCard('總名單數', CRM.fmt(clist.length), scopeNote(clist.length, p.list.length)) +
-          statCard('已撥打數', CRM.fmt(ccalled.length), '完成率 ' + CRM.pct(clist.length ? ccalled.length / clist.length * 100 : 0)) +
-          statCard('接聽率', CRM.pct(ccalled.length ? cyes / ccalled.length * 100 : 0), '是 ' + cyes + '・否 ' + cno + '・無效 ' + cinv) +
-        '</div></div>';
-      return;
-    }
-    renderActiveDetail(p);
-  }
-  function renderActiveDetail(p) {
-    var list = scopeList(p.list);
-    var called = list.filter(function (r) { return r.firstCall; });
-    var yes = called.filter(function (r) { return r.connected === '是'; }).length;
-    var no = called.filter(function (r) { return r.connected === '否'; }).length;
-    var invalid = called.filter(function (r) { return r.connected === '無效'; }).length;
-    var willYes = called.filter(function (r) { return r.willing === '參加'; }).length;
-    var willNo = called.filter(function (r) { return r.willing === '不參加'; }).length;
-
-    var html = '<div class="panel"><div class="panel-title">' + p.name + '<span class="badge badge-active">進行中</span></div>' +
-      '<p class="panel-note" style="margin-bottom:14px">' + p.id + '・' + p.start + ' ~ ' + p.end + '・狀態僅能單向前進（草稿→進行中→已結案），任何變更寫入審計日誌</p>' +
-      '<div class="stat-grid">' +
-        statCard('總名單數', CRM.fmt(list.length), scopeNote(list.length, p.list.length), '本專案全部名單筆數；客服角色僅能檢視分配給自己之名單（REQ-CS-010）') +
-        statCard('已撥打數', CRM.fmt(called.length), '完成率 ' + CRM.pct(list.length ? called.length / list.length * 100 : 0)) +
-        statCard('接聽率', CRM.pct(called.length ? yes / called.length * 100 : 0), '是 ' + yes + '・否 ' + no + '・無效 ' + invalid, '接聽率＝第一次電訪「是」÷已撥打數') +
-        statCard('意願分布', CRM.pct((willYes + willNo) ? willYes / (willYes + willNo) * 100 : 0) + ' 參加', '參加 ' + willYes + '・不參加 ' + willNo) +
-      '</div>' +
-      '<div class="panel-title" style="margin-top:20px;font-size:16px">各客服分配進度' + CRM.infoIcon('分配數與完成進度；客服角色僅顯示自己（REQ-CS-012）') + '</div>' +
-      '<div class="agent-progress">' + (ROLE === 'mgr' ? AGENTS : [CURRENT_AGENT]).map(function (a) {
-        var mine = p.list.filter(function (r) { return r.agent === a; });
-        var done = mine.filter(function (r) { return r.firstCall; }).length;
-        var pv = mine.length ? Math.round(done / mine.length * 100) : 0;
-        return '<div class="agent-row"><span>' + a + '</span><span class="bar-track"><span class="bar-fill" style="width:' + pv + '%"></span></span><span class="cnt">' + done + ' / ' + mine.length + '</span></div>';
-      }).join('') + '</div>' +
-      '<div class="panel-title" style="margin-top:20px;font-size:16px">欄位設定</div>' + fieldChipsHtml() +
-      '<div class="panel-title" style="margin-top:20px;font-size:16px">名單' + CRM.infoIcon('姓名／電話僅本頁（外撥作業範圍）顯示全名／可見；其餘頁面依個資口徑遮罩或不顯示') + '<span style="display:flex;gap:8px;font-weight:400">' +
-        (ROLE === 'mgr' ? '<button type="button" class="btn" id="btn-assign">分配名單</button>' : '') +
-        '<button type="button" class="btn" id="btn-add-list">追加名單</button>' +
-        '<button type="button" class="btn" id="btn-upload-list">上傳名單</button></span></div>' +
+    h += scriptSectionHtml(p);
+    h += '<div class="panel-title" style="margin-top:20px;font-size:16px">欄位設定</div>' + fieldChipsHtml(p);
+    h += '<div class="panel-title" style="margin-top:20px;font-size:16px">名單（' + full.length + ' 筆）' + CRM.infoIcon('姓名／電話依 REQ-PROF-007 遮罩；完整資訊於逐筆撥打表單顯示（外撥作業必要）') + '<span style="display:flex;gap:8px;font-weight:400;flex-wrap:wrap">' +
+      (p.status === '進行中' && ROLE === 'mgr' ? '<button type="button" class="btn" id="btn-assign">分配名單</button>' : '') +
+      (p.status !== '已結案' ? '<button type="button" class="btn" id="btn-upload-list">' + (full.length ? '追加名單' : '上傳名單') + '</button>' : '') +
+      '<button type="button" class="btn" id="btn-export-report" title="' + (ROLE === 'mgr' ? '需 report.export 權限；匯出寫入審計（REQ-CS-021）' : '需 report.export 權限；範圍依 callrecord.edit_assigned 限縮為自己被分配之名單，匯出寫入審計（REQ-CS-021）') + '">下載報表</button>' +
+      '</span></div>' +
+      listQueryRowHtml() +
       '<div class="chart-wrap"><table id="proj-list-table" aria-label="外撥專案名單"></table></div></div>';
-
-    document.getElementById('proj-detail-host').innerHTML = html;
-    wireFieldChipsBtn();
-    if (ROLE === 'mgr') document.getElementById('btn-assign').addEventListener('click', openAssignModal);
-    document.getElementById('btn-add-list').addEventListener('click', function () { CRM.toast('追加名單：進行中專案可持續上傳補充（隊編＋行動電話，電話可留空）（原型示意，REQ-CS-007）'); });
-    document.getElementById('btn-upload-list').addEventListener('click', function () { CRM.toast('上傳名單：支援 Excel/CSV 匯入（原型示意）'); });
-    renderListTable(document.getElementById('proj-list-table'), list);
+    host.innerHTML = h;
+    document.getElementById('btn-back-list').addEventListener('click', function () { oneProj = null; renderProjDetail(); renderProjOverview(); navCommit && navCommit(); });
+    wireScriptSection(p);
+    wireFieldChipsBtn(p);
+    var bs = document.getElementById('btn-start-proj'); if (bs) bs.addEventListener('click', function () { openStartModal(p); });
+    var bc = document.getElementById('btn-close-proj'); if (bc) bc.addEventListener('click', function () { openCloseProjModal(p); });
+    var ba = document.getElementById('btn-assign'); if (ba) ba.addEventListener('click', function () { openAssignModal(p); });
+    var bu = document.getElementById('btn-upload-list'); if (bu) bu.addEventListener('click', function () { openUploadModal(p, full.length > 0); });
+    var be = document.getElementById('btn-export-report'); if (be) be.addEventListener('click', function () { exportProjReport(p); });
+    wireListQuery(list, p);
+    renderListTable(document.getElementById('proj-list-table'), applyListQuery(list), p);
   }
-  function renderListTable(host, list) {
-    var thead = '<thead><tr><th>隊編</th><th>姓名' + CRM.infoIcon('外撥作業範圍顯示全名供稱呼（個資口徑例外）') + '</th><th>行動電話</th><th>第一次電訪</th><th>接聽</th><th>意願</th><th>負責客服</th></tr></thead>';
-    var rows = list.map(function (r) {
+  /* ── 名單查詢列（REQ-CS-013：隊編部分符合＋意願／最近結果／負責客服下拉，純前端 filter） ── */
+  function listQueryRowHtml() {
+    return '<div class="filter-row">' +
+      '<div class="search-input" style="max-width:200px">' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>' +
+        '<input id="lq-code" type="search" placeholder="輸入隊編查詢" aria-label="以隊編查詢名單" value="' + escHtml(listQuery.code) + '">' +
+      '</div>' +
+      '<select id="lq-willing" aria-label="依意願篩選">' +
+        ['all,意願：全部', '參加,參加', '不參加,不參加'].map(function (o) {
+          var kv = o.split(','); return '<option value="' + kv[0] + '"' + (listQuery.willing === kv[0] ? ' selected' : '') + '>' + kv[1] + '</option>';
+        }).join('') +
+      '</select>' +
+      '<select id="lq-result" aria-label="依最近結果篩選">' +
+        ['all,最近結果：全部', '是,是', '否,否', '無效,無效', '拒訪,拒訪'].map(function (o) {
+          var kv = o.split(','); return '<option value="' + kv[0] + '"' + (listQuery.result === kv[0] ? ' selected' : '') + '>' + kv[1] + '</option>';
+        }).join('') +
+      '</select>' +
+      '<select id="lq-agent" aria-label="依負責客服篩選">' +
+        '<option value="all"' + (listQuery.agent === 'all' ? ' selected' : '') + '>負責客服：全部</option>' +
+        AGENTS.map(function (a) { return '<option value="' + a + '"' + (listQuery.agent === a ? ' selected' : '') + '>' + a + '</option>'; }).join('') +
+      '</select>' +
+      '<button type="button" class="chip-btn" id="lq-clear">清空條件</button>' +
+    '</div>';
+  }
+  function applyListQuery(list) {
+    var code = listQuery.code.trim().toLowerCase();
+    return list.filter(function (r) {
+      if (code && r.code.toLowerCase().indexOf(code) === -1) return false;
+      if (listQuery.willing !== 'all' && r.willing !== listQuery.willing) return false;
+      if (listQuery.result !== 'all') { var lc = lastCall(r); if (!lc || lc.connected !== listQuery.result) return false; }
+      if (listQuery.agent !== 'all' && r.agent !== listQuery.agent) return false;
+      return true;
+    });
+  }
+  function wireListQuery(list, p) {
+    var table = document.getElementById('proj-list-table');
+    function refresh() { renderListTable(table, applyListQuery(list), p); }
+    var qc = document.getElementById('lq-code');
+    if (qc) qc.addEventListener('input', function () { listQuery.code = qc.value; refresh(); });
+    var qw = document.getElementById('lq-willing');
+    if (qw) qw.addEventListener('change', function () { listQuery.willing = qw.value; refresh(); });
+    var qr = document.getElementById('lq-result');
+    if (qr) qr.addEventListener('change', function () { listQuery.result = qr.value; refresh(); });
+    var qa = document.getElementById('lq-agent');
+    if (qa) qa.addEventListener('change', function () { listQuery.agent = qa.value; refresh(); });
+    var qcl = document.getElementById('lq-clear');
+    if (qcl) qcl.addEventListener('click', function () {
+      listQuery = { code: '', willing: 'all', result: 'all', agent: 'all' };
+      qc.value = ''; qw.value = 'all'; qr.value = 'all'; qa.value = 'all';
+      refresh();
+    });
+  }
+  function renderListTable(host, list, p) {
+    var customCols = (p && p.fields) ? p.fields.customs : [];
+    var thead = '<thead><tr><th>隊編</th><th>姓名' + CRM.infoIcon('姓名預設去識別化（REQ-PROF-007）；完整資訊於逐筆撥打表單顯示（外撥作業必要）') + '</th><th>行動電話</th><th class="num">電訪次數</th><th>最近電訪</th><th>最近結果</th><th>意願</th><th>不願承接原因</th>' +
+      customCols.map(function (f) { return '<th>' + f.name + '</th>'; }).join('') + '<th>其他建議</th><th>備註</th><th>負責客服</th></tr></thead>';
+    var rows = list.length ? list.map(function (r) {
+      var lc = lastCall(r);
+      var customTds = customCols.map(function (f) {
+        var v = (r.custom || {})[f.name];
+        if (Array.isArray(v)) v = v.join('、');
+        return '<td>' + (v || '—') + '</td>';
+      }).join('');
+      var noteTd = r.note ? '<td><span class="crm-info" tabindex="0" role="note" aria-label="備註：' + escHtml(r.note) + '">📝<span class="crm-info-tip">' + escHtml(r.note) + '</span></span></td>' : '<td>—</td>';
       return '<tr class="mrow" tabindex="0" data-code="' + r.code + '">' +
         '<td>' + r.code + (r.missingMaster ? '<span class="warn-badge">主檔查無</span>' : '') + '</td>' +
-        '<td>' + r.name + '</td>' +
-        '<td>' + (r.phone || '<span style="color:var(--meta)">待補</span>') + '</td>' +
-        '<td>' + (r.firstCall || '<span style="color:var(--meta)">未撥打</span>') + '</td>' +
-        '<td>' + (r.connected || '—') + '</td><td>' + (r.willing || '—') + '</td><td>' + r.agent + '</td></tr>';
-    }).join('');
+        '<td>' + CRM.maskName(r.name) + '</td>' +
+        '<td>' + (r.phone ? CRM.maskPhone(r.phone) : '<span style="color:var(--meta)">待補</span>') + '</td>' +
+        '<td class="num">' + (callCount(r) || '<span style="color:var(--meta)">未撥打</span>') + '</td>' +
+        '<td>' + (lc ? lc.time : '—') + '</td>' +
+        '<td>' + (lc && lc.connected ? lc.connected : '—') + '</td><td>' + (r.willing || '—') + '</td>' +
+        '<td>' + ((r.refuseReason || []).length ? r.refuseReason.join('、') : '—') + '</td>' + customTds +
+        '<td>' + ((r.suggest || []).length ? r.suggest.join('、') : '—') + '</td>' + noteTd + '<td>' + (r.agent || '<span style="color:var(--meta)">未分配</span>') + '</td></tr>';
+    }).join('') : '<tr><td colspan="' + (11 + customCols.length) + '" style="text-align:center;color:var(--meta);padding:22px">' +
+      ((listQuery.code || listQuery.willing !== 'all' || listQuery.result !== 'all' || listQuery.agent !== 'all')
+        ? '查無符合查詢條件的名單——請調整條件或按「清空條件」'
+        : '尚無名單——可上傳、追加，或自分群篩選／回覆篩選一鍵帶入（REQ-CS-007）') + '</td></tr>';
     host.innerHTML = thead + '<tbody>' + rows + '</tbody>';
     host.querySelectorAll('.mrow').forEach(function (tr) {
       function go() {
+        if (p && p.status !== '進行中') { CRM.toast(p.status === '草稿' ? '專案尚未啟動——啟動後才能進入逐筆撥打作業' : '已結案專案唯讀封存，不可再編輯紀錄'); return; }
+        if (p) workProjId = p.id;
+        workCallEditIdx = null;
         switchTab('work');
         var scoped = currentWorkList(); var idx = -1;
         scoped.forEach(function (r, i) { if (r.code === tr.dataset.code) idx = i; });
-        if (idx >= 0) { workIdx = idx; renderWork(); } else CRM.toast('此隊員目前不在你的分配範圍內（切換至主管角色可檢視全部）');
+        if (idx >= 0) { workIdx = idx; renderWork(); renderMyList(); } else CRM.toast('此隊員目前不在你的分配範圍內（切換至主管角色可檢視全部）');
+        navCommit && navCommit();
       }
       tr.addEventListener('click', go);
       tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
     });
   }
 
-  /* ── 分配名單 Modal（REQ-CS-009） ── */
-  function openAssignModal() {
-    var bodyHtml = '<p style="font-size:13px;color:var(--muted);margin-bottom:10px">勾選參與本次分配之客服，系統將把全部 ' + PROJ2_LIST.length + ' 筆名單平均拆分；分配後可於名單表格個別調整負責客服。</p>' +
-      '<div id="assign-checks">' + AGENTS.map(function (a) { return '<label class="assign-row"><input type="checkbox" value="' + a + '" checked> ' + a + '</label>'; }).join('') + '</div>' +
+  /* ── 分配名單 Modal（REQ-CS-009：可自訂各客服分配筆數，預設平均拆分） ── */
+  function openAssignModal(p) {
+    var plist = p.list || [];
+    if (!plist.length) { CRM.toast('尚無名單可分配——請先上傳或帶入名單（REQ-CS-007）'); return; }
+    var total = plist.length;
+    var bodyHtml = '<p style="font-size:13px;color:var(--muted);margin-bottom:10px">勾選參與本次分配之客服，預設平均拆分全部 ' + total + ' 筆名單，可個別調整筆數；分配後可於名單表格再個別調整負責客服。</p>' +
+      '<div id="assign-checks">' + AGENTS.map(function (a) {
+        return '<label class="assign-row"><input type="checkbox" class="assign-cb" value="' + a + '" checked><span style="flex:1">' + a + '</span>' +
+          '<input type="number" class="assign-cnt" data-a="' + a + '" min="0" aria-label="' + a + ' 分配筆數" style="width:70px;border:1px solid var(--border-soft);border-radius:8px;padding:5px 8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--fg)"></label>';
+      }).join('') + '</div>' +
       '<div class="assign-preview" id="assign-preview"></div>';
     var footerHtml = '<button type="button" class="btn" id="assign-cancel">取消</button><button type="button" class="btn btn-primary" id="assign-confirm">確認分配</button>';
     openModal('分配名單', bodyHtml, footerHtml);
-    function checked() { return Array.prototype.slice.call(document.querySelectorAll('#assign-checks input:checked')).map(function (c) { return c.value; }); }
-    function updatePreview() {
-      var ck = checked(); var el = document.getElementById('assign-preview');
-      if (!ck.length) { el.textContent = '請至少選擇一位客服'; return; }
-      var total = PROJ2_LIST.length, per = Math.floor(total / ck.length), rem = total % ck.length;
-      el.innerHTML = '平均拆分預覽：共 ' + total + ' 筆 → ' + ck.map(function (a, i) { return a + ' ' + (per + (i < rem ? 1 : 0)) + ' 筆'; }).join('・');
+    function checkedAgents() { return Array.prototype.slice.call(document.querySelectorAll('.assign-cb:checked')).map(function (c) { return c.value; }); }
+    function cntInput(a) { return document.querySelector('.assign-cnt[data-a="' + a + '"]'); }
+    function cntVal(a) { var v = Math.floor(Number(cntInput(a).value)); return (v >= 0) ? v : 0; }
+    function applyDefaultSplit() {
+      var ck = checkedAgents();
+      var per = ck.length ? Math.floor(total / ck.length) : 0, rem = ck.length ? total % ck.length : 0;
+      AGENTS.forEach(function (a) {
+        var inp = cntInput(a), ix = ck.indexOf(a);
+        inp.disabled = ix < 0;
+        inp.value = ix >= 0 ? (per + (ix < rem ? 1 : 0)) : 0;
+      });
     }
-    document.querySelectorAll('#assign-checks input').forEach(function (c) { c.addEventListener('change', updatePreview); });
-    updatePreview();
+    function updatePreview() {
+      var ck = checkedAgents(); var el = document.getElementById('assign-preview'); var btn = document.getElementById('assign-confirm');
+      if (!ck.length) { el.textContent = '請至少選擇一位客服'; btn.disabled = true; return; }
+      var sum = 0; ck.forEach(function (a) { sum += cntVal(a); });
+      var parts = ck.map(function (a) { return a + ' ' + cntVal(a) + ' 筆'; }).join('・');
+      if (sum > total) {
+        el.innerHTML = '共 ' + total + ' 筆 → ' + parts + '　<b style="color:var(--danger)">超出可分配筆數</b>';
+        btn.disabled = true;
+      } else {
+        el.innerHTML = '共 ' + total + ' 筆 → ' + parts + (sum < total ? '（剩 ' + (total - sum) + ' 筆未分配）' : '');
+        btn.disabled = false;
+      }
+    }
+    document.querySelectorAll('.assign-cb').forEach(function (c) { c.addEventListener('change', function () { applyDefaultSplit(); updatePreview(); }); });
+    document.querySelectorAll('.assign-cnt').forEach(function (inp) { inp.addEventListener('input', updatePreview); });
+    applyDefaultSplit(); updatePreview();
     document.getElementById('assign-cancel').addEventListener('click', closeModal);
     document.getElementById('assign-confirm').addEventListener('click', function () {
-      var ck = checked();
+      var ck = checkedAgents();
       if (!ck.length) { CRM.toast('請至少選擇一位客服'); return; }
-      PROJ2_LIST.forEach(function (r, i) { r.agent = ck[i % ck.length]; });
+      var sum = 0; ck.forEach(function (a) { sum += cntVal(a); });
+      if (sum > total) { CRM.toast('分配筆數總和超出可分配筆數'); return; }
+      var idx = 0;
+      ck.forEach(function (a) {
+        var n = cntVal(a);
+        for (var i = 0; i < n && idx < plist.length; i++, idx++) plist[idx].agent = a;
+      });
       workIdx = 0; closeModal(); renderProjDetail();
       if (lazy.work) { renderWork(); renderMyList(); }
-      CRM.toast('已完成分配（原型示意）：' + PROJ2_LIST.length + ' 筆平均分配給 ' + ck.length + ' 位客服');
+      CRM.toast('已完成分配（原型示意）：共分配 ' + sum + ' / ' + total + ' 筆給 ' + ck.length + ' 位客服' + (sum < total ? '（剩 ' + (total - sum) + ' 筆未分配）' : ''));
+    });
+  }
+
+  /* ── 建立外撥專案 Modal（REQ-CS-001／002～005／007；欄位設定走共用元件） ── */
+  var createCount = 0;
+  var tplCount = 0;  // 另存為模板計數（REQ-CS-005）
+  function openCreateModal() {
+    var fss = fieldSetupState(null);
+    var bodyHtml =
+      '<div class="form-grid">' +
+        '<div class="f-field full"><label for="cp-name">專案名稱（必填）</label><input type="text" id="cp-name" placeholder="例：9月新方案意願調查"></div>' +
+        '<div class="f-field"><label for="cp-start">預計起日（選填，草稿可後補）</label><input type="date" id="cp-start" min="2020-01-01" max="2035-12-31" style="border:1px solid var(--border-soft);border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--fg)"></div>' +
+        '<div class="f-field"><label for="cp-end">預計迄日（選填）</label><input type="date" id="cp-end" min="2020-01-01" max="2035-12-31" style="border:1px solid var(--border-soft);border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--fg)"></div>' +
+        '<div class="f-field full"><label for="cp-tpl">套用專案模板（一鍵帶入欄位設定再微調，REQ-CS-005）</label><select id="cp-tpl">' +
+          Object.keys(PROJ_TEMPLATES).map(function (k) { return '<option value="' + k + '">' + PROJ_TEMPLATES[k].label + '</option>'; }).join('') + '</select></div>' +
+      '</div>' +
+      '<div style="margin-top:14px"><div style="font-size:13.5px;font-weight:500;margin-bottom:8px">紀錄表欄位設定（REQ-CS-002）</div><div id="fs-host"></div></div>' +
+      '<div class="assign-preview" style="margin-top:14px">名單來源（建立後於草稿內設定，REQ-CS-007／015）：①上傳 Excel/CSV（隊編＋行動電話，電話可留空由客服補填）②分群篩選一鍵帶入（僅隊編＋姓名）③回覆篩選一鍵帶入。</div>' +
+      '<div class="f-field" style="margin-top:12px"><label for="cp-note">備註（選填）</label><textarea id="cp-note" style="border:1px solid var(--border-soft);border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--fg);resize:vertical;min-height:52px;width:100%"></textarea></div>' +
+      '<div class="f-field" style="margin-top:12px"><label for="cp-script">撥打話術（選填）</label><textarea id="cp-script" rows="4" placeholder="設定給撥打同仁的話術指引，將顯示於逐筆撥打畫面最上方" style="border:1px solid var(--border-soft);border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--fg);resize:vertical;min-height:52px;width:100%"></textarea></div>';
+    var footerHtml = '<button type="button" class="btn" id="cp-cancel">取消</button><button type="button" class="btn btn-primary" id="cp-confirm">建立專案（草稿）</button>';
+    openModal('建立外撥專案', bodyHtml, footerHtml);
+    paintFieldSetup(fss);
+    document.getElementById('cp-tpl').addEventListener('change', function () {
+      fss.customs = PROJ_TEMPLATES[this.value].customs.map(libField).filter(Boolean);
+      fss._open = null;
+      paintFieldSetup(fss);
+      CRM.toast('已套用模板欄位設定，可再微調（REQ-CS-005）');
+    });
+    document.getElementById('cp-cancel').addEventListener('click', closeModal);
+    document.getElementById('cp-confirm').addEventListener('click', function () {
+      var nm = document.getElementById('cp-name').value.trim();
+      if (!nm) { CRM.toast('請輸入專案名稱（必填，REQ-CS-001）'); return; }
+      var s = document.getElementById('cp-start').value, e = document.getElementById('cp-end').value;
+      if (s && e && e < s) { CRM.toast('預計迄日不可早於起日'); return; }
+      var vr = validateFieldSetup(fss);
+      if (!vr.ok) { CRM.toast(vr.msg); return; }
+      createCount++;
+      var p = { id: 'CS-NEW-' + createCount, name: nm, status: '草稿', list: [], suggestOptions: [],
+        fields: { defaults: fss.defaults, customs: fss.customs }, refuseOptions: fss.refuseOptions, note: document.getElementById('cp-note').value.trim(),
+        script: document.getElementById('cp-script').value.trim() };
+      if (s) p.start = s;
+      if (e) p.end = e;
+      PROJECTS.unshift(p);
+      oneProj = p.id; closeModal(); renderProjOverview(); renderProjDetail();
+      navCommit && navCommit();
+      CRM.toast('已建立外撥專案草稿「' + nm + '」並寫入審計（原型示意）');
+    });
+  }
+
+  /* ── 上傳/追加名單（REQ-CS-007/008——原型以示意檔模擬匯入） ── */
+  function genUploadRows(p, n) {
+    var seed = strSeed(p.id + '|up' + ((p.list || []).length));
+    var rows = [];
+    for (var i = 0; i < n; i++) {
+      var s = seed + i * 173;
+      rows.push({ code: String(400000 + Math.floor(rnd(s, 1) * 599999)), name: SURNAMES[Math.floor(rnd(s, 2) * 10)] + GIVEN[Math.floor(rnd(s, 3) * 10)],
+        agent: '', phone: rnd(s, 4) < 0.25 ? '' : genPhone(s),
+        calls: [], willing: '', sms: false, line: false, refuseReason: [], suggest: [], custom: {}, note: '', missingMaster: false });
+    }
+    rows[n - 1].missingMaster = true;
+    return rows;
+  }
+  function openUploadModal(p, isAppend) {
+    var existing = p.list || [];
+    var rows = genUploadRows(p, 12);
+    // 為 demo 呈現去重效果：既有名單 ≥2 筆時，把前 2 筆生成結果整筆換成既有名單前 2 筆（deterministic，REQ-CS-007 補訂）
+    if (existing.length >= 2) {
+      [0, 1].forEach(function (i) { rows[i] = { code: existing[i].code, name: existing[i].name, agent: '', phone: existing[i].phone,
+        calls: [], willing: '', sms: false, line: false, refuseReason: [], suggest: [], custom: {}, note: '', missingMaster: false }; });
+    }
+    var existingCodes = {}; existing.forEach(function (r) { existingCodes[r.code] = true; });
+    rows.forEach(function (r) { r._dup = !!existingCodes[r.code]; });
+    var dupCount = rows.filter(function (r) { return r._dup; }).length;
+    var previewRows = rows.map(function (r) {
+      return '<tr' + (r._dup ? ' style="opacity:.45"' : '') + '><td>' + r.code + '</td><td>' + CRM.maskName(r.name) + '</td><td>' + (r.phone ? CRM.maskPhone(r.phone) : '<span style="color:var(--meta)">待補</span>') + '</td>' +
+        '<td>' + (r._dup ? '<span style="color:var(--danger);font-size:12px">已存在，略過</span>' : '') + '</td></tr>';
+    }).join('');
+    openModal(isAppend ? '追加名單' : '上傳名單',
+      '<p style="font-size:13px;color:var(--muted);margin-bottom:10px">支援 Excel/CSV，欄位：隊編、行動電話（電話可空白、由客服作業時補填）；' + (isAppend ? '進行中專案可持續追加上傳（REQ-CS-007）' : '可分批上傳（REQ-CS-007）') + '；隊編主檔查無者仍允許建立並標示警告、主檔更新後自動對上（REQ-CS-008）；已存在於本專案名單之隊編整列標示略過、不重複加入。</p>' +
+      '<div class="assign-preview">示意匯入檔：roster_upload.csv・<b>12 筆</b>（隊編＋行動電話，部分電話空白' + (dupCount ? '，其中 ' + dupCount + ' 筆與既有名單重複' : '') + '）</div>' +
+      '<div class="chart-wrap" style="max-height:260px;overflow-y:auto;margin-top:10px"><table><thead><tr><th>隊編</th><th>姓名</th><th>行動電話</th><th>狀態</th></tr></thead><tbody>' + previewRows + '</tbody></table></div>',
+      '<button type="button" class="btn" id="up-cancel">取消</button><button type="button" class="btn btn-primary" id="up-confirm">確認匯入</button>');
+    document.getElementById('up-cancel').addEventListener('click', closeModal);
+    document.getElementById('up-confirm').addEventListener('click', function () {
+      var newRows = rows.filter(function (r) { return !r._dup; });
+      newRows.forEach(function (r) { delete r._dup; });
+      p.list = existing.concat(newRows);
+      var noPhone = 0; newRows.forEach(function (r) { if (!r.phone) noPhone++; });
+      closeModal(); renderProjDetail();
+      if (lazy.work) { renderWork(); renderMyList(); }
+      CRM.toast('已加入 ' + newRows.length + ' 筆、略過重複 ' + dupCount + ' 筆（電話待補 ' + noPhone + ' 筆，寫入審計，原型示意）');
+    });
+  }
+
+  /* ── 下載報表（REQ-CS-021：真 CSV 下載；匯出檔內姓名/電話用完整值，與畫面遮罩分離） ── */
+  function exportProjReport(p) {
+    var customCols = p.fields.customs;
+    var header = ['隊編', '姓名', '行動電話'];
+    for (var i = 1; i <= MAX_CALLS; i++) header.push('第' + i + '次電訪');
+    header.push('意願', '不願承接原因', '簡訊通知', 'LINE通知');
+    customCols.forEach(function (f) { header.push(f.name); });
+    header.push('其他建議', '備註', '負責客服');
+    var rows = [header];
+    scopeList(p.list || []).forEach(function (r) {  // REQ-CS-021：edit_assigned 匯出範圍限縮為自己被分配之名單
+      var row = [r.code, r.name, r.phone || ''];
+      for (var i = 0; i < MAX_CALLS; i++) {
+        var c = (r.calls || [])[i];
+        row.push(c ? (c.time + ' ' + (c.connected || '')) : '');
+      }
+      row.push(r.willing || '', (r.refuseReason || []).join('、'), r.sms ? '是' : '否', r.line ? '是' : '否');
+      customCols.forEach(function (f) {
+        var v = (r.custom || {})[f.name];
+        row.push(Array.isArray(v) ? v.join('、') : (v || ''));
+      });
+      row.push((r.suggest || []).join('、'), r.note || '', r.agent || '');
+      rows.push(row);
+    });
+    CRM.downloadCsv(p.id + '_外撥報表_' + DB.meta.dataAsOf + '.csv', rows);
+    CRM.toast('已下載報表（' + (ROLE === 'mgr' ? '全專案' : '本人被分配範圍') + ' ' + (rows.length - 1) + ' 筆，匯出已寫入審計——原型示意）');
+  }
+
+  /* ── 狀態轉移：啟動／結案（REQ-CS-001——單向、手動觸發、二次確認、寫審計） ── */
+  function openStartModal(p) {
+    var n = (p.list || []).length;
+    openModal('啟動專案',
+      '<p style="font-size:13.5px;color:var(--fg-2);line-height:1.7">確定啟動「<b>' + p.name + '</b>」？啟動後狀態轉為「進行中」、客服即可開始撥打記錄；名單與欄位仍可於進行中追加調整。<br><span style="color:var(--danger)">狀態僅能單向前進、不可退回草稿</span>；此操作將寫入審計日誌（REQ-CS-001）。' + (n ? '' : '<br>提醒：目前名單 <b>0</b> 筆——啟動後仍可上傳或自分群篩選／回覆篩選帶入。') + '</p>',
+      '<button type="button" class="btn" id="st-cancel">取消</button><button type="button" class="btn btn-primary" id="st-confirm">確認啟動</button>');
+    document.getElementById('st-cancel').addEventListener('click', closeModal);
+    document.getElementById('st-confirm').addEventListener('click', function () {
+      p.status = '進行中'; p.list = p.list || [];
+      if (!p.start) p.start = DB.meta.dataAsOf;
+      closeModal(); renderProjOverview(); renderProjDetail();
+      if (lazy.work) { renderWork(); renderMyList(); }
+      CRM.toast('「' + p.name + '」已啟動（草稿→進行中），已寫入審計（原型示意）');
+    });
+  }
+  function openCloseProjModal(p) {
+    openModal('結案',
+      '<p style="font-size:13.5px;color:var(--fg-2);line-height:1.7">確定將「<b>' + p.name + '</b>」結案？結案後<b>唯讀封存</b>：統計保留供查閱、名單與紀錄不可再編輯。<br><span style="color:var(--danger)">已結案不可回退為可編輯狀態</span>；此操作將寫入審計日誌（REQ-CS-001）。</p>',
+      '<button type="button" class="btn" id="cl-cancel">取消</button><button type="button" class="btn btn-primary" id="cl-confirm">確認結案</button>');
+    document.getElementById('cl-cancel').addEventListener('click', closeModal);
+    document.getElementById('cl-confirm').addEventListener('click', function () {
+      p.status = '已結案';
+      if (!p.end) p.end = DB.meta.dataAsOf;
+      closeModal(); renderProjOverview(); renderProjDetail();
+      if (lazy.work) { renderWork(); renderMyList(); }
+      CRM.toast('「' + p.name + '」已結案（唯讀封存、統計保留），已寫入審計（原型示意）');
     });
   }
 
@@ -564,68 +1312,243 @@
     if (o) { o.remove(); document.removeEventListener('keydown', escHandler); }
   }
 
-  /* ── Tab②：逐筆撥打（REQ-CS-011） ── */
+  /* ── Tab②：逐筆撥打（REQ-CS-011）——可切換進行中專案、表單依專案欄位設定動態組成 ── */
   var workIdx = 0;
+  var workProjId = 'CS-2026-07A';
+  var scriptCollapsed = false;  // 逐筆撥打「撥打話術」收合狀態；跨換筆/儲存/重繪持續（REQ-CS-022）
   var lazy = { work: false, reply: false, history: false };
-  function currentWorkList() { return scopeList(PROJ2_LIST); }
+  function ongoingProjects() { return PROJECTS.filter(function (p) { return p.status === '進行中'; }); }
+  function workProj() {
+    var l = ongoingProjects(), m = null;
+    l.forEach(function (p) { if (p.id === workProjId) m = p; });
+    if (!m && l.length) { m = l[0]; workProjId = m.id; }
+    return m;
+  }
+  function currentWorkList() { var p = workProj(); return p ? scopeList(p.list || []) : []; }
+  function curWorkCode() { var l = currentWorkList(); return (l[workIdx] || {}).code || null; }  // 頁內歷史（2026-07-16）：workIdx 非穩定 id，歷史存隊編
+  function workProjSelHtml(p) {
+    return '<label style="font-size:12.5px;color:var(--muted)" for="work-proj-sel">專案</label> <select id="work-proj-sel" aria-label="選擇撥打專案">' +
+      ongoingProjects().map(function (x) { return '<option value="' + x.id + '"' + (x.id === p.id ? ' selected' : '') + '>' + x.name + '</option>'; }).join('') + '</select>';
+  }
+  function wireWorkSel() {
+    var sel = document.getElementById('work-proj-sel');
+    if (sel) sel.addEventListener('change', function () { workProjId = this.value; workIdx = 0; workCallEditIdx = null; renderWork(); renderMyList(); navCommit && navCommit(); });
+  }
+  function customFieldHtml(f, r, idx) {
+    var val = (r.custom || {})[f.name];
+    var id = 'wf-cf-' + idx;
+    var inputStyle = 'border:1px solid var(--border-soft);border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--fg)';
+    if (f.type === '單選') {
+      return '<div class="f-field"><label id="' + id + '-label">' + f.name + '<span class="soft-label" style="font-size:11px;color:var(--meta)">（單選）</span></label><div class="radio-row" role="radiogroup" aria-labelledby="' + id + '-label">' +
+        ['－'].concat(f.options).map(function (o) { var chk = (o === '－') ? !val : val === o; return '<label><input type="radio" name="' + id + '" value="' + o + '"' + (chk ? ' checked' : '') + '> ' + o + '</label>'; }).join('') + '</div></div>';
+    }
+    if (f.type === '多選') {
+      var arr = Array.isArray(val) ? val : [];
+      return '<div class="f-field"><label id="' + id + '-label">' + f.name + '<span class="soft-label" style="font-size:11px;color:var(--meta)">（多選）</span></label><div class="check-row" role="group" aria-labelledby="' + id + '-label">' +
+        f.options.map(function (o) { return '<label><input type="checkbox" class="' + id + '-cb" value="' + o + '"' + (arr.indexOf(o) >= 0 ? ' checked' : '') + '> ' + o + '</label>'; }).join('') + '</div></div>';
+    }
+    if (f.type === '數字') return '<div class="f-field"><label for="' + id + '">' + f.name + '</label><input type="number" id="' + id + '" value="' + (val == null ? '' : val) + '" style="' + inputStyle + '"></div>';
+    if (f.type === '日期') return '<div class="f-field"><label for="' + id + '">' + f.name + '</label><input type="date" id="' + id + '" value="' + (val || '') + '" min="2020-01-01" max="2035-12-31" style="' + inputStyle + '"></div>';
+    return '<div class="f-field"><label for="' + id + '">' + f.name + '</label><input type="text" id="' + id + '" value="' + (val || '') + '"></div>';
+  }
+  /* ── 逐筆撥打最上方「撥打話術」收合區塊（REQ-CS-022）：無話術整塊不出現，收合狀態跨重繪保持 ── */
+  function workScriptHtml(p) {
+    if (!p.script) return '';
+    var expanded = !scriptCollapsed;
+    return '<div style="margin-bottom:14px">' +
+      '<button type="button" id="wf-script-toggle" aria-expanded="' + expanded + '" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface-warm);border:1px solid var(--border-soft);border-radius:' + (expanded ? '12px 12px 0 0' : '12px') + ';padding:10px 14px;font-size:13.5px;font-weight:500;color:var(--fg);cursor:pointer;min-height:40px">' +
+        '<span>📢 撥打話術</span><span aria-hidden="true" style="color:var(--muted)">' + (expanded ? '▾' : '▸') + '</span>' +
+      '</button>' +
+      (expanded ? '<div style="border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:14px;white-space:pre-wrap;font-size:13.5px;background:var(--surface)">' + escHtml(p.script) + '</div>' : '') +
+    '</div>';
+  }
   function renderWork() {
-    var list = currentWorkList();
     var host = document.getElementById('work-host');
-    if (!list.length) { host.innerHTML = '<div class="panel-title">逐筆撥打</div><p class="state-desc">目前角色範圍內沒有被分配的名單。</p>'; return; }
+    var p = workProj();
+    if (!p) {
+      host.innerHTML = '<div class="panel-title">逐筆撥打</div><p class="state-desc">目前沒有「進行中」的外撥專案——請先於「外撥專案」分頁建立並啟動專案。</p>';
+      return;
+    }
+    var list = currentWorkList();
+    var selHtml = '<span style="font-weight:400;display:flex;gap:8px;align-items:center">' + workProjSelHtml(p) + '</span>';
+    if (!list.length) {
+      host.innerHTML = '<div class="panel-title">逐筆撥打' + selHtml + '</div><p class="state-desc">「' + p.name + '」目前角色範圍內沒有名單——請先上傳／帶入並分配名單（REQ-CS-007／009）。</p>';
+      wireWorkSel();
+      return;
+    }
     if (workIdx >= list.length) workIdx = 0;
     var r = list[workIdx];
-    var html = '<div class="panel-title">逐筆撥打' + CRM.infoIcon('點下方「儲存並帶下一筆」會自動跳到下一筆待撥名單；亦可由下方「我的被分配名單」點選特定筆處理（回撥／補記錄）') + '</div>' +
-      '<div class="work-progress">第 <b>' + (workIdx + 1) + '</b> / ' + list.length + ' 筆' + (r.firstCall ? '' : '　<span style="color:var(--accent)">・待撥打</span>') + '</div>' +
+    function hasDef(n) { return p.fields.defaults.indexOf(n) >= 0; }
+    var customsHtml = p.fields.customs.map(function (f, i) { return customFieldHtml(f, r, i); }).join('');
+    var html = '<div class="panel-title">逐筆撥打' + CRM.infoIcon('點下方「儲存並帶下一筆」會自動跳到下一筆待撥名單；亦可由下方「我的被分配名單」點選特定筆處理（回撥／補記錄）；表單欄位依本專案欄位設定組成（REQ-CS-002）') + selHtml + '</div>' +
+      workScriptHtml(p) +
+      '<div class="work-progress">第 <b>' + (workIdx + 1) + '</b> / ' + list.length + ' 筆' + (callCount(r) ? '' : '　<span style="color:var(--accent)">・待撥打</span>') + '</div>' +
       '<div class="work-person"><span class="wp-name">' + r.name + '</span><span class="wp-code">隊編 ' + r.code + '</span>' +
-        (r.missingMaster ? '<span class="warn-badge">主檔查無</span>' : '') + '<span style="color:var(--meta);font-size:13px">負責客服：' + r.agent + '</span></div>' +
+        (r.missingMaster ? '<span class="warn-badge">主檔查無</span>' : '') + '<span style="color:var(--meta);font-size:13px">負責客服：' + (r.agent || '未分配') + '</span></div>' +
       '<div class="form-grid">' +
-        '<div class="f-field"><label for="wf-phone">行動電話（客服填寫）</label><input type="tel" id="wf-phone" value="' + r.phone + '" placeholder="09xx-xxx-xxx"></div>' +
-        '<div class="f-field"><label for="wf-firstcall">第一次電訪時間</label><input type="text" id="wf-firstcall" value="' + r.firstCall + '" placeholder="YYYY-MM-DD HH:MM"></div>' +
-        '<div class="f-field"><label id="wf-connected-label">是否接聽</label><div class="radio-row" role="radiogroup" aria-labelledby="wf-connected-label">' +
-          ['是', '否', '無效'].map(function (v) { return '<label><input type="radio" name="wf-connected" value="' + v + '"' + (r.connected === v ? ' checked' : '') + '> ' + v + '</label>'; }).join('') + '</div></div>' +
-        '<div class="f-field"><label id="wf-willing-label">意願</label><div class="radio-row" role="radiogroup" aria-labelledby="wf-willing-label">' +
-          ['參加', '不參加'].map(function (v) { return '<label><input type="radio" name="wf-willing" value="' + v + '"' + (r.willing === v ? ' checked' : '') + '> ' + v + '</label>'; }).join('') + '</div></div>' +
-        '<div class="f-field"><label id="wf-notify-label">簡訊／LINE 通知</label><div class="check-row">' +
-          '<label><input type="checkbox" id="wf-sms"' + (r.sms ? ' checked' : '') + '> 簡訊通知</label><label><input type="checkbox" id="wf-line"' + (r.line ? ' checked' : '') + '> LINE通知</label></div></div>' +
-        '<div class="f-field"><label for="wf-reason">不願承接原因</label><select id="wf-reason"><option value="">－</option>' +
-          REASONS.map(function (v) { return '<option value="' + v + '"' + (r.refuseReason === v ? ' selected' : '') + '>' + v + '</option>'; }).join('') + '</select></div>' +
+        '<div class="f-field"><label for="wf-phone">行動電話（客服填寫，自動格式化）</label><input type="tel" id="wf-phone" value="' + r.phone + '" placeholder="0912-345-678"></div>' +
+        '<div class="f-field full">' + callsEditorHtml(r) + '</div>' +
+        (hasDef('意願') ? '<div class="f-field"><label id="wf-willing-label">意願</label><div class="radio-row" role="radiogroup" aria-labelledby="wf-willing-label">' +
+          ['參加', '不參加'].map(function (v) { return '<label><input type="radio" name="wf-willing" value="' + v + '"' + (r.willing === v ? ' checked' : '') + '> ' + v + '</label>'; }).join('') + '</div></div>' : '') +
+        (hasDef('不願承接原因') ? '<div class="f-field full"><label id="wf-refuse-label">不願承接原因<span class="soft-label" style="font-size:11px;color:var(--meta)">（多選）</span></label><div class="check-row" role="group" aria-labelledby="wf-refuse-label">' +
+          (p.refuseOptions || []).map(function (o) { return '<label><input type="checkbox" class="wf-refuse-cb" value="' + o + '"' + ((r.refuseReason || []).indexOf(o) >= 0 ? ' checked' : '') + '> ' + o + '</label>'; }).join('') + '</div></div>' : '') +
+        (hasDef('簡訊/LINE 通知') ? '<div class="f-field"><label id="wf-notify-label">簡訊／LINE 通知</label><div class="check-row">' +
+          '<label><input type="checkbox" id="wf-sms"' + (r.sms ? ' checked' : '') + '> 簡訊通知</label><label><input type="checkbox" id="wf-line"' + (r.line ? ' checked' : '') + '> LINE通知</label></div></div>' : '') +
+        customsHtml +
+        '<div class="f-field full"><label id="wf-suggest-label">其他建議<span class="soft-label" style="font-size:11px;color:var(--meta)">（多選・固定最末題）</span>' + CRM.infoIcon('蒐集司機額外回饋（REQ-CS-002 固定欄位）；選項開放撥打同仁即時新增——儲存後本專案全體同仁皆可選用，數據分析自動統計建議比例') + '</label>' +
+          '<div class="check-row" role="group" aria-labelledby="wf-suggest-label">' +
+          ((p.suggestOptions || []).length ? (p.suggestOptions || []).map(function (o) { return '<label><input type="checkbox" class="wf-suggest-cb" value="' + o + '"' + ((r.suggest || []).indexOf(o) >= 0 ? ' checked' : '') + '> ' + o + '</label>'; }).join('') : '<span style="font-size:12.5px;color:var(--meta)">尚無選項——聽到司機的建議就在右方新增</span>') +
+          '</div>' +
+          '<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">' +
+            '<input type="text" id="wf-suggest-new" placeholder="新增建議選項（例：改善派單邏輯）" style="border:1px solid var(--border-soft);border-radius:10px;padding:8px 12px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--fg);flex:1;min-width:180px">' +
+            '<button type="button" class="chip-btn" id="wf-suggest-add">＋ 新增選項（全專案共用）</button></div></div>' +
         '<div class="f-field full"><label for="wf-note">備註</label><textarea id="wf-note">' + r.note + '</textarea></div>' +
       '</div>' +
       '<div style="margin-top:16px"><button type="button" class="btn btn-primary" id="btn-save-next">儲存並帶下一筆</button></div>';
     host.innerHTML = html;
+    wireWorkSel();
+    wireCallsEditor(r);
+    var scriptToggle = document.getElementById('wf-script-toggle');
+    if (scriptToggle) scriptToggle.addEventListener('click', function () { scriptCollapsed = !scriptCollapsed; renderWork(); });  // 摺疊面板不入瀏覽器歷史（REQ-GEN-009 排除項），不呼叫 navCommit
+    document.getElementById('wf-suggest-add').addEventListener('click', function () {
+      var v = document.getElementById('wf-suggest-new').value.trim();
+      if (!v) { CRM.toast('請先輸入建議選項文字'); return; }
+      p.suggestOptions = p.suggestOptions || [];
+      if (p.suggestOptions.indexOf(v) >= 0) { CRM.toast('選項已存在，直接勾選即可'); return; }
+      collectFormInto(r);
+      p.suggestOptions.push(v);
+      r.suggest = r.suggest || []; r.suggest.push(v);  // 新增者預設代表本筆司機之回饋、自動勾選
+      renderWork();
+      CRM.toast('已新增建議選項「' + v + '」——本專案全體同仁皆可選用，並已納入數據分析（寫入審計，原型示意）');
+    });
+    document.getElementById('wf-phone').addEventListener('input', function () { this.value = fmtPhone(this.value); });
     document.getElementById('btn-save-next').addEventListener('click', saveCurrent);
   }
+
+  /* ── 電訪紀錄清單編輯器（REQ-CS-002 多次制：已記錄唯讀＋✎修改/✕刪除；新增僅能往後追加） ── */
+  var workCallEditIdx = null;  // 正在 ✎ 修改的既有次別（null＝新增模式）
+  function callsEditorHtml(r) {
+    var h = '<label>電訪紀錄（' + callCount(r) + '／' + MAX_CALLS + ' 次）' + CRM.infoIcon('已記錄次別唯讀：✎ 修改、✕ 刪除（次序遞補）；新增僅能往後追加，防誤寫既有次別（REQ-CS-002）；點「是否接聽」時若時間空白自動帶入當下時間、已有值不覆蓋（REQ-CS-011）') + '</label>' +
+      '<div style="display:grid;gap:6px">';
+    (r.calls || []).forEach(function (c, i) {
+      if (i === workCallEditIdx) return;  // 修改中的次別移至下方編輯區
+      h += '<div class="call-row"><span class="call-n">第 ' + (i + 1) + ' 次</span><span class="call-t">' + (c.time || '—') + '</span>' +
+        '<span class="tl-result ' + (c.connected === '是' ? 'yes' : (c.connected === '否' || c.connected === '拒訪' ? 'no' : 'na')) + '">' + (c.connected || '未記錄') + '</span>' +
+        '<span style="margin-left:auto;display:flex;gap:4px"><button type="button" class="chip-btn call-edit" data-i="' + i + '">✎ 修改</button><button type="button" class="chip-btn call-del" data-i="' + i + '">✕ 刪除</button></span></div>';
+    });
+    var editing = workCallEditIdx != null;
+    var cur = editing ? r.calls[workCallEditIdx] : null;
+    if (editing || callCount(r) < MAX_CALLS) {
+      h += '<div class="call-edit-box">' +
+        '<div style="font-size:12px;color:var(--meta);margin-bottom:6px">' + (editing ? '✎ 修改第 ' + (workCallEditIdx + 1) + ' 次電訪（按「儲存並帶下一筆」寫回）' : '第 ' + (callCount(r) + 1) + ' 次電訪——填時間或點結果即記錄本次') + '</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+          '<input type="datetime-local" id="wf-call-time" value="' + toLocalInput(cur ? cur.time : '') + '" min="2020-01-01T00:00" max="2035-12-31T23:59" aria-label="電訪時間（可點選可輸入；點接聽結果自動帶入當下時間）" style="border:1px solid var(--border-soft);border-radius:10px;padding:8px 10px;font-size:13.5px;font-family:inherit;background:var(--surface);color:var(--fg)">' +
+          '<span class="radio-row" role="radiogroup" aria-label="是否接聽">' + ['是', '否', '無效', '拒訪'].map(function (v) { return '<label><input type="radio" name="wf-call-conn" value="' + v + '"' + (cur && cur.connected === v ? ' checked' : '') + '> ' + v + '</label>'; }).join('') + '</span>' +
+          (editing ? '<button type="button" class="chip-btn" id="wf-call-cancel">取消修改</button>' : '') +
+        '</div></div>';
+    } else {
+      h += '<div style="font-size:12px;color:var(--meta)">已達電訪次數上限（' + MAX_CALLS + ' 次）——超過部分請記於備註。</div>';
+    }
+    return h + '</div>';
+  }
+  function wireCallsEditor(r) {
+    document.querySelectorAll('.call-edit').forEach(function (b) { b.addEventListener('click', function () {
+      collectFormInto(r); workCallEditIdx = Number(b.dataset.i); renderWork();
+    }); });
+    document.querySelectorAll('.call-del').forEach(function (b) { b.addEventListener('click', function () {
+      var i = Number(b.dataset.i);
+      collectFormInto(r);
+      r.calls.splice(i, 1);
+      if (workCallEditIdx === i) workCallEditIdx = null;
+      else if (workCallEditIdx != null && workCallEditIdx > i) workCallEditIdx--;
+      renderWork(); renderMyList();
+      CRM.toast('已刪除第 ' + (i + 1) + ' 次電訪，後續次序自動遞補（寫入審計，原型示意）');
+    }); });
+    document.querySelectorAll('input[name="wf-call-conn"]').forEach(function (c) { c.addEventListener('change', function () {
+      var t = document.getElementById('wf-call-time');
+      if (!t.value) t.value = toLocalInput(nowStr());  // 點接聽自動帶當下時間（空白才帶，REQ-CS-011）
+    }); });
+    var cancelBtn = document.getElementById('wf-call-cancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', function () { workCallEditIdx = null; renderWork(); });
+  }
+  function collectCallEditor(r) {
+    var t = document.getElementById('wf-call-time');
+    if (!t) return;
+    var time = fromLocalInput(t.value);
+    var conn = document.querySelector('input[name="wf-call-conn"]:checked');
+    if (workCallEditIdx != null) {
+      var cur = r.calls[workCallEditIdx];
+      if (cur) { cur.time = time || cur.time; cur.connected = conn ? conn.value : cur.connected; }
+    } else if ((time || conn) && callCount(r) < MAX_CALLS) {
+      r.calls = r.calls || [];
+      r.calls.push({ time: time || nowStr(), connected: conn ? conn.value : '' });
+    }
+  }
+  function collectFormInto(r) {
+    var p = workProj(); if (!p) return;
+    var ph = document.getElementById('wf-phone'); if (ph) r.phone = fmtPhone(ph.value);
+    collectCallEditor(r);
+    if (document.getElementById('wf-willing-label')) { var will = document.querySelector('input[name="wf-willing"]:checked'); r.willing = will ? will.value : ''; }
+    if (document.getElementById('wf-refuse-label')) r.refuseReason = Array.prototype.slice.call(document.querySelectorAll('.wf-refuse-cb:checked')).map(function (x) { return x.value; });
+    var sms = document.getElementById('wf-sms'); if (sms) { r.sms = sms.checked; r.line = document.getElementById('wf-line').checked; }
+    if (document.getElementById('wf-suggest-label')) r.suggest = Array.prototype.slice.call(document.querySelectorAll('.wf-suggest-cb:checked')).map(function (x) { return x.value; });
+    r.custom = r.custom || {};
+    p.fields.customs.forEach(function (f, i) {
+      var id = 'wf-cf-' + i;
+      if (f.type === '單選') {
+        var c = document.querySelector('input[name="' + id + '"]:checked');
+        r.custom[f.name] = (c && c.value !== '－') ? c.value : null;
+      } else if (f.type === '多選') {
+        r.custom[f.name] = Array.prototype.slice.call(document.querySelectorAll('.' + id + '-cb:checked')).map(function (x) { return x.value; });
+      } else {
+        var el = document.getElementById(id); r.custom[f.name] = el ? el.value.trim() : '';
+      }
+    });
+    var note = document.getElementById('wf-note'); if (note) r.note = note.value;
+  }
   function saveCurrent() {
+    var p = workProj(); if (!p) return;
     var list = currentWorkList(); var r = list[workIdx];
-    r.phone = document.getElementById('wf-phone').value.trim();
-    r.firstCall = document.getElementById('wf-firstcall').value.trim();
-    var conn = document.querySelector('input[name="wf-connected"]:checked'); r.connected = conn ? conn.value : '';
-    var will = document.querySelector('input[name="wf-willing"]:checked'); r.willing = will ? will.value : '';
-    r.sms = document.getElementById('wf-sms').checked;
-    r.line = document.getElementById('wf-line').checked;
-    r.refuseReason = document.getElementById('wf-reason').value || null;
-    r.note = document.getElementById('wf-note').value;
+    collectFormInto(r);
+    workCallEditIdx = null;
     workIdx = (workIdx + 1) % list.length;
     CRM.toast('已儲存，帶出下一筆待撥名單');
     renderWork(); renderMyList(); renderProjDetail();
+    navCommit && navCommit();
   }
   function renderMyList() {
+    var p = workProj();
+    if (!p) { document.getElementById('mylist-scope-note').textContent = ''; document.getElementById('mylist-table').innerHTML = ''; return; }
     var list = currentWorkList();
-    document.getElementById('mylist-scope-note').textContent = ROLE === 'mgr' ? '（主管檢視：全部 ' + list.length + ' 筆）' : '（客服檢視：僅本人 ' + list.length + ' 筆）';
+    document.getElementById('mylist-scope-note').textContent = ROLE === 'mgr' ? '（主管檢視：「' + p.name + '」全部 ' + list.length + ' 筆）' : '（客服檢視：「' + p.name + '」僅本人 ' + list.length + ' 筆）';
     var host = document.getElementById('mylist-table');
-    var thead = '<thead><tr><th>隊編</th><th>姓名</th><th>行動電話</th><th>第一次電訪</th><th>接聽</th><th>意願</th></tr></thead>';
+    var customCols = p.fields.customs;
+    var thead = '<thead><tr><th>隊編</th><th>姓名</th><th>行動電話</th><th class="num">電訪次數</th><th>最近電訪</th><th>最近結果</th><th>意願</th><th>不願承接原因</th>' +
+      customCols.map(function (f) { return '<th>' + f.name + '</th>'; }).join('') + '<th>其他建議</th><th>備註</th></tr></thead>';
     var rows = list.map(function (r, i) {
+      var lc = lastCall(r);
+      var customTds = customCols.map(function (f) {
+        var v = (r.custom || {})[f.name];
+        if (Array.isArray(v)) v = v.join('、');
+        return '<td>' + (v || '—') + '</td>';
+      }).join('');
+      var noteTd = r.note ? '<td><span class="crm-info" tabindex="0" role="note" aria-label="備註：' + escHtml(r.note) + '">📝<span class="crm-info-tip">' + escHtml(r.note) + '</span></span></td>' : '<td>—</td>';
       return '<tr class="mrow' + (i === workIdx ? ' active-row' : '') + '" tabindex="0" data-idx="' + i + '">' +
-        '<td>' + r.code + (r.missingMaster ? '<span class="warn-badge">主檔查無</span>' : '') + '</td><td>' + r.name + '</td>' +
-        '<td>' + (r.phone || '<span style="color:var(--meta)">待補</span>') + '</td>' +
-        '<td>' + (r.firstCall || '<span style="color:var(--meta)">未撥打</span>') + '</td><td>' + (r.connected || '—') + '</td><td>' + (r.willing || '—') + '</td></tr>';
+        '<td>' + r.code + (r.missingMaster ? '<span class="warn-badge">主檔查無</span>' : '') + '</td><td>' + CRM.maskName(r.name) + '</td>' +
+        '<td>' + (r.phone ? CRM.maskPhone(r.phone) : '<span style="color:var(--meta)">待補</span>') + '</td>' +
+        '<td class="num">' + (callCount(r) || '<span style="color:var(--meta)">未撥打</span>') + '</td>' +
+        '<td>' + (lc ? lc.time : '—') + '</td><td>' + (lc && lc.connected ? lc.connected : '—') + '</td><td>' + (r.willing || '—') + '</td>' +
+        '<td>' + ((r.refuseReason || []).length ? r.refuseReason.join('、') : '—') + '</td>' + customTds +
+        '<td>' + ((r.suggest || []).length ? r.suggest.join('、') : '—') + '</td>' + noteTd + '</tr>';
     }).join('');
     host.innerHTML = thead + '<tbody>' + rows + '</tbody>';
     host.querySelectorAll('.mrow').forEach(function (tr) {
       function go() {
         workIdx = Number(tr.dataset.idx);
+        workCallEditIdx = null;
         renderWork(); renderMyList();
         document.getElementById('work-host').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        navCommit && navCommit();
       }
       tr.addEventListener('click', go);
       tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
@@ -633,47 +1556,96 @@
   }
 
   /* ── Tab③：回覆篩選（REQ-CS-017／REQ-SEG-005：限 callrecord.view_all） ── */
-  var FIELD_OPTS = {
-    refuseReason: { label: '不願承接原因', values: REASONS },
-    willing: { label: '意願', values: ['參加', '不參加'] },
-    connected: { label: '是否接聽', values: ['是', '否', '無效'] }
-  };
+  /* 篩選欄位動態連動（2026-07-17 使用者拍板：預設欄位＋被任一專案掛用之單/多選自訂欄位；值域＝跨專案選項聯集） */
+  function replyFieldOpts() {
+    var opts = {};
+    var ru = [];
+    PROJECTS.forEach(function (p) { (p.refuseOptions || []).forEach(function (o) { if (ru.indexOf(o) < 0) ru.push(o); }); });
+    opts.refuseReason = { label: '不願承接原因', values: ru.length ? ru : REASONS };
+    opts.willing = { label: '意願', values: ['參加', '不參加'] };
+    opts.connected = { label: '最近接聽結果', values: ['是', '否', '無效', '拒訪'] };
+    PROJECTS.forEach(function (p) {
+      ((p.fields || {}).customs || []).forEach(function (f) {
+        if (!f.options) return;
+        var key = 'c:' + f.name;
+        if (!opts[key]) opts[key] = { label: f.name, values: [] };
+        f.options.forEach(function (o) { if (opts[key].values.indexOf(o) < 0) opts[key].values.push(o); });
+      });
+    });
+    return opts;
+  }
   var lastReplyMatches = [];
-  function initReplyTab() {
-    document.getElementById('reply-info-host').innerHTML = CRM.infoIcon('跨專案彙整同一自訂／預設欄位之司機回覆；僅具 callrecord.view_all 權限可查詢；含電話之檢視／匯出逐次寫入審計');
+  function populateReplyFields() {
     var fieldSel = document.getElementById('rf-field');
-    fieldSel.innerHTML = Object.keys(FIELD_OPTS).map(function (k) { return '<option value="' + k + '">' + FIELD_OPTS[k].label + '</option>'; }).join('');
-    fieldSel.addEventListener('change', function () { populateReplyValues(); runReplyFilter(); });
+    var cur = fieldSel.value;
+    var opts = replyFieldOpts();
+    fieldSel.innerHTML = Object.keys(opts).map(function (k) { return '<option value="' + k + '">' + opts[k].label + '</option>'; }).join('');
+    if (cur && opts[cur]) fieldSel.value = cur;
+  }
+  function initReplyTab() {
+    document.getElementById('reply-info-host').innerHTML = CRM.infoIcon('跨專案彙整同一自訂／預設欄位之司機回覆（欄位與選項隨各專案欄位設定自動連動，REQ-CS-017）；僅具 callrecord.view_all 權限可查詢；含電話之檢視／匯出逐次寫入審計');
+    populateReplyFields();
+    document.getElementById('rf-field').addEventListener('change', function () { populateReplyValues(); runReplyFilter(); });
     document.getElementById('rf-value').addEventListener('change', runReplyFilter);
-    document.getElementById('btn-reply-export').addEventListener('click', function () { CRM.toast('原型示意：正式版將匯出 Excel/CSV'); });
+    document.getElementById('btn-reply-export').addEventListener('click', exportReplyCsv);
     document.getElementById('btn-reply-bring').addEventListener('click', openBringInModal);
     populateReplyValues();
     updateReplyLock();
     runReplyFilter();
   }
   function populateReplyValues() {
-    var field = document.getElementById('rf-field').value;
-    document.getElementById('rf-value').innerHTML = FIELD_OPTS[field].values.map(function (v) { return '<option value="' + v + '">' + v + '</option>'; }).join('');
+    var opts = replyFieldOpts();
+    var fieldSel = document.getElementById('rf-field');
+    if (!opts[fieldSel.value]) fieldSel.value = Object.keys(opts)[0];
+    var valSel = document.getElementById('rf-value');
+    var cur = valSel.value;
+    var values = opts[fieldSel.value].values;
+    valSel.innerHTML = values.map(function (v) { return '<option value="' + v + '">' + v + '</option>'; }).join('');
+    if (cur && values.indexOf(cur) >= 0) valSel.value = cur;
   }
   function combinedProjRows() {
-    function tag(list, proj) { return list.map(function (r) { var o = {}; for (var k in r) o[k] = r[k]; o._proj = proj.name; return o; }); }
-    return tag(PROJ2_LIST, PROJECTS[1]).concat(tag(PROJ3_LIST, PROJECTS[2]));
+    var out = [];
+    PROJECTS.forEach(function (p) {
+      (p.list || []).forEach(function (r) { var o = {}; for (var k in r) o[k] = r[k]; o._proj = p.name; out.push(o); });
+    });
+    return out;
   }
   function runReplyFilter() {
     if (ROLE !== 'mgr') { document.getElementById('reply-table').innerHTML = ''; return; }
     var field = document.getElementById('rf-field').value, value = document.getElementById('rf-value').value;
-    var rows = combinedProjRows().filter(function (r) { return r[field] === value; });
+    var rows = combinedProjRows().filter(function (r) {
+      if (field === 'connected') { var lc = lastCall(r); return !!lc && lc.connected === value; }
+      if (field === 'refuseReason') return (r.refuseReason || []).indexOf(value) >= 0;
+      if (field.indexOf('c:') === 0) {
+        var v = (r.custom || {})[field.slice(2)];
+        return Array.isArray(v) ? v.indexOf(value) >= 0 : v === value;
+      }
+      return r[field] === value;
+    });
     lastReplyMatches = rows;
     var thead = '<thead><tr><th>隊編</th><th>最近回覆時間</th><th>回覆值</th><th>所屬專案</th><th>操作</th></tr></thead>';
     var body = rows.length ? rows.map(function (r) {
-      return '<tr><td>' + r.code + '</td><td>' + (r.firstCall || '—') + '</td><td>' + value + '</td><td>' + r._proj + '</td>' +
+      var lc = lastCall(r);
+      return '<tr><td>' + r.code + '</td><td>' + (lc ? lc.time : '—') + '</td><td>' + value + '</td><td>' + r._proj + '</td>' +
         '<td><button type="button" class="btn" data-code="' + r.code + '">查看溝通歷程</button></td></tr>';
     }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--meta);padding:22px">查無符合條件之回覆紀錄</td></tr>';
     var host = document.getElementById('reply-table');
     host.innerHTML = thead + '<tbody>' + body + '</tbody>';
     host.querySelectorAll('button[data-code]').forEach(function (b) {
-      b.addEventListener('click', function () { switchTab('history'); document.getElementById('tl-code').value = b.dataset.code; runHistorySearch(b.dataset.code); });
+      b.addEventListener('click', function () { switchTab('history'); document.getElementById('tl-code').value = b.dataset.code; runHistorySearch(b.dataset.code); navCommit && navCommit(); });
     });
+  }
+  function exportReplyCsv() {
+    if (ROLE !== 'mgr') return;
+    if (!lastReplyMatches.length) { CRM.toast('目前篩選結果為 0 筆，無法匯出'); return; }
+    var value = document.getElementById('rf-value').value;
+    var rows = [['隊編', '最近回覆時間', '回覆值', '所屬專案']];
+    lastReplyMatches.forEach(function (r) {
+      var lc = lastCall(r);
+      rows.push([r.code, lc ? lc.time : '', value, r._proj]);
+    });
+    CRM.downloadCsv('回覆篩選_' + DB.meta.dataAsOf + '.csv', rows);
+    CRM.toast('已下載報表（匯出已寫入審計——原型示意）');
   }
   function updateReplyLock() {
     var mgr = ROLE === 'mgr';
@@ -683,42 +1655,73 @@
   function openBringInModal() {
     if (ROLE !== 'mgr') return;
     if (!lastReplyMatches.length) { CRM.toast('目前篩選結果為 0 筆，無法帶入'); return; }
-    var bodyHtml = '<p style="font-size:13px;color:var(--muted);margin-bottom:10px">將以下 ' + lastReplyMatches.length + ' 筆隊編建立新外撥專案名單（僅含隊編＋姓名，電話欄留空由客服補填）。</p>' +
-      '<div class="chart-wrap" style="max-height:260px;overflow-y:auto"><table><thead><tr><th>隊編</th><th>姓名</th><th>行動電話</th></tr></thead><tbody>' +
-      lastReplyMatches.map(function (r) { return '<tr><td>' + r.code + '</td><td>' + r.name + '</td><td style="color:var(--meta)">待補</td></tr>'; }).join('') +
+    var field = document.getElementById('rf-field').value, value = document.getElementById('rf-value').value;
+    var defaultName = replyFieldOpts()[field].label + '＝' + value + ' 回訪外撥';
+    var bodyHtml = '<p style="font-size:13px;color:var(--muted);margin-bottom:10px">將以下 ' + lastReplyMatches.length + ' 筆隊編建立「新外撥專案（草稿）」之名單（僅含隊編＋姓名，電話欄留空由客服補填，REQ-CS-017）。</p>' +
+      '<div class="f-field" style="margin-bottom:10px"><label for="bring-name">專案名稱</label><input type="text" id="bring-name" value="' + defaultName + '"></div>' +
+      '<div class="chart-wrap" style="max-height:220px;overflow-y:auto"><table><thead><tr><th>隊編</th><th>姓名</th><th>行動電話</th></tr></thead><tbody>' +
+      lastReplyMatches.map(function (r) { return '<tr><td>' + r.code + '</td><td>' + CRM.maskName(r.name) + '</td><td style="color:var(--meta)">待補</td></tr>'; }).join('') +
       '</tbody></table></div>';
-    var footerHtml = '<button type="button" class="btn" id="bring-cancel">取消</button><button type="button" class="btn btn-primary" id="bring-confirm">確認建立</button>';
+    var footerHtml = '<button type="button" class="btn" id="bring-cancel">取消</button><button type="button" class="btn btn-primary" id="bring-confirm">建立草稿專案</button>';
     openModal('一鍵帶入新外撥專案名單', bodyHtml, footerHtml);
     document.getElementById('bring-cancel').addEventListener('click', closeModal);
     document.getElementById('bring-confirm').addEventListener('click', function () {
-      var n = lastReplyMatches.length; closeModal();
-      CRM.toast('已建立新外撥專案草稿，帶入 ' + n + ' 筆隊編＋姓名（電話待客服補填）（原型示意）');
+      var nm = document.getElementById('bring-name').value.trim();
+      if (!nm) { CRM.toast('請輸入專案名稱（必填，REQ-CS-001）'); return; }
+      createCount++;
+      var np = { id: 'CS-NEW-' + createCount, name: nm, status: '草稿', fields: stdFields(), suggestOptions: [], refuseOptions: REASONS.slice(),
+        note: '自回覆篩選帶入（' + replyFieldOpts()[field].label + '＝' + value + '，' + lastReplyMatches.length + ' 筆）',
+        list: lastReplyMatches.map(function (r) { return { code: r.code, name: r.name, agent: '', phone: '', calls: [], willing: '', sms: false, line: false, refuseReason: [], suggest: [], custom: {}, note: '', missingMaster: false }; }) };
+      PROJECTS.unshift(np);
+      oneProj = np.id; closeModal();
+      switchTab('dial'); renderProjOverview(); renderProjDetail();
+      navCommit && navCommit();
+      CRM.toast('已建立草稿「' + nm + '」並帶入 ' + np.list.length + ' 筆名單——可補欄位設定後啟動專案');
     });
   }
 
   /* ── Tab④：溝通歷程（REQ-CS-018） ── */
   function buildContactContent(r) {
-    var parts = ['第一次電訪時間：' + (r.firstCall || '—'), '是否接聽：' + (r.connected || '—')];
+    var parts = [];
+    (r.calls || []).forEach(function (c, i) { parts.push('第' + (i + 1) + '次電訪：' + c.time + '（' + (c.connected || '未記錄') + '）'); });
+    if (!parts.length) parts.push('尚未電訪');
     if (r.willing) parts.push('意願：' + r.willing);
     parts.push('簡訊通知：' + (r.sms ? '是' : '否'), 'LINE通知：' + (r.line ? '是' : '否'));
-    if (r.refuseReason) parts.push('不願承接原因：' + r.refuseReason);
+    if ((r.refuseReason || []).length) parts.push('不願承接原因：' + r.refuseReason.join('、'));
+    if ((r.suggest || []).length) parts.push('其他建議：' + r.suggest.join('、'));
+    Object.keys(r.custom || {}).forEach(function (k) {
+      var v = r.custom[k];
+      if (v == null || v === '' || (Array.isArray(v) && !v.length)) return;
+      parts.push(k + '：' + (Array.isArray(v) ? v.join('、') : v));
+    });
+    if (r.note) parts.push('備註：' + escHtml(r.note));
     return parts.join('；');
   }
   function combinedContacts(code) {
     var arr = [];
     var m = DB.members[code];
     if (m && m.contacts) m.contacts.forEach(function (c) { arr.push({ date: c.date, project: c.project, content: c.content, result: c.result }); });
-    var r2 = PROJ2_LIST.filter(function (r) { return r.code === code; })[0];
-    if (r2 && r2.firstCall) arr.push({ date: r2.firstCall, project: PROJECTS[1].name, content: buildContactContent(r2), result: r2.willing || '未表態' });
-    var r3 = PROJ3_LIST.filter(function (r) { return r.code === code; })[0];
-    if (r3 && r3.firstCall) arr.push({ date: r3.firstCall, project: PROJECTS[2].name, content: buildContactContent(r3), result: r3.willing || '未表態' });
+    PROJECTS.forEach(function (p) {
+      (p.list || []).forEach(function (r) {
+        if (r.code === code && callCount(r)) arr.push({ date: lastCall(r).time, project: p.name, content: buildContactContent(r), result: r.willing || '未表態' });
+      });
+    });
     arr.sort(function (a, b) { return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0); });
     return arr;
+  }
+  function isCodeAssignedToAgent(code, agent) {  // REQ-CS-013：edit_assigned 僅能查自己被分配之隊編
+    var found = false;
+    PROJECTS.forEach(function (p) { (p.list || []).forEach(function (r) { if (r.code === code && r.agent === agent) found = true; }); });
+    return found;
   }
   function runHistorySearch(q) {
     q = (q || '').trim();
     var host = document.getElementById('history-host');
     if (!q) { host.innerHTML = '<p class="tl-guide">請輸入隊編查詢跨專案溝通歷程；可試 <b>123456</b>／<b>0103</b>／<b>0217</b>。</p>'; return; }
+    if (ROLE !== 'mgr' && !isCodeAssignedToAgent(q, CURRENT_AGENT)) {
+      host.innerHTML = '<p class="tl-guide">此隊編不在您被分配之名單範圍（callrecord.edit_assigned 僅能查自己的紀錄，REQ-CS-013）。</p>';
+      return;
+    }
     var list = combinedContacts(q);
     if (!list.length) { host.innerHTML = '<p class="tl-guide">查無「' + q + '」之跨專案聯繫紀錄。</p>'; return; }
     host.innerHTML = '<div class="timeline">' + list.map(function (c) {
@@ -729,7 +1732,7 @@
     }).join('') + '</div>';
   }
   function initHistoryTab() {
-    document.getElementById('history-info-host').innerHTML = CRM.infoIcon('溝通歷程混用隊員 Profile 之聯繫紀錄與各外撥專案通話紀錄；跨專案全量查詢口徑依 REQ-CS-013 限 callrecord.view_all（本原型不阻擋操作）');
+    document.getElementById('history-info-host').innerHTML = CRM.infoIcon('溝通歷程混用隊員 Profile 之聯繫紀錄與各外撥專案通話紀錄；跨專案全量查詢限 callrecord.view_all，edit_assigned 僅能查詢自己被分配之隊編（REQ-CS-013／018）');
     document.getElementById('btn-history-search').addEventListener('click', function () { runHistorySearch(document.getElementById('tl-code').value); });
     document.getElementById('tl-code').addEventListener('keydown', function (e) { if (e.key === 'Enter') runHistorySearch(e.target.value); });
     runHistorySearch('');
@@ -740,20 +1743,27 @@
   function switchTab(key) {
     document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.tab === key)); });
     Object.keys(PANES).forEach(function (k) { document.getElementById(PANES[k]).style.display = (k === key) ? '' : 'none'; });
-    if (key === 'work' && !lazy.work) { lazy.work = true; renderWork(); renderMyList(); }
-    if (key === 'reply' && !lazy.reply) { lazy.reply = true; initReplyTab(); }
+    // work/reply 每次進入都重繪（欄位/選項/名單可能已在他分頁變更——2026-07-16 使用者回報修正）
+    if (key === 'work') { lazy.work = true; renderWork(); renderMyList(); }
+    if (key === 'reply') { if (!lazy.reply) { lazy.reply = true; initReplyTab(); } else { populateReplyFields(); populateReplyValues(); runReplyFilter(); } }
     if (key === 'history' && !lazy.history) { lazy.history = true; initHistoryTab(); }
   }
-  document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { switchTab(t.dataset.tab); }); });
+  document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { switchTab(t.dataset.tab); navCommit && navCommit(); }); });
+
+  /* ── 建立專案入口（REQ-CS-001：限 callproject.manage；原型以主管視角對映） ── */
+  document.getElementById('btn-create-proj').addEventListener('click', openCreateModal);
+  function updateCreateBtn() { document.getElementById('btn-create-proj').style.display = ROLE === 'mgr' ? '' : 'none'; }
 
   /* ── 檢視角色切換（REQ-CS-010）：即時影響名單/進度/回覆篩選 ── */
-  document.getElementById('scope-info-host').innerHTML = CRM.infoIcon('本頁為全站唯一顯示全名與行動電話之頁面；含電話之檢視與匯出逐次寫入審計；跨專案全量查詢限 callrecord.view_all（REQ-CS-013／017）');
+  document.getElementById('scope-info-host').innerHTML = CRM.infoIcon('名單清單之姓名／電話依 REQ-PROF-007 遮罩；逐筆撥打表單顯示完整資訊供作業；含電話之檢視與匯出逐次寫入審計');
   document.getElementById('role-select').addEventListener('change', function () {
     ROLE = this.value; workIdx = 0;
-    renderProjGrid(); renderProjDetail();
+    updateCreateBtn();
+    renderProjOverview(); renderProjDetail();
     if (lazy.work) { renderWork(); renderMyList(); }
     updateReplyLock();
     if (lazy.reply) runReplyFilter();
+    if (lazy.history) runHistorySearch(document.getElementById('tl-code').value);
     CRM.toast(ROLE === 'mgr' ? '已切換為主管檢視（callrecord.view_all）：可見全部名單與跨專案回覆篩選' : '已切換為客服檢視・王雅婷（callrecord.edit_assigned）：僅見自己被分配之名單');
   });
 
@@ -762,9 +1772,56 @@
     ['empty', 'loading', 'error', 'forbidden'].forEach(function (k) { document.getElementById('st-' + k).classList.toggle('show', state === k); });
   });
 
-  renderProjGrid();
+  /* ── 分群篩選帶入外撥專案（REQ-SEG-004／REQ-CS-007）：讀 localStorage「crm-cs-bringin」→ 建草稿專案並下鑽、用畢即清 key ── */
+  function consumeSegBringIn() {
+    var raw = null;
+    try { raw = localStorage.getItem('crm-cs-bringin'); } catch (e) { /* ignore */ }
+    if (!raw) return;
+    try { localStorage.removeItem('crm-cs-bringin'); } catch (e) { /* ignore */ }
+    var payload = null;
+    try { payload = JSON.parse(raw); } catch (e) { payload = null; }
+    if (!payload || !payload.rows || !payload.rows.length) return;
+    createCount++;
+    var nm = (payload.name || '').trim() || ('分群帶入外撥專案' + createCount);
+    var np = { id: 'CS-NEW-' + createCount, name: nm, status: '草稿', fields: stdFields(), suggestOptions: [], refuseOptions: REASONS.slice(),
+      note: '自分群篩選帶入（' + payload.rows.length + ' 筆，REQ-SEG-004）',
+      list: payload.rows.map(function (r) { return { code: r.code, name: r.name, agent: '', phone: '', calls: [], willing: '', sms: false, line: false, refuseReason: [], suggest: [], custom: {}, note: '', missingMaster: false }; }) };
+    PROJECTS.unshift(np);
+    oneProj = np.id;
+    CRM.toast('已自分群帶入 ' + np.list.length + ' 筆建立草稿專案「' + nm + '」');
+  }
+  consumeSegBringIn();
+
+  document.getElementById('proj-status-filter').addEventListener('change', function () { projStatusFilter = this.value; renderProjOverview(); });
+  renderProjOverview();
   renderProjDetail();
   updateReplyLock();
+  updateCreateBtn();
+
+  /* 頁內歷史（2026-07-16） */
+  function getViewState() {
+    var tabEl = document.querySelector('.tab[aria-selected="true"]');
+    var tab = (tabEl && PANES[tabEl.dataset.tab]) ? tabEl.dataset.tab : 'dial';
+    return { tab: tab, oneProj: oneProj, workProjId: workProjId, workCode: curWorkCode() };
+  }
+  function applyViewState(st) {
+    st = st || {};
+    // 1) oneProj 還原
+    oneProj = (st.oneProj && projById(st.oneProj)) ? st.oneProj : null;
+    renderProjOverview(); renderProjDetail();
+    // 2) work 還原：workProjId 須仍為進行中專案；workIdx 以隊編在當下名單重找（找不到則歸零）
+    if (st.workProjId && ongoingProjects().some(function (p) { return p.id === st.workProjId; })) workProjId = st.workProjId;
+    workCallEditIdx = null;
+    if (st.workCode) {
+      var scoped = currentWorkList(), idx = 0;
+      scoped.forEach(function (r, i) { if (r.code === st.workCode) idx = i; });
+      workIdx = idx;
+    }
+    // 3) tab 還原（work 分頁交由 switchTab 本體重繪）
+    var tab = (st.tab === 'dial' || st.tab === 'work' || st.tab === 'reply' || st.tab === 'history') ? st.tab : 'dial';
+    switchTab(tab);
+  }
+  var navCommit = CRM.initPageHistory(getViewState, applyViewState);
 })();
 </script>
 

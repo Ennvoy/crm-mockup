@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>隊員 Profile — 55688 隊員 CRM</title>
-<link rel="stylesheet" href="../tokens.css?v=29">
+<link rel="stylesheet" href="../tokens.css?v=35">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 16px; }
@@ -46,6 +46,15 @@
   .btn:hover { background: #e0ddd1; }
   .btn-primary { background: var(--accent); color: var(--accent-on); box-shadow: 0 0 0 1px var(--accent); }
   .btn-primary:hover { background: var(--accent-hover); }
+  select {
+    appearance: none; background: var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%235e5d59" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+    border: 1px solid var(--border-soft); border-radius: 10px; padding: 6px 28px 6px 12px;
+    font-size: 13.5px; color: var(--fg); cursor: pointer; min-height: 36px; font-family: inherit;
+  }
+  select:hover { border-color: #d1cfc5; }
+  .online-period-ctl { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
+  .online-period-ctl .btn { padding: 5px 12px; min-height: 32px; font-size: 12.5px; }
+  .perm-switcher-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
   .chips { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .chips span { color: var(--meta); font-size: 12.5px; }
   .chip-btn { border: 1px solid var(--border-soft); background: var(--surface); border-radius: 9999px; padding: 5px 14px; font-size: 13px; color: var(--fg-2); cursor: pointer; min-height: 32px; }
@@ -54,6 +63,7 @@
   /* 統計總覽卡 */
   .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 24px; }
   @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 375px) { .stat-grid { grid-template-columns: 1fr; } }
   .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
   .stat-card .k { font-size: 13px; color: var(--muted); }
   .stat-card .v { font-size: 24px; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
@@ -70,7 +80,11 @@
   .id-badge { display: inline-block; padding: 4px 14px; border-radius: 9999px; font-size: 13px; font-weight: 500; margin-top: 6px; }
   .id-小黃 { background: var(--brand-55688); color: var(--brand-55688-on); }
   .id-多元 { background: #dbe7f5; color: #2c5282; }
-  .id-試跑 { background: var(--surface-warm); color: var(--fg-2); }
+  .id-多元試跑 { background: var(--surface-warm); color: var(--fg-2); }
+  /* 退隊標記（REQ-IMP-015：名冊全量比對推導）——姓名旁醒目 chip＋資訊卡頂部提示列 */
+  .withdrawn-badge { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 3px 11px; border-radius: 9999px; font-size: 12px; font-weight: 500; background: rgba(181,51,51,.1); color: var(--danger); vertical-align: middle; }
+  .withdrawn-banner { display: flex; align-items: flex-start; gap: 10px; background: rgba(181,51,51,.06); border: 1px solid rgba(181,51,51,.25); border-radius: 12px; padding: 12px 18px; font-size: 13.5px; color: var(--fg-2); margin-bottom: 12px; line-height: 1.6; }
+  .withdrawn-banner strong { color: var(--danger); font-weight: 600; }
   .p-meta { margin-top: 14px; display: grid; gap: 8px; width: 100%; text-align: left; font-size: 13.5px; }
   .p-meta div { display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 8px; gap: 10px; }
   .p-meta .k { color: var(--meta); flex-shrink: 0; }
@@ -141,6 +155,9 @@
   <h1>隊員 Profile</h1>
   <div class="page-sub">11 維度隊員資料卡・隊編搜尋個人各維度數據；依標籤／條件拉名單見「分群篩選」分頁（Profile 維度為分群篩選與 AI 分群基礎）</div>
 
+  <!-- 檢視權限切換（REQ-PROF-007/008 原型示範：模擬具 profile.view_sensitive 與一般兩種視角） -->
+  <div class="perm-switcher-row" id="perm-switcher" role="group" aria-label="檢視權限切換"></div>
+
   <!-- 分群篩選＝Profile 頁內 tab（使用者 A/B 比較後定版 2026-07-08） -->
   <div class="pf-tabs" role="tablist" aria-label="Profile 功能切換">
     <button class="pf-tab" role="tab" id="pf-tab-1" aria-selected="true" data-pftab="search" type="button">個人查詢</button>
@@ -158,6 +175,7 @@
       <button class="chip-btn" data-q="123456" type="button">123456 陳○明</button>
       <button class="chip-btn" data-q="0103" type="button">0103 林○偉</button>
       <button class="chip-btn" data-q="0217" type="button">0217 張○芬</button>
+      <button class="chip-btn" data-q="9999" type="button">9999（已退隊示例）</button>
     </div>
   </div>
 
@@ -167,13 +185,24 @@
     <div id="overview-stats">
       <div class="stat-grid">
         <div class="stat-card"><div class="k">身份別分布</div><div class="v">21,847</div>
-          <div class="sub">小黃 14,206・多元 6,428・試跑 1,213</div></div>
+          <div class="sub">小黃 14,206・多元 6,428・多元試跑 1,213</div></div>
         <div class="stat-card"><div class="k">月上線 21 天以上</div><div class="v">7,464</div>
           <div class="sub">11~20 天 5,873・1~10 天 2,640・0 天 5,870</div></div>
         <div class="stat-card"><div class="k">曾參與活動</div><div class="v">9,182</div>
           <div class="sub">佔正式隊員 42%</div></div>
         <div class="stat-card"><div class="k">歷史承接率中位數</div><div class="v">24%</div>
           <div class="sub">最近 90 天・個人承接率口徑</div></div>
+      </div>
+      <div style="margin-top:20px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px">示例隊編快速入口（點擊直接查看該隊員 Profile）</div>
+        <div class="chips">
+          <button class="chip-btn" data-q="123456" type="button">123456 陳○明・正常</button>
+          <button class="chip-btn" data-q="0103" type="button">0103 林○偉・正常</button>
+          <button class="chip-btn" data-q="0217" type="button">0217 張○芬・正常</button>
+          <button class="chip-btn" data-q="3021" type="button">3021（生成範例）・正常</button>
+          <button class="chip-btn" data-q="9999" type="button">9999（生成範例）・已退隊</button>
+          <button class="chip-btn" data-q="5299" type="button">5299（生成範例）・已退隊</button>
+        </div>
       </div>
       <p style="color:var(--meta);font-size:13.5px;margin-top:18px">輸入隊編或點擊上方示例，檢視單一隊員的 11 維度 Profile；依標籤／條件拉名單請切換上方「分群篩選」分頁。</p>
     </div>
@@ -209,6 +238,7 @@
     <div class="state-icon" aria-hidden="true">⚠️</div>
     <div class="state-title">資料載入失敗</div>
     <div class="state-desc">連線發生問題（HTTP 500），請稍後再試。</div>
+    <button class="btn" type="button" onclick="document.querySelector('[data-state=&quot;normal&quot;]').click(); CRM.toast('已重新載入')">重試</button>
   </div>
   <div class="state-layer" id="st-forbidden">
     <div class="state-icon" aria-hidden="true">🔒</div>
@@ -221,8 +251,8 @@
   原型說明：Profile 卡對應協理 11 維度示意圖（依訪談拿掉評分與優良司機標章）。「隊員平均每月收入」為敏感欄位——原型以已授權（profile.view_sensitive）的管理員視角展示，未授權者將顯示 ***。行動電話非批次可得資訊、不在 Profile（僅存在於外撥專案、由客服填寫，主管確認 2026-07-09）。姓名屬個資、各處預設去識別化顯示（陳○明；具權限者可見全名，使用者指示 2026-07-09）。「不願承接任務的原因」取自客服外撥最新回覆；溝通歷程對應跨專案聯繫紀錄時間軸。
 </footer>
 
-<script src="../app.js?v=29"></script>
-<script src="../seg.js?v=29"></script>
+<script src="../app.js?v=35"></script>
+<script src="../seg.js?v=35"></script>
 <script>
 (function () {
   'use strict';
@@ -275,53 +305,122 @@
     return svg;
   }
 
+  /* 車隊→車隊地區推導（REQ-PROF-002：「所屬地區」改由 fleetDict 對照 m.branch，不再直接讀 m.region——
+     m.region 為 REQ-SEG-001 之近90天完成任務行政區口徑，語意不同、其餘頁面沿用不動） */
+  function regionOfBranch(branch) {
+    var f = DB.fleetDict.filter(function (x) { return x.name === branch; })[0];
+    return f ? f.region : '未對照';
+  }
+
+  /* 資料截至年月（供趨勢年粒度與上線天數年月篩選共用） */
+  var CUR_YM = (function () {
+    var p = DB.meta.dataAsOf.split('-');
+    return { y: parseInt(p[0], 10), m: parseInt(p[1], 10) };
+  })();
+
+  /* 任一隊編＋年月之上線天數/尖峰天數（②年月區間檢視：genMember 式 deterministic 種子函式，
+     對已知與生成隊員一體適用） */
+  function monthOnlineStats(code, year, month) {
+    var codeStr = String(code);
+    var s = 0; for (var i = 0; i < codeStr.length; i++) s = s * 31 + codeStr.charCodeAt(i);
+    s += year * 97 + month * 13;
+    var r = function (k) { var x = Math.sin((s % 100000 + k) * 12.9898) * 43758.5453; return x - Math.floor(x); };
+    var daysInMonth = new Date(year, month, 0).getDate();
+    return {
+      days: Math.min(daysInMonth, Math.floor(6 + r(1) * 22)),
+      evePeak: Math.min(daysInMonth, Math.floor(r(2) * 20)),
+      mornPeak: Math.min(daysInMonth, Math.floor(r(3) * 18))
+    };
+  }
+
   /* 趨勢圖之 X 軸標籤（資料截至 2026-07-06） */
+  function lastNDaysLabels(anchorStr, n) {
+    var anchor = new Date(anchorStr + 'T00:00:00');
+    var out = [];
+    for (var i = n - 1; i >= 0; i--) {
+      var d = new Date(anchor.getTime() - i * 86400000);
+      out.push((d.getMonth() + 1) + '/' + d.getDate());
+    }
+    return out;
+  }
   var TREND_LABELS = {
+    daily: lastNDaysLabels(DB.meta.dataAsOf, 30),
     weekly: ['5/18 週', '5/25 週', '6/1 週', '6/8 週', '6/15 週', '6/22 週', '6/29 週'],
     monthly: ['2月', '3月', '4月', '5月', '6月', '7月'],
-    quarterly: ["Q3 '25", "Q4 '25", "Q1 '26", "Q2 '26"]
+    quarterly: ["Q3 '25", "Q4 '25", "Q1 '26", "Q2 '26"],
+    yearly: [String(CUR_YM.y - 2), String(CUR_YM.y - 1), String(CUR_YM.y)]
   };
-  var GRAN_DESC = { weekly: '最近 7 週・每週', monthly: '最近 6 個月・每月', quarterly: '最近 4 季・每季' };
+  var GRAN_DESC = { daily: '最近 30 天・每日', weekly: '最近 7 週・每週', monthly: '最近 6 個月・每月', quarterly: '最近 4 季・每季', yearly: '最近 3 年・每年' };
 
   var trendState = { metric: 'tasks', gran: 'monthly' };
+  /* 上線天數年月區間篩選狀態（②；預設「最近」＝現行滾動值） */
+  var onlinePeriodState = { mode: 'recent', year: null, month: null };
+  /* 檢視權限狀態（④REQ-PROF-007/008；預設具 profile.view_sensitive，符合原型既有預設視角） */
+  var permState = { sensitive: true };
+  var currentMember = null;
 
   function renderProfile(m) {
     var view = document.getElementById('profile-view');
     var initials = m.name.slice(0, 1);
-    var html = '<div class="profile-wrap">';
+    var isWithdrawn = m.status === '退隊';
+    var html = '';
+    if (isWithdrawn) {
+      html += '<div class="withdrawn-banner" role="note">🚫 <span><strong>此隊員已退隊</strong>' +
+        (m.withdrawnDate ? '（退隊日 ' + m.withdrawnDate + '）' : '') +
+        '——名冊全量比對推導，未出現於最新正式隊員全名冊（REQ-IMP-015）；歷史統計保留供查閱，若再次出現於名冊將自動復原正式。</span></div>';
+    }
+    html += '<div class="profile-wrap">';
     // 左欄
     html += '<aside class="p-side">' +
       '<div class="avatar" aria-hidden="true">' + initials + '</div>' +
-      '<div class="p-name">' + CRM.maskName(m.name) + '</div>' +
+      '<div class="p-name">' + CRM.maskName(m.name) + (isWithdrawn ? '<span class="withdrawn-badge">已退隊</span>' : '') + '</div>' +
       '<div class="p-code">隊編 ' + m.code + '</div>' +
       '<span class="id-badge id-' + m.identity + '">' + m.identity + '</span>' +
       '<div class="p-meta">' +
-        '<div><span class="k">所屬地區</span><span>' + m.region + '</span></div>' +
+        '<div><span class="k">所屬地區</span><span>' + regionOfBranch(m.branch) + '</span></div>' +
         '<div><span class="k">車隊</span><span>' + (m.branch || '—') + '</span></div>' +
         '<div><span class="k">車款</span><span>' + m.carModel + '</span></div>' +
         '<div><span class="k">車組</span><span class="fleet-chips">' +
           (m.fleetGroups.length ? m.fleetGroups.map(function (g) { return '<span class="fleet-chip">' + g + '</span>'; }).join('') : '—') +
         '</span></div>' +
       '</div>' +
-      '<button class="btn" type="button" onclick="CRM.toast(\'溝通歷程見下方時間軸；正式版此鈕捲動定位\')">溝通歷程</button>' +
+      '<button class="btn" type="button" onclick="(function(){var t=document.getElementById(\'tl-section\');if(t){t.scrollIntoView({behavior:\'smooth\'});}else{CRM.toast(\'溝通歷程見下方時間軸；正式版此鈕捲動定位\')}})()">溝通歷程</button>' +
       '</aside>';
     // 右欄
     html += '<div class="p-main">';
-    // 11 維度
-    html += '<section class="panel"><div class="panel-title">分析維度（11 項）</div><div class="dim-grid">' +
-      dim(IC.cal, '上線天數（月、季、年）', '月＝最近30天、季＝最近90天、年＝最近365天有上線之天數',
-        m.onlineDays.month + ' / ' + m.onlineDays.quarter + ' / ' + m.onlineDays.year + ' <small>天</small>') +
-      dim(IC.moon, '晚尖峰上線天數', '最近 30 天內，17:00–18:59 有上線之天數', m.evePeakDays + ' <small>天（最近30天）</small>') +
-      dim(IC.sun, '早尖峰上線天數', '最近 30 天內，07:00–08:59 有上線之天數', m.mornPeakDays + ' <small>天（最近30天）</small>') +
-      dim(IC.user, '身份別', '取自隊員主檔（小黃／多元／試跑）', m.identity) +
-      dim(IC.target, '歷史承接率', '最近 90 天；Σ承接任務 ÷ Σ任務數(排除別人已承接)；0.5%~1% 顯示為 1%', m.acceptRate + '%<small>（最近90天）</small>') +
-      dim(IC.gift, '是否曾參與活動', '曾出現在任一活動報名名單', m.joinedActivity ? '是' : '否') +
-      dim(IC.users, '主動參與活動類型', '參加過之活動類型彙整', m.activityTypes.length ? m.activityTypes.join('、') : '—') +
-      dim(IC.list, '歷史每月承接任務數', '最近 12 個月承接任務總數 ÷ 12', CRM.fmt(m.monthlyTasks) + ' <small>趟／月</small>') +
-      dim(IC.dollar, '隊員平均每月收入<span class="sensitive-tag">敏感</span>', '最近 12 個月車資總和 ÷ 12；需 profile.view_sensitive 權限，檢視寫入審計', '$' + CRM.fmt(m.monthlyIncome) + ' <small>／月</small>') +
-      dim(IC.pin, '常跑區域', '最近 90 天承接任務之行政區前 3 名', m.topDistricts.join('、')) +
-      dim(IC.ban, '不願承接任務的原因', '取自客服外撥紀錄之最新回覆（需 callrecord.view_all 權限）', m.refuseReasons.length ? m.refuseReasons.join('、') : '—') +
-      '</div></section>';
+    // 11 維度（②上線天數年月區間、④檢視權限遮罩／隱藏視角）
+    var opActive = onlinePeriodState.mode === 'month';
+    var opStats = opActive ? monthOnlineStats(m.code, onlinePeriodState.year, onlinePeriodState.month) : null;
+    var opLabel = opActive ? (onlinePeriodState.year + '年' + onlinePeriodState.month + '月') : '最近30天';
+    var opYears = [CUR_YM.y - 2, CUR_YM.y - 1, CUR_YM.y];
+    var opSelYear = onlinePeriodState.year || CUR_YM.y;
+    var opMaxMonth = (opSelYear === CUR_YM.y) ? CUR_YM.m : 12;
+    var opSelMonth = Math.min(onlinePeriodState.month || CUR_YM.m, opMaxMonth);
+    var opYearOpts = opYears.map(function (y) { return '<option value="' + y + '"' + (y === opSelYear ? ' selected' : '') + '>' + y + '</option>'; }).join('');
+    var opMonthOpts = '';
+    for (var opMm = 1; opMm <= opMaxMonth; opMm++) opMonthOpts += '<option value="' + opMm + '"' + (opMm === opSelMonth ? ' selected' : '') + '>' + opMm + ' 月</option>';
+    var onlinePeriodCtl = '<span class="online-period-ctl"><span>上線天數查詢</span>' +
+      '<select id="op-year" aria-label="選擇年度">' + opYearOpts + '</select>' +
+      '<select id="op-month" aria-label="選擇月份">' + opMonthOpts + '</select>' +
+      '<button class="btn" type="button" id="op-recent" aria-pressed="' + !opActive + '">最近</button>' +
+      '</span>';
+    var dims = [
+      dim(IC.cal, '上線天數（月、季、年）', opActive ? ('查詢 ' + opLabel + '；季／年仍為最近90/365天滾動值') : '月＝最近30天、季＝最近90天、年＝最近365天有上線之天數',
+        (opActive ? opStats.days : m.onlineDays.month) + ' / ' + m.onlineDays.quarter + ' / ' + m.onlineDays.year + ' <small>天（' + opLabel + '／最近90天／最近365天）</small>'),
+      dim(IC.moon, '晚尖峰上線天數', (opActive ? '查詢 ' + opLabel : '最近 30 天內') + '，17:00–18:59 有上線之天數', (opActive ? opStats.evePeak : m.evePeakDays) + ' <small>天（' + opLabel + '）</small>'),
+      dim(IC.sun, '早尖峰上線天數', (opActive ? '查詢 ' + opLabel : '最近 30 天內') + '，07:00–08:59 有上線之天數', (opActive ? opStats.mornPeak : m.mornPeakDays) + ' <small>天（' + opLabel + '）</small>'),
+      dim(IC.user, '身份別', '取自隊員主檔（小黃／多元／多元試跑）', m.identity),
+      dim(IC.target, '歷史承接率', '最近 90 天；Σ承接任務 ÷ Σ任務數(排除別人已承接)；0.5%~1% 顯示為 1%', m.acceptRate + '%<small>（最近90天）</small>'),
+      dim(IC.gift, '是否曾參與活動', '曾出現在任一活動報名名單', m.joinedActivity ? '是' : '否'),
+      dim(IC.users, '主動參與活動類型', '參加過之活動類型彙整', m.activityTypes.length ? m.activityTypes.join('、') : '—'),
+      dim(IC.list, '歷史每月承接任務數', '最近 12 個月承接任務總數 ÷ 12', CRM.fmt(m.monthlyTasks) + ' <small>趟／月</small>'),
+      dim(IC.dollar, '隊員平均每月收入<span class="sensitive-tag">敏感</span>', '最近 12 個月車資總和 ÷ 12；需 profile.view_sensitive 權限，檢視寫入審計',
+        permState.sensitive ? ('$' + CRM.fmt(m.monthlyIncome) + ' <small>／月</small>') : '***<small>（需 profile.view_sensitive 權限）</small>'),
+      dim(IC.pin, '常跑區域', '最近 90 天完成任務之行政區前 3 名', m.topDistricts.join('、')),
+      // 不願承接任務的原因：僅一般視角以外顯示（REQ-PROF-008，原型以④之單一權限切換模擬 callrecord.view_all 未授權情境）
+      permState.sensitive ? dim(IC.ban, '不願承接任務的原因', '取自客服外撥紀錄之最新回覆（需 callrecord.view_all 權限）', m.refuseReasons.length ? m.refuseReasons.join('、') : '—') : ''
+    ].filter(function (d) { return d; });
+    html += '<section class="panel"><div class="panel-title">分析維度（' + dims.length + ' 項）' + onlinePeriodCtl + '</div><div class="dim-grid">' + dims.join('') + '</div></section>';
     // 趨勢
     html += '<section class="panel"><div class="panel-title">趨勢' +
       '<span class="trend-controls">' +
@@ -329,13 +428,15 @@
         '<button type="button" data-tm="tasks" aria-pressed="' + (trendState.metric === 'tasks') + '">承接任務數</button>' +
         '<button type="button" data-tm="income" aria-pressed="' + (trendState.metric === 'income') + '">收入</button></span>' +
       '<span class="metric-toggle" role="group" aria-label="切換時間維度">' +
+        '<button type="button" data-tg="daily" aria-pressed="' + (trendState.gran === 'daily') + '">日</button>' +
         '<button type="button" data-tg="weekly" aria-pressed="' + (trendState.gran === 'weekly') + '">週</button>' +
         '<button type="button" data-tg="monthly" aria-pressed="' + (trendState.gran === 'monthly') + '">月</button>' +
-        '<button type="button" data-tg="quarterly" aria-pressed="' + (trendState.gran === 'quarterly') + '">季</button></span>' +
+        '<button type="button" data-tg="quarterly" aria-pressed="' + (trendState.gran === 'quarterly') + '">季</button>' +
+        '<button type="button" data-tg="yearly" aria-pressed="' + (trendState.gran === 'yearly') + '">年</button></span>' +
       '</span></div>' +
       '<div class="chart-wrap" id="trend-chart"></div></section>';
     // 溝通歷程
-    html += '<section class="panel"><div class="panel-title">溝通歷程（跨外撥專案時間軸）' + CRM.infoIcon('每次聯繫之時間、專案、溝通內容與回覆；跨專案全量檢視需 callrecord.view_all 權限') + '</div>';
+    html += '<section class="panel" id="tl-section"><div class="panel-title">溝通歷程（跨外撥專案時間軸）' + CRM.infoIcon('每次聯繫之時間、專案、溝通內容與回覆；跨專案全量檢視需 callrecord.view_all 權限') + '</div>';
     if (m.contacts.length) {
       html += '<div class="timeline">' + m.contacts.map(function (c) {
         return '<div class="tl-item"><div class="tl-dot"></div><div>' +
@@ -357,6 +458,22 @@
     view.querySelectorAll('[data-tg]').forEach(function (b) {
       b.addEventListener('click', function () { trendState.gran = b.dataset.tg; renderProfile(m); });
     });
+    var opYearEl = view.querySelector('#op-year');
+    var opMonthEl = view.querySelector('#op-month');
+    var opRecentEl = view.querySelector('#op-recent');
+    if (opYearEl) opYearEl.addEventListener('change', function () {
+      onlinePeriodState.mode = 'month';
+      onlinePeriodState.year = parseInt(opYearEl.value, 10);
+      onlinePeriodState.month = onlinePeriodState.month || CUR_YM.m;
+      renderProfile(m);
+    });
+    if (opMonthEl) opMonthEl.addEventListener('change', function () {
+      onlinePeriodState.mode = 'month';
+      onlinePeriodState.year = onlinePeriodState.year || CUR_YM.y;
+      onlinePeriodState.month = parseInt(opMonthEl.value, 10);
+      renderProfile(m);
+    });
+    if (opRecentEl) opRecentEl.addEventListener('click', function () { onlinePeriodState.mode = 'recent'; renderProfile(m); });
   }
 
   function drawTrend(m) {
@@ -389,7 +506,11 @@
     var r = function (k) { var x = Math.sin((s % 100000 + k) * 12.9898) * 43758.5453; return x - Math.floor(x); };
     var monthDays = Math.floor(6 + r(1) * 22);
     var monthlyTasks = Math.floor(30 + r(2) * 150);
-    var idPool = ['小黃', '小黃', '多元', '小黃', '試跑'];
+    var idPool = ['小黃', '小黃', '多元', '小黃', '多元試跑'];
+    // 退隊判定（原型 deterministic 情境：隊編以「99」結尾＝名冊全量比對後未出現、標記退隊；REQ-IMP-015。
+    // 正式版由每次匯入之全名冊比對產生，非依隊編規則）
+    var isWithdrawn = /99$/.test(code);
+    var withdrawnDate = isWithdrawn ? ('2026-06-' + String(1 + Math.floor(r(40) * 27)).padStart(2, '0')) : null;
     function trend(base, n, amp) {
       var arr = [];
       for (var j = 0; j < n; j++) arr.push(Math.max(1, Math.round(base * (0.88 + r(10 + j) * 0.24) + j * base * 0.015)));
@@ -401,6 +522,7 @@
     var nReasons = Math.floor(r(4) * 3);
     return {
       code: code, _generated: true,
+      status: isWithdrawn ? '退隊' : '正常', withdrawnDate: withdrawnDate,
       name: G_SURNAMES[Math.floor(r(5) * 10)] + G_GIVEN[Math.floor(r(6) * 10)],
       identity: idPool[Math.floor(r(7) * 5)],
       region: r(8) > 0.5 ? '台北市' : '新北市',
@@ -423,9 +545,11 @@
       topDistricts: dPick,
       refuseReasons: G_REASONS.slice(0, nReasons),
       taskTrend: {
+        daily: trend(Math.round(monthlyTasks / 30), 30),
         weekly: trend(Math.round(monthlyTasks / 4.3), 7),
         monthly: trend(monthlyTasks, 6),
-        quarterly: trend(monthlyTasks * 3, 4)
+        quarterly: trend(monthlyTasks * 3, 4),
+        yearly: trend(monthlyTasks * 12, 3)
       },
       contacts: r(27) > 0.5 ? [
         { date: '2026-06-1' + Math.floor(r(28) * 9) + ' 1' + Math.floor(r(29) * 9) + ':30', project: '6月晚尖峰意願調查',
@@ -435,22 +559,47 @@
     };
   }
 
+  /* 頁內歷史（2026-07-16） */
+  var curQ = '';
+
   /* 搜尋（REQ-PROF-001/006：隊編搜尋；標籤／條件式拉名單由「分群篩選」tab 承接） */
   function search(q) {
     q = (q || '').trim();
+    curQ = q;
     // 原型：已知隊編用完整假資料；其他純數字隊編（3~6 位）以生成器補齊，確保活動名單任一隊編可查
     var m = DB.members[q] || (/^\d{3,6}$/.test(q) ? genMember(q) : null);
+    currentMember = m;
     document.getElementById('overview-stats').style.display = q ? 'none' : '';
     document.getElementById('profile-view').style.display = (q && m) ? '' : 'none';
     document.getElementById('not-found').classList.toggle('show', !!q && !m);
     if (m) renderProfile(m);
-    if (q) history.replaceState(null, '', '?m=' + encodeURIComponent(q));
+    if (q) history.replaceState(history.state, '', '?m=' + encodeURIComponent(q));
   }
-  document.getElementById('btn-search').addEventListener('click', function () { search(document.getElementById('q').value); });
-  document.getElementById('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') search(e.target.value); });
+  document.getElementById('btn-search').addEventListener('click', function () { search(document.getElementById('q').value); navCommit && navCommit(); });
+  document.getElementById('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') { search(e.target.value); navCommit && navCommit(); } });
   document.querySelectorAll('.chip-btn').forEach(function (b) {
-    b.addEventListener('click', function () { document.getElementById('q').value = b.dataset.q; search(b.dataset.q); });
+    b.addEventListener('click', function () { document.getElementById('q').value = b.dataset.q; search(b.dataset.q); navCommit && navCommit(); });
   });
+
+  /* ④檢視權限切換（REQ-PROF-007/008 原型示範）：一般視角收入遮罩＋不願承接原因隱藏；姓名去識別化不受影響（維持既有預設）；切換即重繪 */
+  function renderPermSwitcher() {
+    var el = document.getElementById('perm-switcher');
+    if (!el) return;
+    el.innerHTML = '<span style="font-size:13px;color:var(--muted)">檢視權限（原型示範）</span>' +
+      '<span class="metric-toggle" role="group" aria-label="切換檢視權限視角">' +
+        '<button type="button" data-perm="sensitive" aria-pressed="' + permState.sensitive + '">profile.view_sensitive</button>' +
+        '<button type="button" data-perm="general" aria-pressed="' + (!permState.sensitive) + '">一般</button>' +
+      '</span>' +
+      (permState.sensitive ? CRM.infoIcon('目前為 profile.view_sensitive 檢視視角：瀏覽收入等敏感欄位已依 REQ-SET-004 寫入審計日誌（操作者＋時間＋動作＋對象）') : '');
+    el.querySelectorAll('[data-perm]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        permState.sensitive = (b.dataset.perm === 'sensitive');
+        renderPermSwitcher();
+        if (currentMember) renderProfile(currentMember);
+      });
+    });
+  }
+  renderPermSwitcher();
 
   /* 異常狀態切換器 */
   CRM.mountStateSwitcher(function (state) {
@@ -474,9 +623,26 @@
     if (key === 'seg' && !segMounted) { CRMSEG.mount(document.getElementById('seg-host-tab')); segMounted = true; }
   }
   document.querySelectorAll('.pf-tab').forEach(function (b) {
-    b.addEventListener('click', function () { switchTab(b.dataset.pftab); });
+    b.addEventListener('click', function () { switchTab(b.dataset.pftab); navCommit && navCommit(); });
   });
   if (new URLSearchParams(location.search).get('tab') === 'seg') switchTab('seg');
+
+  function getViewState() {
+    var tabEl = document.querySelector('.pf-tab[aria-selected="true"]');
+    return { tab: (tabEl && tabEl.dataset.pftab) || 'search', q: curQ };
+  }
+  function applyViewState(st) {
+    var tab = (st && (st.tab === 'search' || st.tab === 'seg')) ? st.tab : 'search';
+    switchTab(tab);
+    if (tab === 'search') {
+      var q = (st && st.q) || '';
+      if (curQ !== q) {
+        document.getElementById('q').value = q;
+        search(q);
+      }
+    }
+  }
+  var navCommit = CRM.initPageHistory(getViewState, applyViewState);
 })();
 </script>
 
