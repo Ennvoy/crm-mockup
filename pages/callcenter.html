@@ -1380,7 +1380,7 @@
     var r = list[workIdx];
     function hasDef(n) { return p.fields.defaults.indexOf(n) >= 0; }
     var customsHtml = p.fields.customs.map(function (f, i) { return customFieldHtml(f, r, i); }).join('');
-    var html = '<div class="panel-title">逐筆撥打' + CRM.infoIcon('點下方「儲存並帶下一筆」會自動跳到下一筆待撥名單；亦可由下方「我的被分配名單」點選特定筆處理（回撥／補記錄）；表單欄位依本專案欄位設定組成（REQ-CS-002）') + selHtml + '</div>' +
+    var html = '<div class="panel-title"><span style="display:inline-flex;align-items:center;gap:4px">逐筆撥打' + CRM.infoIcon('點下方「儲存並帶下一筆」會自動跳到下一筆待撥名單；亦可由下方「我的被分配名單」點選特定筆處理（回撥／補記錄）；表單欄位依本專案欄位設定組成（REQ-CS-002）') + '</span>' + selHtml + '</div>' +
       workScriptHtml(p) +
       '<div class="work-progress">第 <b>' + (workIdx + 1) + '</b> / ' + list.length + ' 筆' + (callCount(r) ? '' : '　<span style="color:var(--accent)">・待撥打</span>') + '</div>' +
       '<div class="work-person"><span class="wp-name">' + r.name + '</span><span class="wp-code">隊編 ' + r.code + '</span>' +
