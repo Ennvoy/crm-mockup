@@ -562,7 +562,7 @@
     document.getElementById('seg-export').addEventListener('click', function () {
       var rows = [['隊編', '姓名', '身份別', '車隊', '縣市']];
       result.forEach(function (m) { rows.push([m.code, m.name, m.identity, m.branch, m.city || '']); });
-      CRM.downloadCsv('分群名單_' + (CRM.load().meta.dataAsOf || '') + '.csv', rows);
+      CRM.downloadCsv('分群名單_' + (CRM.load().meta.dataAsOf || '') + '.csv', rows, [0]);  // 隊編欄文字化防前導零遺失
       CRM.toast('已下載名單 ' + CRM.fmt(result.length) + ' 筆（匯出依 REQ-GEN-006 寫入審計——原型示意）');
     });
 

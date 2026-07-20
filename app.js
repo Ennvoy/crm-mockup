@@ -324,9 +324,91 @@
     if (/["\n,]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
     return v;
   }
-  function downloadCsv(filename, rows) {
-    var text = rows.map(function (row) { return row.map(csvCell).join(','); }).join('\r\n');
+  function downloadCsv(filename, rows, textCols) {
+    // textCols＝須以文字輸出之欄 index：純數字值包成 ="0103" 防 Excel 吃掉前導零（隊編等，2026-07-17 走查第 9 條）
+    var text = rows.map(function (row) {
+      return row.map(function (v, i) {
+        if (textCols && textCols.indexOf(i) >= 0 && v != null && /^\d+$/.test(String(v)))
+          return '"=""' + String(v) + '"""';
+        return csvCell(v);
+      }).join(',');
+    }).join('\r\n');
     var blob = new Blob(['\uFEFF' + text], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  /* ── XLSX 匯出（REQ-CS-023 三工作表；2026-07-20 拍板「三區塊分三分頁」）──
+        零依賴實作：XLSX＝ZIP 容器＋SpreadsheetML——以 STORED（不壓縮）ZIP 組裝、儲存格全用 inline string／number；
+        字串一律文字儲存格 → 隊編前導零天然保留（xlsx 版取代 CSV ="0123" 技法） ── */
+  var CRC_TABLE = (function () {
+    var t = [], c;
+    for (var n = 0; n < 256; n++) {
+      c = n;
+      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(bytes) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function utf8Bytes(s) { return new TextEncoder().encode(s); }
+  function xmlEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function colRef(i) { var s = ''; i++; while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+  function sheetXml(rows) {
+    var xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
+    rows.forEach(function (row, ri) {
+      xml += '<row r="' + (ri + 1) + '">';
+      row.forEach(function (v, ci) {
+        if (v == null || v === '') return;
+        var ref = colRef(ci) + (ri + 1);
+        if (typeof v === 'number' && isFinite(v)) xml += '<c r="' + ref + '"><v>' + v + '</v></c>';
+        else xml += '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(v) + '</t></is></c>';
+      });
+      xml += '</row>';
+    });
+    return xml + '</sheetData></worksheet>';
+  }
+  function zipStore(files) {  // files: [{name, data:Uint8Array}] → STORED zip Blob（local headers＋central directory＋EOCD）
+    var parts = [], central = [], offset = 0;
+    files.forEach(function (f) {
+      var nameB = utf8Bytes(f.name), crc = crc32(f.data), sz = f.data.length;
+      var lh = new Uint8Array(30 + nameB.length), dv = new DataView(lh.buffer);
+      dv.setUint32(0, 0x04034b50, true); dv.setUint16(4, 20, true); dv.setUint16(6, 0x0800, true);
+      dv.setUint32(14, crc, true); dv.setUint32(18, sz, true); dv.setUint32(22, sz, true);
+      dv.setUint16(26, nameB.length, true);
+      lh.set(nameB, 30);
+      parts.push(lh, f.data);
+      var ch = new Uint8Array(46 + nameB.length), cv = new DataView(ch.buffer);
+      cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x0800, true);
+      cv.setUint32(16, crc, true); cv.setUint32(20, sz, true); cv.setUint32(24, sz, true);
+      cv.setUint16(28, nameB.length, true); cv.setUint32(42, offset, true);
+      ch.set(nameB, 46);
+      central.push(ch);
+      offset += lh.length + sz;
+    });
+    var centralSize = 0; central.forEach(function (c) { centralSize += c.length; });
+    var eocd = new Uint8Array(22), ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+    ev.setUint32(12, centralSize, true); ev.setUint32(16, offset, true);
+    return new Blob(parts.concat(central, [eocd]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  }
+  function downloadXlsx(filename, sheets) {  // sheets: [{name, rows}]；工作表名限 31 字、不得含 : \ / ? * [ ]
+    var files = [
+      { name: '[Content_Types].xml', data: utf8Bytes('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' + sheets.map(function (s, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') + '</Types>') },
+      { name: '_rels/.rels', data: utf8Bytes('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>') },
+      { name: 'xl/workbook.xml', data: utf8Bytes('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + sheets.map(function (s, i) { return '<sheet name="' + xmlEsc(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join('') + '</sheets></workbook>') },
+      { name: 'xl/_rels/workbook.xml.rels', data: utf8Bytes('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map(function (s, i) { return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }).join('') + '</Relationships>') }
+    ];
+    sheets.forEach(function (s, i) { files.push({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: utf8Bytes(sheetXml(s.rows)) }); });
+    var blob = zipStore(files);
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url; a.download = filename;
@@ -398,6 +480,7 @@
     var x = Math.max(150, Math.min(window.innerWidth - 150, r.left + r.width / 2));
     tip.style.maxWidth = '300px';
     tip.style.whiteSpace = 'normal';
+    tip.style.overflowWrap = 'anywhere';  // 無空格長字串（如備註連續數字）強制斷行，防溢出框外（2026-07-20 走查）
     tip.style.position = 'fixed';
     tip.style.left = x + 'px';
     tip.style.bottom = 'auto';
@@ -578,6 +661,7 @@
     mountNav: mountNav,
     infoIcon: infoIcon,
     initPageHistory: initPageHistory,
-    downloadCsv: downloadCsv
+    downloadCsv: downloadCsv,
+    downloadXlsx: downloadXlsx
   };
 })();
