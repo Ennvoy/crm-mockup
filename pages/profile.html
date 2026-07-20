@@ -251,7 +251,7 @@
   原型說明：Profile 卡對應協理 11 維度示意圖（依訪談拿掉評分與優良司機標章）。「隊員平均每月收入」為敏感欄位——原型以已授權（profile.view_sensitive）的管理員視角展示，未授權者將顯示 ***。行動電話非批次可得資訊、不在 Profile（僅存在於外撥專案、由客服填寫，主管確認 2026-07-09）。姓名屬個資、各處預設去識別化顯示（陳○明；具權限者可見全名，使用者指示 2026-07-09）。「不願承接任務的原因」取自客服外撥最新回覆；溝通歷程對應跨專案聯繫紀錄時間軸。
 </footer>
 
-<script src="../app.js?v=44"></script>
+<script src="../app.js?v=46"></script>
 <script src="../seg.js?v=44"></script>
 <script>
 (function () {
@@ -409,7 +409,7 @@
         (opActive ? opStats.days : m.onlineDays.month) + ' / ' + m.onlineDays.quarter + ' / ' + m.onlineDays.year + ' <small>天（' + opLabel + '／最近90天／最近365天）</small>'),
       dim(IC.moon, '晚尖峰上線天數', (opActive ? '查詢 ' + opLabel : '最近 30 天內') + '，17:00–18:59 有上線之天數', (opActive ? opStats.evePeak : m.evePeakDays) + ' <small>天（' + opLabel + '）</small>'),
       dim(IC.sun, '早尖峰上線天數', (opActive ? '查詢 ' + opLabel : '最近 30 天內') + '，07:00–08:59 有上線之天數', (opActive ? opStats.mornPeak : m.mornPeakDays) + ' <small>天（' + opLabel + '）</small>'),
-      dim(IC.user, '身份別', '取自隊員主檔（小黃／多元／多元試跑）', m.identity),
+      dim(IC.user, '身份別', '由所屬車隊之類別推導（車隊對照表；小黃／多元／多元試跑）', m.identity),
       dim(IC.target, '歷史承接率', '最近 90 天；Σ承接任務 ÷ Σ任務數(排除別人已承接)；0.5%~1% 顯示為 1%', m.acceptRate + '%<small>（最近90天）</small>'),
       dim(IC.gift, '是否曾參與活動', '曾出現在任一活動報名名單', m.joinedActivity ? '是' : '否'),
       dim(IC.users, '主動參與活動類型', '參加過之活動類型彙整', m.activityTypes.length ? m.activityTypes.join('、') : '—'),

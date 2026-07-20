@@ -529,6 +529,31 @@
         '.pref-seg{display:inline-flex;background:var(--surface-warm);border-radius:9999px;padding:2px}' +
         '.pref-seg button{border:none;background:transparent;padding:4px 11px;border-radius:9999px;font-size:12.5px;color:var(--muted);cursor:pointer;min-height:26px;font-family:inherit}' +
         '.pref-seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 0 0 1px var(--border-soft)}' +
+        /* 使用者選單下拉（REQ-AUTH-004：變更密碼入口） */
+        '.nav-user{border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:inherit;color:inherit;display:inline-flex;align-items:center;gap:3px;padding:4px 6px;border-radius:8px}' +
+        '.nav-user:hover{background:var(--surface-warm)}' +
+        '.nav-user-caret{font-size:10px;color:var(--muted)}' +
+        '.nav-user-menu{position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;box-shadow:rgba(0,0,0,.12) 0 8px 32px;padding:6px;z-index:600;min-width:150px;display:none}' +
+        '.nav-user-menu.show{display:block}' +
+        '.nav-user-menu-item{display:block;width:100%;text-align:left;border:none;background:transparent;padding:8px 10px;border-radius:8px;font-size:13.5px;color:var(--fg-2);cursor:pointer;font-family:inherit}' +
+        '.nav-user-menu-item:hover{background:var(--surface-warm)}' +
+        /* 變更密碼 modal（自帶樣式，各頁不一定有 .modal 系列 class 可沿用） */
+        '.pcm-backdrop{position:fixed;inset:0;background:rgba(20,20,19,.45);z-index:8000;display:none;align-items:center;justify-content:center;padding:16px}' +
+        '.pcm-backdrop.show{display:flex}' +
+        '.pcm-box{background:var(--surface);border-radius:16px;width:400px;max-width:100%;padding:24px;box-shadow:rgba(0,0,0,.18) 0 12px 48px}' +
+        '.pcm-box h3{font-weight:500;font-size:18px;margin:0 0 6px}' +
+        '.pcm-desc{color:var(--muted);font-size:12.5px;margin:0 0 16px;line-height:1.6}' +
+        '.pcm-field{margin-bottom:12px}' +
+        '.pcm-field label{display:block;font-size:12.5px;color:var(--fg-2);margin-bottom:4px}' +
+        '.pcm-field input{width:100%;box-sizing:border-box;border:1px solid var(--border-soft);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--fg)}' +
+        '.pcm-hint{font-size:11.5px;color:var(--muted);margin-top:4px}' +
+        '.pcm-error{background:#fbeceb;color:var(--danger);border-radius:8px;padding:8px 10px;font-size:12.5px;margin-bottom:12px;display:none}' +
+        '.pcm-error.show{display:block}' +
+        '.pcm-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}' +
+        '.pcm-btn{border:none;cursor:pointer;border-radius:8px;font-size:13.5px;padding:8px 14px;min-height:36px;font-family:inherit}' +
+        '.pcm-btn-cancel{background:var(--surface-warm);color:var(--fg-2)}' +
+        '.pcm-btn-primary{background:var(--brand-55688);color:var(--brand-55688-on)}' +
+        '.pcm-btn-primary:hover{background:var(--brand-55688-deep)}' +
         /* 手機漢堡選單（2026-07-15 使用者拍板：桌機不動、窄螢幕收進抽屜） */
         '.nav-burger{display:none;border:1px solid var(--border-soft);background:var(--surface);border-radius:8px;min-width:38px;min-height:32px;font-size:17px;line-height:1;color:var(--fg-2);cursor:pointer;font-family:inherit;align-items:center;justify-content:center;transition:background var(--motion-fast)}' +
         '.nav-burger:hover{background:var(--surface-warm)}' +
@@ -565,7 +590,11 @@
           '<button type="button" data-v="light">細</button><button type="button" data-v="md">適中</button><button type="button" data-v="bold">粗</button></span></div>' +
       '</div>' +
       '<span class="data-chip" title="最後成功匯入時間">資料截至 ' + dataAsOf + '</span>' +
-      '<span class="nav-user">王營管</span></div></div>';
+      '<button class="nav-user" id="nav-user-btn" type="button" aria-haspopup="true" aria-expanded="false">王營管<span class="nav-user-caret" aria-hidden="true">▾</span></button>' +
+      '<div class="nav-user-menu" id="nav-user-menu" role="menu" aria-label="使用者選單">' +
+        '<button type="button" class="nav-user-menu-item" id="nav-user-pwd" role="menuitem">變更密碼</button>' +
+        '<button type="button" class="nav-user-menu-item" id="nav-user-logout" role="menuitem">登出</button>' +
+      '</div></div></div>';
     nav.innerHTML = html;
     nav.querySelectorAll('a.pending').forEach(function (a) {
       a.addEventListener('click', function (e) {
@@ -586,6 +615,96 @@
     document.addEventListener('click', function (e) { if (nav.classList.contains('nav-open') && !nav.contains(e.target)) closeDrawer(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && nav.classList.contains('nav-open')) closeDrawer(); });
     initPrefs(nav);
+    initUserMenu(nav);
+  }
+
+  /* ── 使用者選單下拉＋變更密碼（REQ-AUTH-004：忘記密碼文案兌現「登入後可於個人選單自行變更密碼」） ── */
+  function initUserMenu(nav) {
+    var btn = nav.querySelector('#nav-user-btn');
+    var menu = nav.querySelector('#nav-user-menu');
+    if (!btn || !menu) return;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var show = !menu.classList.contains('show');
+      menu.classList.toggle('show', show);
+      btn.setAttribute('aria-expanded', String(show));
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) { menu.classList.remove('show'); btn.setAttribute('aria-expanded', 'false'); }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && menu.classList.contains('show')) { menu.classList.remove('show'); btn.setAttribute('aria-expanded', 'false'); }
+    });
+    var pwdItem = nav.querySelector('#nav-user-pwd');
+    pwdItem.addEventListener('click', function () {
+      menu.classList.remove('show');
+      btn.setAttribute('aria-expanded', 'false');
+      openPwdChangeModal();
+    });
+    var logoutItem = nav.querySelector('#nav-user-logout');
+    logoutItem.addEventListener('click', function () {
+      menu.classList.remove('show');
+      btn.setAttribute('aria-expanded', 'false');
+      location.href = 'login.html';
+    });
+  }
+
+  var pcmBackdrop = null;
+  function ensurePwdChangeModal() {
+    if (pcmBackdrop) return pcmBackdrop;
+    pcmBackdrop = document.createElement('div');
+    pcmBackdrop.className = 'pcm-backdrop';
+    pcmBackdrop.id = 'pcm-backdrop';
+    pcmBackdrop.setAttribute('role', 'dialog');
+    pcmBackdrop.setAttribute('aria-modal', 'true');
+    pcmBackdrop.setAttribute('aria-labelledby', 'pcm-title');
+    pcmBackdrop.innerHTML =
+      '<div class="pcm-box">' +
+        '<h3 id="pcm-title">變更密碼</h3>' +
+        '<p class="pcm-desc">請輸入目前密碼與新密碼；新密碼將於下次登入生效。</p>' +
+        '<div class="pcm-error" id="pcm-error"></div>' +
+        '<div class="pcm-field"><label for="pcm-cur">目前密碼</label><input type="password" id="pcm-cur" autocomplete="current-password"></div>' +
+        '<div class="pcm-field"><label for="pcm-new">新密碼</label><input type="password" id="pcm-new" autocomplete="new-password">' +
+          '<div class="pcm-hint">至少 8 碼，需包含英文與數字</div></div>' +
+        '<div class="pcm-field"><label for="pcm-confirm">確認新密碼</label><input type="password" id="pcm-confirm" autocomplete="new-password"></div>' +
+        '<div class="pcm-foot">' +
+          '<button type="button" class="pcm-btn pcm-btn-cancel" id="pcm-cancel">取消</button>' +
+          '<button type="button" class="pcm-btn pcm-btn-primary" id="pcm-ok">確認變更</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(pcmBackdrop);
+
+    var errBox = pcmBackdrop.querySelector('#pcm-error');
+    var curInput = pcmBackdrop.querySelector('#pcm-cur');
+    var newInput = pcmBackdrop.querySelector('#pcm-new');
+    var confirmInput = pcmBackdrop.querySelector('#pcm-confirm');
+
+    function showErr(msg) { errBox.textContent = msg; errBox.classList.add('show'); }
+    function hideErr() { errBox.classList.remove('show'); errBox.textContent = ''; }
+    function close() {
+      pcmBackdrop.classList.remove('show');
+      curInput.value = ''; newInput.value = ''; confirmInput.value = '';
+      hideErr();
+    }
+    pcmBackdrop.querySelector('#pcm-cancel').addEventListener('click', close);
+    pcmBackdrop.addEventListener('click', function (e) { if (e.target === pcmBackdrop) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && pcmBackdrop.classList.contains('show')) close(); });
+    pcmBackdrop.querySelector('#pcm-ok').addEventListener('click', function () {
+      hideErr();
+      if (!curInput.value) { showErr('請輸入目前密碼'); curInput.focus(); return; }
+      if (newInput.value.length < 8 || !/[A-Za-z]/.test(newInput.value) || !/[0-9]/.test(newInput.value)) {
+        showErr('新密碼至少 8 碼，需包含英文與數字'); newInput.focus(); return;
+      }
+      if (newInput.value !== confirmInput.value) { showErr('兩次輸入的新密碼不一致，請重新輸入'); confirmInput.focus(); return; }
+      close();
+      toast('密碼已變更');
+    });
+    return pcmBackdrop;
+  }
+  function openPwdChangeModal() {
+    var modal = ensurePwdChangeModal();
+    modal.classList.add('show');
+    modal.querySelector('#pcm-cur').focus();
   }
 
   /* ── 顯示偏好：字級 大/中/小、字重 細/適中/粗（localStorage 持久、全站生效） ── */

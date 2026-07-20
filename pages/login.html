@@ -242,7 +242,7 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
-        <div class="hint">至少 8 碼</div>
+        <div class="hint">至少 8 碼，需包含英文與數字</div>
       </div>
       <div class="field">
         <label for="pc-confirm">確認密碼</label>
@@ -275,7 +275,7 @@
   </div>
 </main>
 
-<script src="../app.js?v=44"></script>
+<script src="../app.js?v=46"></script>
 <script>
 (function () {
   'use strict';
@@ -374,8 +374,8 @@
 
   pcForm.addEventListener('submit', function (e) {
     e.preventDefault();
-    if (pcNew.value.length < 8) {
-      pcErrorText.textContent = '新密碼至少需 8 碼';
+    if (pcNew.value.length < 8 || !/[A-Za-z]/.test(pcNew.value) || !/[0-9]/.test(pcNew.value)) {
+      pcErrorText.textContent = '新密碼至少 8 碼，需包含英文與數字';
       pcError.hidden = false;
       pcNew.focus();
       return;

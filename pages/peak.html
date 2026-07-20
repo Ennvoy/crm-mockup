@@ -131,9 +131,9 @@
         <div class="panel-title" id="kpi-title"></div>
         <div class="filters" role="group" aria-label="完成數 KPI 篩選">
           <select id="f-region1" aria-label="選擇地區">
-            <option>全台</option><option selected>雙北地區</option>
+            <option>全台</option><option selected>雙北</option>
             <option>台北市</option><option>新北市</option><option>桃園市</option><option>台中市</option><option>台南市</option><option>高雄市</option>
-            <option disabled>──其他縣市（正式版全列）──</option>
+            <option>基隆市</option><option>新竹市</option><option>新竹縣</option><option>苗栗縣</option><option>彰化縣</option><option>南投縣</option><option>雲林縣</option><option>嘉義市</option><option>嘉義縣</option><option>屏東縣</option><option>宜蘭縣</option><option>花蓮縣</option><option>台東縣</option><option>澎湖縣</option><option>金門縣</option><option>連江縣</option>
           </select>
           <select id="f-peak1" aria-label="選擇時段"><option value="morning">早尖峰</option><option value="evening" selected>晚尖峰</option><option value="offpeak">離峰</option></select>
           <button class="btn" id="btn-export1" type="button" title="需 report.export 權限（REQ-GEN-006）">匯出</button>
@@ -151,9 +151,9 @@
         <div class="panel-title" id="wd-title"></div>
         <div class="filters" role="group" aria-label="每日完成數篩選">
           <select id="f-region2" aria-label="選擇地區">
-            <option>全台</option><option selected>雙北地區</option>
+            <option>全台</option><option selected>雙北</option>
             <option>台北市</option><option>新北市</option><option>桃園市</option><option>台中市</option><option>台南市</option><option>高雄市</option>
-            <option disabled>──其他縣市（正式版全列）──</option>
+            <option>基隆市</option><option>新竹市</option><option>新竹縣</option><option>苗栗縣</option><option>彰化縣</option><option>南投縣</option><option>雲林縣</option><option>嘉義市</option><option>嘉義縣</option><option>屏東縣</option><option>宜蘭縣</option><option>花蓮縣</option><option>台東縣</option><option>澎湖縣</option><option>金門縣</option><option>連江縣</option>
           </select>
           <select id="f-year2" aria-label="選擇年份"><option>2026</option><option>2025</option><option>2024</option></select>
           <select id="f-month2" aria-label="選擇月份">
@@ -181,9 +181,9 @@
         <div class="panel-title" id="st-title"></div>
         <div class="filters" role="group" aria-label="每日任務數篩選">
           <select id="f-region3" aria-label="選擇地區">
-            <option>全台</option><option selected>雙北地區</option>
+            <option>全台</option><option selected>雙北</option>
             <option>台北市</option><option>新北市</option><option>桃園市</option><option>台中市</option><option>台南市</option><option>高雄市</option>
-            <option disabled>──其他縣市（正式版全列）──</option>
+            <option>基隆市</option><option>新竹市</option><option>新竹縣</option><option>苗栗縣</option><option>彰化縣</option><option>南投縣</option><option>雲林縣</option><option>嘉義市</option><option>嘉義縣</option><option>屏東縣</option><option>宜蘭縣</option><option>花蓮縣</option><option>台東縣</option><option>澎湖縣</option><option>金門縣</option><option>連江縣</option>
           </select>
           <select id="f-year3" aria-label="選擇年份"><option>2026</option><option>2025</option><option>2024</option></select>
           <select id="f-month3" aria-label="選擇月份">
@@ -241,7 +241,7 @@
   <div class="state-layer" id="st-forbidden">
     <div class="state-icon" aria-hidden="true">🔒</div>
     <div class="state-title">無權限檢視此頁</div>
-    <div class="state-desc">你的帳號沒有此分頁權限，需要存取請聯絡系統管理員。</div>
+    <div class="state-desc">你的帳號缺少 <strong>overview.view</strong> 權限，需要存取請聯絡系統管理員。</div>
   </div>
 </main>
 
@@ -249,7 +249,7 @@
   原型說明：本頁對應 v2 需求文件「其他分頁」三張 Tableau 報表（雙北_晚尖峰完成數 KPI／每日完成數 by 星期／晚尖峰每日任務數_完成狀況）。假資料即時生成、數字量級貼近截圖。
 </footer>
 
-<script src="../app.js?v=44"></script>
+<script src="../app.js?v=46"></script>
 <script>
 (function () {
   'use strict';
@@ -327,9 +327,15 @@
 
   function val(id) { return document.getElementById(id).value; }
   function num(id) { return Number(val(id)); }
-  // 地區倍率：雙北地區＝基準 1（原型假資料量級以此校準）、全台＝2.4（既有邏輯，2026-07-09 主管走查）
+  // 地區倍率：雙北＝基準 1（原型假資料量級以此校準）、全台＝2.4（既有邏輯，2026-07-09 主管走查）
   // 各縣市倍率為新增示意值（REQ-OV-010 補訂），彼此加總 ≈1（相對「全台＝1.0」正規化：台北 0.32＋新北 0.26＝0.58 對齊雙北占全台之既有假設）
-  var REGION_FACTOR = { '全台': 2.4, '雙北地區': 1, '台北市': 0.32, '新北市': 0.26, '桃園市': 0.12, '台中市': 0.14, '台南市': 0.07, '高雄市': 0.09 };
+  // 其餘縣市（含金馬離島）量級明顯小於六都，依人口規模概估示意值（REQ-OV-010 補訂，2026-07-20）
+  var REGION_FACTOR = {
+    '全台': 2.4, '雙北': 1, '台北市': 0.32, '新北市': 0.26, '桃園市': 0.12, '台中市': 0.14, '台南市': 0.07, '高雄市': 0.09,
+    '基隆市': 0.025, '新竹市': 0.03, '新竹縣': 0.035, '苗栗縣': 0.03, '彰化縣': 0.06, '南投縣': 0.025, '雲林縣': 0.03,
+    '嘉義市': 0.02, '嘉義縣': 0.025, '屏東縣': 0.045, '宜蘭縣': 0.025, '花蓮縣': 0.02, '台東縣': 0.012,
+    '澎湖縣': 0.006, '金門縣': 0.006, '連江縣': 0.002
+  };
   function factorOf(rg) { return REGION_FACTOR.hasOwnProperty(rg) ? REGION_FACTOR[rg] : 1; }
 
   /* ═══ Tab 1：完成數 KPI（直接呈現近 3 年年度對照；篩選＝地區＋時段，主管走查回饋 2026-07-09） ═══ */

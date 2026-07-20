@@ -379,7 +379,7 @@
   原型說明：逐筆撥打表單為全站唯一顯示隊員全名與完整行動電話之區塊（REQ-PROF-007 收窄，外撥作業必要）；本頁其餘名單清單（外撥專案名單、我的被分配名單、一鍵帶入預覽）依個資口徑遮罩姓名／電話，其餘頁面比照辦理。名單／統計／數據分析／溝通歷程皆為 deterministic 假資料即時生成（客服 3 人：王雅婷、李思穎、陳柏宇）；「建立外撥專案」「分群篩選帶入建立草稿專案」「啟動／結案」「編輯欄位／選項（含自訂欄位隱藏／移除、另存為模板）」「上傳／追加名單（示意檔模擬匯入）」「回覆篩選帶入建專案」「分配／重新分配名單（限未撥打／未接）」「電訪紀錄新增（一經儲存唯讀、不提供修改刪除）」「不參加原因（意願選不參加時顯示）／不願承接原因（獨立欄位）／其他建議選項新增（皆本專案共用）」「儲存並帶下一筆（席位必填）」「客服績效區間統計與明細匯出」「對應活動綁定」皆為前端記憶體內真互動，重新整理頁面將重置（點聯絡狀況自動帶入之時間與席位 8 小時記憶之時戳為使用者操作當下時間，屬唯二非 deterministic 來源）；正式版建立與狀態轉移限 callproject.manage 權限並寫入審計（REQ-CS-001），自訂欄位「移除」限 admin.delete 權限（REQ-CS-006）。含電話之檢視與匯出，正式版將逐次寫入審計日誌（REQ-GEN-006／REQ-SET-004）；溝通歷程與報表下載之 edit_assigned 範圍收斂依 REQ-CS-013／018／021（原型以「客服・王雅婷」角色示意）。
 </footer>
 
-<script src="../app.js?v=44"></script>
+<script src="../app.js?v=46"></script>
 <script>
 (function () {
   'use strict';
@@ -1062,7 +1062,7 @@
     if (p.status !== '草稿') {
       h += '<div class="stat-grid">' +
         statCard('總名單數', CRM.fmt(st.total), scopeNote(list.length, st.total), '客服角色僅能檢視分配給自己之名單（REQ-CS-010）') +
-        statCard('已撥打數', CRM.fmt(st.called), '完成率 ' + CRM.pct(st.prog), '已撥打＝至少一次電訪紀錄') +
+        statCard('已撥打數', CRM.fmt(st.called), '撥打進度 ' + CRM.pct(st.prog), '已撥打＝至少一次電訪紀錄') +
         statCard('外撥總通次', CRM.fmt(st.nCalls), '全部名單電訪次數加總（REQ-CS-012）') +
         statCard('成功接觸', CRM.fmt(st.reached), '名單成功聯繫率 ' + CRM.pct(st.rate), '成功接觸＝任一次接聽「是」；聯繫率＝成功接觸÷名單總數（REQ-CS-012）') +
       '</div>';
@@ -1999,7 +1999,7 @@
     var h = '<div class="perf-card">' +
       '<div class="perf-card-head"><span class="perf-avatar" aria-hidden="true">' + x.a.charAt(0) + '</span><span class="perf-name">' + x.a + '</span>' +
         '<span class="perf-head-stats"><span>分配 <b>' + x.st.assigned + '</b> 筆</span><span>通次 <b>' + x.st.calls + '</b></span><span>成功 <b>' + x.ns + '</b> 筆</span><span>失敗 <b>' + (x.nd - x.ns) + '</b> 筆</span></span></div>' +
-      '<div class="perf-rate-row"><span>名單成功率' + CRM.infoIcon('成功筆數 ÷ 區間內有撥打之名單筆數') + '</span><span class="perf-rate-track"><span class="perf-rate-fill" style="width:' + (rate || 0) + '%"></span></span><b>' + (rate == null ? '—' : rate + '%') + '</b>' +
+      '<div class="perf-rate-row"><span>撥打成功率' + CRM.infoIcon('成功筆數 ÷ 區間內有撥打之名單筆數（客服級指標；與專案統計「名單成功聯繫率」＝成功接觸÷名單總數分母不同）') + '</span><span class="perf-rate-track"><span class="perf-rate-fill" style="width:' + (rate || 0) + '%"></span></span><b>' + (rate == null ? '—' : rate + '%') + '</b>' +
         '<span style="margin-left:auto">平均每通 <b>' + (x.st.nDur ? fmtDur(x.st.sumDur / x.st.nDur) : '—') + '</b>・總計 <b>' + fmtDurLong(x.st.sumDur) + '</b>・日均 <b>' + (x.days ? fmtDurLong(x.st.sumDur / x.days) : '—') + '</b></span></div>';
     if (!projs.length) h += '<div class="perf-proj"><p style="font-size:12.5px;color:var(--meta)">區間內無被分配與撥打之專案。</p></div>';
     projs.forEach(function (px) {
@@ -2072,7 +2072,7 @@
     // ── KPI 帶 ──
     h += '<div class="stat-grid">' +
       statCard('外撥通次', CRM.fmt(tot.calls), '分配 ' + CRM.fmt(tot.assigned) + ' 筆・已撥 ' + CRM.fmt(tot.nd) + ' 筆', '依資料區間計；分配筆數＝區間內被分配之名單筆數（REQ-CS-009 分配時間戳）') +
-      statCard('成功筆數', CRM.fmt(tot.ns), '名單成功率 ' + (tot.nd ? Math.round(tot.ns / tot.nd * 1000) / 10 + '%' : '—'), '區間內任一通「成功」之名單筆數；成功率＝成功筆數 ÷ 有撥打名單數') +
+      statCard('成功筆數', CRM.fmt(tot.ns), '撥打成功率 ' + (tot.nd ? Math.round(tot.ns / tot.nd * 1000) / 10 + '%' : '—'), '區間內任一通「成功」之名單筆數；撥打成功率＝成功筆數 ÷ 有撥打名單數') +
       statCard('失敗筆數', CRM.fmt(tot.nd - tot.ns), '未接／空號／拒訪', '區間內有撥打但無任何一通「成功」之名單筆數') +
       statCard('合計處理時長', fmtDurLong(tot.sumDur), '平均每通 ' + (tot.nDur ? fmtDur(tot.sumDur / tot.nDur) : '—') + '・日均 ' + (dayKeys.length ? fmtDurLong(tot.sumDur / dayKeys.length) : '—'), '區間內每日處理時長加總；原型為示意值，正式版＝話務系統通話＋作業時長') +
       '</div>';
@@ -2092,7 +2092,7 @@
     h += '<div class="ana-box" style="margin-top:12px"><div class="bt">📈 每日外撥通次</div>' +
       (dayRows.length ? lineChartHtml(dayRows, 1120, 170) : '<p style="font-size:12.5px;color:var(--meta)">區間內無通次</p>') + '</div>';
     // ── 各客服績效卡（2026-07-17 四輪重構：卡片式取代寬表格＋展開列） ──
-    h += '<div class="panel-title" style="margin-top:20px;font-size:16px">各客服績效' + CRM.infoIcon('每位客服一卡：區間內分配／通次／成功／失敗筆數、名單成功率、處理時間，與各專案之撥打狀況分布・活動轉化鏈（成功聯繫➜參加意願➜報名轉化➜活動達標＝有領到結算獎金之隊員，REQ-ACT-017）') + '</div>';
+    h += '<div class="panel-title" style="margin-top:20px;font-size:16px">各客服績效' + CRM.infoIcon('每位客服一卡：區間內分配／通次／成功／失敗筆數、撥打成功率、處理時間，與各專案之撥打狀況分布・活動轉化鏈（成功聯繫➜參加意願➜報名轉化➜活動達標＝整檔達標（Σ結算獎勵>0），REQ-ACT-017）') + '</div>';
     per.forEach(function (x) { h += perfAgentCardHtml(x); });
     host.innerHTML = h;
     var ps = document.getElementById('perf-start'), pe = document.getElementById('perf-end');

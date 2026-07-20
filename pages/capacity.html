@@ -402,7 +402,7 @@
               <button type="button" class="seg-btn" data-id="多元" aria-pressed="false">多元</button>
               <button type="button" class="seg-btn" data-id="多元試跑" aria-pressed="false">多元試跑</button>
             </div>
-            <button class="btn" id="btn-export-yoy" type="button">匯出</button>
+            <button class="btn" id="btn-export-yoy" type="button" title="需 report.export 權限（REQ-GEN-006）">匯出</button>
           </div>
         </div>
         <div class="panel-note" id="yoy-note"></div>
@@ -420,7 +420,7 @@
       <div class="panel">
         <div class="panel-head">
           <div class="panel-title" id="rate-title"></div>
-          <button class="btn" id="btn-export-rate" type="button">匯出</button>
+          <button class="btn" id="btn-export-rate" type="button" title="需 report.export 權限（REQ-GEN-006）">匯出</button>
         </div>
         <div class="panel-note" id="rate-note"></div>
         <div class="rate-cards" id="rate-cards"></div>
@@ -434,7 +434,7 @@
       <div class="panel">
         <div class="panel-head">
           <div class="panel-title" id="gap-title"></div>
-          <button class="btn" id="btn-export-gap" type="button">匯出</button>
+          <button class="btn" id="btn-export-gap" type="button" title="需 report.export 權限（REQ-GEN-006）">匯出</button>
         </div>
         <div class="panel-note" id="gap-note"></div>
         
@@ -481,7 +481,7 @@
   原型說明（口徑摘要）：承接率＝Σ承接任務 ÷ Σ任務數（排除別人已承接），資料源 driver_inquiry_stats（承接統計_隊員），全系統統一口徑 2026-07-13。離峰＝早尖峰（07:00–08:59）與晚尖峰（17:00–18:59）以外之其餘時段。聚合表自 2024 年起提供，2024 年 1–5 月無名冊月快照，「在隊隊員數」該段顯示「資料未涵蓋」。在隊隊員數取名冊月快照（非日均）。數字皆為 deterministic 假資料、量級示意；正式版由每日匯入後自動重算。
 </footer>
 
-<script src="../app.js?v=44"></script>
+<script src="../app.js?v=46"></script>
 <script>
 (function () {
   'use strict';
@@ -1067,8 +1067,76 @@
     document.querySelectorAll('#f-id-seg .seg-btn').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
     renderYoy();
   });
-  ['btn-export-yoy', 'btn-export-rate', 'btn-export-gap'].forEach(function (id) {
-    document.getElementById(id).addEventListener('click', function () { CRM.toast('已匯出（原型示意）'); });
+  /* ── CSV 匯出（真下載；共用邏輯見 app.js CRM.downloadCsv，比照 peak.html 模式） ── */
+  function filterNote() {
+    var yrs = pairYears();
+    return '篩選條件：地區=' + F.region + '／時段=' + PEAK_LABEL[F.peak] + '／對照=' + yrs.cur + ' vs ' + yrs.cmp;
+  }
+  function exportYoyRows() {
+    var yrs = pairYears(), cur = yrs.cur, cmp = yrs.cmp;
+    var region = F.region, peak = F.peak, idn = F.identity, lastFull = lastFullOf(cur);
+    var sCur = makeSeries(peak, idn, region, cur), sCmp = makeSeries(peak, idn, region, cmp);
+    var metrics = YOY_METRICS.filter(function (mt) { return mt.key !== 'valid' || idn === '總體'; });
+    var rows = [[filterNote() + '／身份別=' + idn], []];
+    var header = ['月份'];
+    metrics.forEach(function (mt) { header.push(mt.name + '_' + cur + '年(' + mt.unit + ')', mt.name + '_' + cmp + '年(' + mt.unit + ')'); });
+    rows.push(header);
+    for (var m = 1; m <= 12; m++) {
+      var row = [m + '月'];
+      metrics.forEach(function (mt) {
+        var cv = sCur[mt.key][m - 1], pv = sCmp[mt.key][m - 1];
+        row.push(cv === null || cv === undefined ? '' : cv, pv === null || pv === undefined ? '' : pv);
+      });
+      rows.push(row);
+    }
+    rows.push([]);
+    var kpiHeader = ['指標', cur + ' 年 1–' + lastFull + ' 月平均', cmp + ' 年同期平均', '差值', '增減%'];
+    rows.push(kpiHeader);
+    metrics.forEach(function (mt) {
+      var k = kpiCalc(sCur[mt.key], sCmp[mt.key], lastFull, mt.dec);
+      rows.push([mt.name, k.cur === null ? '' : k.cur, k.cmp === null ? '' : k.cmp, k.diff === null ? '' : k.diff, k.pct === null ? '' : k.pct]);
+    });
+    return rows;
+  }
+  function exportRateRows() {
+    var yrs = pairYears(), cur = yrs.cur, cmp = yrs.cmp;
+    var region = F.region, peak = F.peak;
+    var rows = [[filterNote()], [], ['身份別', PEAK_LABEL[peak] + '承接率_' + cur + '年(%)', PEAK_LABEL[peak] + '承接率_' + cmp + '年(%)', '差(個百分點)']];
+    ID_LIST.forEach(function (id) {
+      var rc = rateOf(cur, peak, id, region), rp = rateOf(cmp, peak, id, region);
+      rows.push([id, rc, rp, Math.round((rc - rp) * 10) / 10]);
+    });
+    return rows;
+  }
+  function exportGapRows() {
+    var yrs = pairYears(), cur = yrs.cur, cmp = yrs.cmp;
+    var region = F.region, peak = F.peak;
+    var wk = {};
+    GAP_METRICS.forEach(function (mt) { wk[mt.key] = { cur: makeWeekday(mt.key, peak, region, cur), cmp: makeWeekday(mt.key, peak, region, cmp) }; });
+    var header = ['星期'];
+    GAP_METRICS.forEach(function (mt) { header.push(mt.name + '_' + cur + '年(' + mt.unit + ')', mt.name + '_' + cmp + '年(' + mt.unit + ')'); });
+    var rows = [[filterNote()], [], header];
+    WD_NAMES.forEach(function (wdName, i) {
+      var row = [wdName];
+      GAP_METRICS.forEach(function (mt) { row.push(wk[mt.key].cur[i], wk[mt.key].cmp[i]); });
+      rows.push(row);
+    });
+    return rows;
+  }
+  document.getElementById('btn-export-yoy').addEventListener('click', function () {
+    var yrs = pairYears();
+    CRM.downloadCsv('運力分析_YoY對照表_' + F.region + '_' + PEAK_LABEL[F.peak] + '_' + yrs.cur + 'vs' + yrs.cmp + '_' + DB.meta.dataAsOf + '.csv', exportYoyRows());
+    CRM.toast('已下載（匯出寫入審計）');
+  });
+  document.getElementById('btn-export-rate').addEventListener('click', function () {
+    var yrs = pairYears();
+    CRM.downloadCsv('運力分析_承接率表_' + F.region + '_' + PEAK_LABEL[F.peak] + '_' + yrs.cur + 'vs' + yrs.cmp + '_' + DB.meta.dataAsOf + '.csv', exportRateRows());
+    CRM.toast('已下載（匯出寫入審計）');
+  });
+  document.getElementById('btn-export-gap').addEventListener('click', function () {
+    var yrs = pairYears();
+    CRM.downloadCsv('運力分析_缺口表_' + F.region + '_' + PEAK_LABEL[F.peak] + '_' + yrs.cur + 'vs' + yrs.cmp + '_' + DB.meta.dataAsOf + '.csv', exportGapRows());
+    CRM.toast('已下載（匯出寫入審計）');
   });
 
   /* ═══════════════ tabs ═══════════════ */

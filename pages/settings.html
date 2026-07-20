@@ -120,6 +120,9 @@
   .cut-inputs input { width: 64px; min-height: 34px; padding: 5px 8px; font-size: 13px; }
   .cut-preview { display: flex; flex-wrap: wrap; gap: 5px; }
   .cut-preview span { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 9999px; padding: 3px 10px; font-size: 12px; color: var(--fg-2); }
+  .cut-preview .cp-green { color: var(--success); border-color: var(--success); }
+  .cut-preview .cp-yellow { color: var(--warn); border-color: var(--warn); }
+  .cut-preview .cp-red { color: var(--danger); border-color: var(--danger); }
 
   /* 質性門檻卡＋右側套用範例面板 */
   .judge-layout { display: grid; grid-template-columns: minmax(260px, 400px) 1fr; gap: 16px; align-items: start; }
@@ -447,10 +450,17 @@
 <div class="modal-backdrop" id="modal-user" role="dialog" aria-modal="true" aria-labelledby="mu-title">
   <div class="modal">
     <h3 id="mu-title">新增帳號</h3>
-    <p class="desc">帳號由 Supabase Auth 以 email＋password 管理；建立後系統將寄送設定密碼邀請信（原型示意寄送動作）。</p>
+    <p class="desc">帳號由 Supabase Auth 以 email＋password 管理；設定預設密碼交付新使用者，首次登入將強制變更密碼。</p>
     <div class="field"><label for="mu-email">Email</label><input type="text" id="mu-email" placeholder="name@55688.com.tw" autocomplete="off"></div>
     <div class="field"><label for="mu-name">姓名</label><input type="text" id="mu-name" placeholder="真實姓名（全站顯示將自動遮罩）" autocomplete="off"></div>
     <div class="field"><label for="mu-role">角色</label><select id="mu-role"></select></div>
+    <div class="field">
+      <label for="mu-pwd">預設密碼</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="mu-pwd" placeholder="至少 8 碼，需含英文與數字" autocomplete="off" style="flex:1">
+        <button class="btn" type="button" id="mu-pwd-gen">產生</button>
+      </div>
+    </div>
     <div class="modal-foot">
       <button class="btn" type="button" id="mu-cancel">取消</button>
       <button class="btn btn-primary" type="button" id="mu-ok">建立帳號</button>
@@ -500,7 +510,7 @@
   </div>
 </div>
 
-<script src="../app.js?v=44"></script>
+<script src="../app.js?v=46"></script>
 <script>
 (function () {
   'use strict';
@@ -511,33 +521,45 @@
   var CUT_DEFS = [
     { key: 'online', label: '上線天數級距', note: '影響可用運力／上線隊員數等指標分桶', c1: 10, c2: 20, unit: '天', hasZero: true },
     { key: 'daily', label: '日均完成數級距', note: '影響活動成效前後比較之日均完成桶（AI 建議值，營管可自行調整）', c1: 3, c2: 6, unit: '次', hasZero: true },
-    { key: 'accept', label: '承接天數級距', note: 'AI 建議值，營管可自行調整；影響有承接隊員數之週視角分桶', c1: 2, c2: 4, unit: '天', hasZero: false }
+    { key: 'accept', label: '承接天數級距', note: 'AI 建議值，營管可自行調整；影響有承接隊員數之週視角分桶', c1: 2, c2: 4, unit: '天', hasZero: false },
+    { key: 'complete', label: '完成率門檻顏色切點', note: '總覽／報表完成率著色門檻（REQ-OV-010③）：綠 ≥ 綠色門檻、黃 ≥ 黃色門檻、低於黃色門檻為紅', c1: 70, c2: 55, unit: '%', kind: 'color' }
   ];
   function cutPreview(def) {
     var u = def.unit;
-    if (def.hasZero) {
-      return ['0 ' + u, '1~' + def.c1 + ' ' + u, (def.c1 + 1) + '~' + def.c2 + ' ' + u, (def.c2 + 1) + '+ ' + u];
+    if (def.kind === 'color') {
+      return ['<span class="cp-green">綠 ≥ ' + def.c1 + u + '</span>', '<span class="cp-yellow">黃 ≥ ' + def.c2 + u + '</span>', '<span class="cp-red">紅 ＜ ' + def.c2 + u + '</span>'];
     }
-    return ['1~' + def.c1 + ' ' + u, (def.c1 + 1) + '~' + def.c2 + ' ' + u, (def.c2 + 1) + ' ' + u + '以上'];
+    if (def.hasZero) {
+      return ['0 ' + u, '1~' + def.c1 + ' ' + u, (def.c1 + 1) + '~' + def.c2 + ' ' + u, (def.c2 + 1) + '+ ' + u].map(function (t) { return '<span>' + t + '</span>'; });
+    }
+    return ['1~' + def.c1 + ' ' + u, (def.c1 + 1) + '~' + def.c2 + ' ' + u, (def.c2 + 1) + ' ' + u + '以上'].map(function (t) { return '<span>' + t + '</span>'; });
   }
   function renderCutGrid() {
     var wrap = document.getElementById('cut-grid');
     wrap.innerHTML = CUT_DEFS.map(function (d) {
+      var lbl1 = d.kind === 'color' ? '綠色門檻' : '切點 1';
+      var lbl2 = d.kind === 'color' ? '黃色門檻' : '切點 2';
       return '<div class="cut-card" data-cut="' + d.key + '">' +
         '<div class="ck-label">' + d.label + '</div>' +
         '<div class="ck-note">' + d.note + '</div>' +
-        '<div class="cut-inputs">切點 1 <input type="number" min="1" class="c1" value="' + d.c1 + '" aria-label="' + d.label + ' 切點一"> ／ 切點 2 <input type="number" min="2" class="c2" value="' + d.c2 + '" aria-label="' + d.label + ' 切點二"></div>' +
-        '<div class="cut-preview">' + cutPreview(d).map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>' +
+        '<div class="cut-inputs">' + lbl1 + ' <input type="number" min="1" class="c1" value="' + d.c1 + '" aria-label="' + d.label + ' ' + lbl1 + '"> ／ ' + lbl2 + ' <input type="number" min="1" class="c2" value="' + d.c2 + '" aria-label="' + d.label + ' ' + lbl2 + '"></div>' +
+        '<div class="cut-preview">' + cutPreview(d).join('') + '</div>' +
         '</div>';
     }).join('');
     wrap.querySelectorAll('.cut-card').forEach(function (card) {
       var def = CUT_DEFS.filter(function (d) { return d.key === card.dataset.cut; })[0];
       var i1 = card.querySelector('.c1'), i2 = card.querySelector('.c2');
       function sync() {
-        var v1 = Math.max(1, Math.round(Number(i1.value) || def.c1));
-        var v2 = Math.max(v1 + 1, Math.round(Number(i2.value) || def.c2));
+        var v1, v2;
+        if (def.kind === 'color') {
+          v1 = Math.min(100, Math.max(1, Math.round(Number(i1.value) || def.c1)));
+          v2 = Math.min(v1 - 1, Math.max(1, Math.round(Number(i2.value) || def.c2)));
+        } else {
+          v1 = Math.max(1, Math.round(Number(i1.value) || def.c1));
+          v2 = Math.max(v1 + 1, Math.round(Number(i2.value) || def.c2));
+        }
         def.c1 = v1; def.c2 = v2; i1.value = v1; i2.value = v2;
-        card.querySelector('.cut-preview').innerHTML = cutPreview(def).map(function (t) { return '<span>' + t + '</span>'; }).join('');
+        card.querySelector('.cut-preview').innerHTML = cutPreview(def).join('');
       }
       i1.addEventListener('input', sync);
       i2.addEventListener('input', sync);
@@ -940,10 +962,19 @@
   });
 
   var mUser = document.getElementById('modal-user');
+  function genDefaultPwd() {
+    var letters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
+    var digits = '23456789';
+    var chars = letters + digits;
+    var pwd = letters.charAt(Math.floor(Math.random() * letters.length)) + digits.charAt(Math.floor(Math.random() * digits.length));
+    for (var i = 0; i < 6; i++) { pwd += chars.charAt(Math.floor(Math.random() * chars.length)); }
+    return pwd.split('').sort(function () { return Math.random() - 0.5; }).join('');
+  }
   function openUserModal() {
     document.getElementById('mu-email').value = '';
     document.getElementById('mu-name').value = '';
     document.getElementById('mu-role').innerHTML = activeRoleNames().map(function (r) { return '<option value="' + r + '">' + r + '</option>'; }).join('');
+    document.getElementById('mu-pwd').value = '';
     mUser.classList.add('show');
     document.getElementById('mu-email').focus();
   }
@@ -951,17 +982,22 @@
   document.getElementById('btn-user-add').addEventListener('click', openUserModal);
   document.getElementById('mu-cancel').addEventListener('click', closeUserModal);
   mUser.addEventListener('click', function (e) { if (e.target === mUser) closeUserModal(); });
+  document.getElementById('mu-pwd-gen').addEventListener('click', function () {
+    document.getElementById('mu-pwd').value = genDefaultPwd();
+  });
   document.getElementById('mu-ok').addEventListener('click', function () {
     var email = document.getElementById('mu-email').value.trim();
     var nm = document.getElementById('mu-name').value.trim();
     var role = document.getElementById('mu-role').value;
+    var pwd = document.getElementById('mu-pwd').value;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { CRM.toast('請輸入正確格式的 email'); return; }
     if (!nm) { CRM.toast('請輸入姓名'); return; }
     if (USERS.some(function (u) { return u.acct === email; })) { CRM.toast('此 email 已建有帳號'); return; }
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(pwd)) { CRM.toast('預設密碼須至少 8 碼，且需同時包含英文與數字'); return; }
     USERS.push({ acct: email, name: nm, roles: role ? [role] : [], on: true });
     closeUserModal();
     renderUserTable();
-    CRM.toast('已建立帳號「' + email + '」（已寄送設定密碼邀請信，已寫入審計）');
+    CRM.toast('帳號已建立，請將預設密碼交付使用者（首登強制變更）');
   });
 
   var mReset = document.getElementById('modal-reset');
